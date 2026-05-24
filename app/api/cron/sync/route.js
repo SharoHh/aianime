@@ -4,6 +4,7 @@ import { fetchJikanAnimePaged, fetchJikanAnimeDetails, normalizeJikanAnime } fro
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { verifyCronAccess, cronAuthError } from '@/lib/cronAuth'
 import { readJikanSyncState, writeJikanSyncState } from '@/lib/syncState'
+import { translateGenres, makeRussianDescription } from '@/lib/ruContent'
 
 function localPosterBySlug(slug){
   const local = [
@@ -49,6 +50,7 @@ function normalizeRows(rows, source){
       title: row.title || row.original_title || 'Без названия',
       original_title: row.original_title || row.originalTitle || row.title || null,
       description: row.description || null,
+      description_ru: row.description_ru || makeRussianDescription({ ...row, slug }),
       status: row.status || null,
       kind: row.kind || null,
       year: row.year ?? null,
@@ -56,7 +58,7 @@ function normalizeRows(rows, source){
       rating: row.rating ?? row.score ?? null,
       poster_url: normalizePosterUrl(row.poster_url || row.poster || null, slug),
       banner_url: normalizePosterUrl(row.banner_url || row.banner || row.poster_url || row.poster || null, slug),
-      genres: Array.isArray(row.genres) ? row.genres : [],
+      genres: translateGenres(row.genres),
       studio: row.studio || null,
       provider: row.provider || source,
       raw: row.raw || row,
