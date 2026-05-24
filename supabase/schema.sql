@@ -218,11 +218,14 @@ create table if not exists public.anime_schedule (
   title text,
   title_ru text,
   poster_url text,
+  title_orig text,
   episode_number integer,
   broadcast_day text,
   broadcast_time text,
   broadcast_timezone text default 'Asia/Tokyo',
   airing_at timestamptz,
+  anime_status text,
+  catalog_matched boolean default true,
   source text default 'jikan',
   raw jsonb default '{}'::jsonb,
   created_at timestamptz default now(),
@@ -238,11 +241,14 @@ alter table public.anime_schedule add column if not exists mal_id bigint;
 alter table public.anime_schedule add column if not exists title text;
 alter table public.anime_schedule add column if not exists title_ru text;
 alter table public.anime_schedule add column if not exists poster_url text;
+alter table public.anime_schedule add column if not exists title_orig text;
 alter table public.anime_schedule add column if not exists episode_number integer;
 alter table public.anime_schedule add column if not exists broadcast_day text;
 alter table public.anime_schedule add column if not exists broadcast_time text;
 alter table public.anime_schedule add column if not exists broadcast_timezone text default 'Asia/Tokyo';
 alter table public.anime_schedule add column if not exists airing_at timestamptz;
+alter table public.anime_schedule add column if not exists anime_status text;
+alter table public.anime_schedule add column if not exists catalog_matched boolean default true;
 alter table public.anime_schedule add column if not exists source text default 'jikan';
 alter table public.anime_schedule add column if not exists raw jsonb default '{}'::jsonb;
 alter table public.anime_schedule add column if not exists created_at timestamptz default now();
@@ -255,12 +261,14 @@ set
   schedule_uid = coalesce(schedule_uid, 'legacy:' || coalesce(id::text, md5(random()::text || clock_timestamp()::text))),
   broadcast_timezone = coalesce(nullif(broadcast_timezone, ''), 'Asia/Tokyo'),
   source = coalesce(nullif(source, ''), 'jikan'),
+  catalog_matched = coalesce(catalog_matched, true),
   raw = coalesce(raw, '{}'::jsonb),
   created_at = coalesce(created_at, now()),
   updated_at = coalesce(updated_at, now())
 where schedule_uid is null
    or broadcast_timezone is null
    or source is null
+   or catalog_matched is null
    or raw is null
    or created_at is null
    or updated_at is null;
@@ -284,8 +292,12 @@ create index if not exists anime_schedule_airing_at_idx on public.anime_schedule
 create index if not exists anime_schedule_anime_slug_idx on public.anime_schedule(anime_slug);
 create index if not exists anime_schedule_mal_id_idx on public.anime_schedule(mal_id);
 create index if not exists anime_schedule_source_idx on public.anime_schedule(source);
+create index if not exists anime_schedule_anime_status_idx on public.anime_schedule(anime_status);
+create index if not exists anime_schedule_catalog_matched_idx on public.anime_schedule(catalog_matched);
 
 comment on table public.anime_schedule is 'Real release/broadcast schedule for AIanime. Filled by /api/cron/schedule from Jikan/MAL schedules.';
 comment on column public.anime_schedule.airing_at is 'Exact broadcast datetime normalized to UTC. UI formats it in AIANIME_SCHEDULE_TIME_ZONE.';
 comment on column public.anime_schedule.schedule_uid is 'Stable unique key for weekly upsert: source + anime + date + broadcast time.';
+comment on column public.anime_schedule.catalog_matched is 'True when the schedule item is linked to an existing AIanime catalog title. Public UI hides false rows.';
+comment on column public.anime_schedule.anime_status is 'Catalog status at sync time. Public schedule is intended for ongoing titles.';
 
