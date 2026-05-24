@@ -12738,3 +12738,14 @@ body{
 .profile-upload-card-v7{
   position:relative;
 }
+
+/* Schedule functional fix: visible current day without changing the layout */
+.schedule-day-card-today{
+  border-color:#dfc9ff !important;
+  box-shadow:0 24px 70px rgba(125,69,232,.13) !important;
+}
+.schedule-day-card-today header i{
+  background:linear-gradient(135deg,#9b67ff,#de55c8) !important;
+  color:#fff !important;
+  border-color:transparent !important;
+}

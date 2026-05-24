@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { schedule, collections } from '@/lib/data'
+import { collections } from '@/lib/data'
+import { getWeeklySchedule } from '@/lib/scheduleData'
 import { getAnimeList } from '@/lib/animeRepository'
 import ContinueWatchingClient from '@/components/ContinueWatchingClient'
 import HomeMoodPickerClient from '@/components/HomeMoodPickerClient'
@@ -78,17 +79,17 @@ function buildSiteStats(anime, todaySchedule){
   ]
 }
 
-function SiteStatsWidget({anime}){
-  return <SiteStatsClient initialStats={buildSiteStats(anime, schedule)} />
+function SiteStatsWidget({anime, weeklySchedule}){
+  return <SiteStatsClient initialStats={buildSiteStats(anime, weeklySchedule?.todayItems || [])} />
 }
 
-function RightPanel({anime}){return <aside className="rightcol">
-  <HomeScheduleWidgetClient schedule={schedule}/>
+function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
+  <HomeScheduleWidgetClient scheduleDays={weeklySchedule?.days || []} initialDay={weeklySchedule?.todayIndex || 0}/>
   <HomeMoodPickerClient anime={anime.slice(0,40)}/>
   <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><em>★ {a.rating}</em></Link>)}</div>
-  <SiteStatsWidget anime={anime}/>
+  <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
-export default async function Home(){const anime = await getAnimeList({limit:180}); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
+export default async function Home(){const anime = await getAnimeList({limit:180}); const weeklySchedule = await getWeeklySchedule(); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
   <div className="hero-image-overlay" />
   <div className="hero-copy">
     <span>AI РЕКОМЕНДАЦИЯ ДНЯ</span>
@@ -111,4 +112,4 @@ export default async function Home(){const anime = await getAnimeList({limit:180
     </div>
   </div>
 </section>
-<SectionTitle icon="♨" title="Популярное сейчас"/><div className="poster-row">{anime.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient fallback={anime.slice(0,4)}/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime}/><OnboardingClient/></main>}
+<SectionTitle icon="♨" title="Популярное сейчас"/><div className="poster-row">{anime.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient fallback={anime.slice(0,4)}/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}
