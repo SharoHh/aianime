@@ -125,26 +125,51 @@ async function readAnimeBatch({ page = 1, limit = 30, onlyMissing = true } = {})
   return Array.isArray(rows) ? rows : []
 }
 
+function missingColumnFromSupabase(text){
+  const raw = String(text || '')
+  const quoted = raw.match(/Could not find the '([^']+)' column/i)
+  if(quoted?.[1]) return quoted[1]
+  const jsonMatch = raw.match(/\"message\":\"Could not find the '([^']+)' column/i)
+  if(jsonMatch?.[1]) return jsonMatch[1]
+  return null
+}
+
+async function patchAnime(slug, payload){
+  return supabaseRequest(`anime?slug=eq.${encodeURIComponent(slug)}`, {
+    method:'PATCH',
+    body: JSON.stringify(payload),
+    headers: { Prefer:'return=representation' },
+    timeout: 12000
+  })
+}
+
 async function updateAnimeWithKodik(slug, patch){
   const payload = { ...patch }
   Object.keys(payload).forEach(key => {
     if(payload[key] === undefined) delete payload[key]
   })
 
-  const res = await supabaseRequest(`anime?slug=eq.${encodeURIComponent(slug)}`, {
-    method:'PATCH',
-    body: JSON.stringify(payload),
-    headers: { Prefer:'return=representation' },
-    timeout: 12000
-  })
+  const removed = []
+  for(let attempt = 0; attempt < 12; attempt++){
+    const res = await patchAnime(slug, payload)
+    if(res.ok){
+      const rows = await res.json().catch(() => [])
+      const row = Array.isArray(rows) ? rows[0] : null
+      return removed.length ? { ...row, __removedMissingColumns: removed } : row
+    }
 
-  if(!res.ok){
     const text = await res.text().catch(() => '')
+    const missing = missingColumnFromSupabase(text)
+    if(missing && Object.prototype.hasOwnProperty.call(payload, missing)){
+      delete payload[missing]
+      removed.push(missing)
+      continue
+    }
+
     throw new Error(`anime update failed for ${slug}: ${res.status} ${text}`)
   }
 
-  const rows = await res.json().catch(() => [])
-  return Array.isArray(rows) ? rows[0] : null
+  throw new Error(`anime update failed for ${slug}: too many missing columns: ${removed.join(', ')}`)
 }
 
 export async function GET(req){
@@ -206,7 +231,7 @@ export async function GET(req){
         result.matched += 1
         result.updated += 1
         if(result.sample.length < 5){
-          result.sample.push({ slug:row.slug, title:row.title, title_ru:patch.title_ru, translation:patch.translation_title, quality:patch.quality })
+          result.sample.push({ slug:row.slug, title:row.title, title_ru:patch.title_ru, translation:patch.translation_title, quality:patch.quality, matchScore:patch.kodik_match_score || null })
         }
       }catch(error){
         result.errors.push({ slug:row.slug, title:row.title, error:error?.message || String(error) })

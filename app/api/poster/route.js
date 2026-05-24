@@ -48,7 +48,11 @@ export async function GET(req){
     const image = pickImage(payload)
     if(!image || !/^https:\/\/cdn\.myanimelist\.net\//i.test(image)) return localFallback(req)
 
-    return Response.redirect(image, 302)
+    const fallbackParam = req.nextUrl.searchParams.get('fallback') || '/posters/magic2.svg'
+    const proxy = new URL('/api/image', req.url)
+    proxy.searchParams.set('url', image)
+    proxy.searchParams.set('fallback', fallbackParam)
+    return Response.redirect(proxy, 302)
   }catch{
     return localFallback(req)
   }
