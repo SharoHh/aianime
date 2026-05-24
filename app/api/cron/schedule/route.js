@@ -108,6 +108,26 @@ function pickPoster(item){
     null
 }
 
+function isOngoingStatus(value){
+  const raw = String(value || '').toLowerCase()
+  return raw === 'ongoing' || raw.includes('currently airing') || raw.includes('airing') || raw === 'released'
+}
+
+function catalogStatus(value){
+  const raw = String(value || '').toLowerCase().trim()
+  if(raw === 'ongoing' || raw.includes('currently airing')) return 'ongoing'
+  if(raw === 'released') return 'completed'
+  return raw || null
+}
+
+function scheduleTitleFromCatalog(matched, item){
+  return clean(matched?.titleRu) || clean(matched?.displayTitle) || clean(matched?.title) || clean(item?.title) || 'Аниме'
+}
+
+function schedulePosterFromCatalog(matched, item){
+  return clean(matched?.poster) || clean(matched?.banner) || pickPoster(item) || '/posters/magic2.svg'
+}
+
 
 function stripMalId(row){
   const { mal_id, ...rest } = row
@@ -218,7 +238,7 @@ function findCatalogAnime(jikanItem, index){
   return null
 }
 
-function normalizeScheduleRows(remoteItems, catalogAnime, now, { importMissing = true } = {}){
+function normalizeScheduleRows(remoteItems, catalogAnime, now, { importMissing = false } = {}){
   const catalogIndex = buildCatalogIndex(catalogAnime)
   const rows = []
   const skipped = []
@@ -232,9 +252,17 @@ function normalizeScheduleRows(remoteItems, catalogAnime, now, { importMissing =
     const airingAt = airingAtForWeek(dayFilter, time, timezone, now)
     let matched = findCatalogAnime(item, catalogIndex)
     const malId = Number(item?.mal_id)
+    const remoteStatus = item?.status || item?.airing_status || ''
 
     if(!time || !airingAt){
       skipped.push({ title: item?.title, mal_id: item?.mal_id, reason: 'no-broadcast-time' })
+      continue
+    }
+
+    // Jikan schedules can include titles that are not useful for AIanime users.
+    // Keep the public schedule clean: by default we show only real catalog titles.
+    if(!matched?.slug && !importMissing){
+      skipped.push({ title: item?.title, mal_id: item?.mal_id, reason: 'not-in-catalog' })
       continue
     }
 
@@ -246,14 +274,26 @@ function normalizeScheduleRows(remoteItems, catalogAnime, now, { importMissing =
           slug: created.slug,
           title: created.title,
           displayTitle: created.title,
-          titleRu: created.title,
+          titleRu: null,
           poster: created.poster_url || pickPoster(item) || '/posters/magic2.svg',
+          status: created.status || 'ongoing',
         }
       }
     }
 
     if(!matched?.slug){
       skipped.push({ title: item?.title, mal_id: item?.mal_id, reason: 'not-in-catalog' })
+      continue
+    }
+
+    const matchedStatus = catalogStatus(matched.status)
+    if(matchedStatus && matchedStatus !== 'ongoing'){
+      skipped.push({ title: item?.title, mal_id: item?.mal_id, slug: matched.slug, reason: `catalog-status-${matchedStatus}` })
+      continue
+    }
+
+    if(remoteStatus && !isOngoingStatus(remoteStatus)){
+      skipped.push({ title: item?.title, mal_id: item?.mal_id, status: remoteStatus, reason: 'remote-not-ongoing' })
       continue
     }
 
@@ -264,18 +304,23 @@ function normalizeScheduleRows(remoteItems, catalogAnime, now, { importMissing =
     if(seen.has(scheduleUid)) continue
     seen.add(scheduleUid)
 
+    const title = scheduleTitleFromCatalog(matched, item)
+
     rows.push({
       schedule_uid: scheduleUid,
       anime_slug: slug,
       mal_id: safeMalId,
-      title: matched.title || matched.displayTitle || item?.title || 'Аниме',
-      title_ru: matched.titleRu || matched.displayTitle || matched.title || null,
-      poster_url: matched.poster || pickPoster(item) || '/posters/magic2.svg',
+      title: clean(matched.originalTitle) || clean(item?.title) || title,
+      title_ru: title,
+      title_orig: clean(matched.originalTitle) || clean(item?.title) || null,
+      poster_url: schedulePosterFromCatalog(matched, item),
       episode_number: null,
       broadcast_day: DAY_RU[dayFilter] || dayFilter,
       broadcast_time: time,
       broadcast_timezone: timezone,
       airing_at: airingAt,
+      anime_status: matchedStatus || 'ongoing',
+      catalog_matched: Boolean(matched?.slug && !missingAnime.some(row => row.slug === matched.slug)),
       source: 'jikan',
       raw: item,
       updated_at: new Date().toISOString(),
@@ -318,6 +363,22 @@ async function deleteOldRows(now){
   }
 }
 
+async function deleteVisibleWeekRows(now){
+  const weekStart = mondayOfWeek(now)
+  const from = new Date(weekStart.getTime() - 2 * 86400000).toISOString()
+  const to = new Date(weekStart.getTime() + 9 * 86400000).toISOString()
+  try{
+    const res = await supabaseRequest(`anime_schedule?source=eq.jikan&airing_at=gte.${encodeURIComponent(from)}&airing_at=lt.${encodeURIComponent(to)}`, {
+      method: 'DELETE',
+      headers: { Prefer: 'return=minimal' },
+      timeout: 12000,
+    })
+    return { ok: res.ok, status: res.status, from, to }
+  }catch(error){
+    return { ok: false, error: error?.message || String(error), from, to }
+  }
+}
+
 function scheduleSyncEnabled(req){
   return req.nextUrl.searchParams.get('enable') === '1' || process.env.ENABLE_JIKAN_SCHEDULE_SYNC === '1'
 }
@@ -350,7 +411,7 @@ export async function GET(req){
   const pagesPerDay = Math.min(Math.max(Number(req.nextUrl.searchParams.get('pages') || 1), 1), 4)
   const delay = Number(req.nextUrl.searchParams.get('delay') || process.env.JIKAN_SCHEDULE_DELAY_MS || 900)
   const now = startedAt
-  const importMissing = req.nextUrl.searchParams.get('importMissing') !== '0'
+  const importMissing = req.nextUrl.searchParams.get('importMissing') === '1'
 
   try{
     const [remoteItems, catalogAnime] = await Promise.all([
@@ -359,6 +420,7 @@ export async function GET(req){
     ])
 
     const normalized = normalizeScheduleRows(remoteItems, catalogAnime, now, { importMissing })
+    const weekCleanup = await deleteVisibleWeekRows(now)
     const animeImport = await upsertMissingAnimeRows(normalized.missingAnime)
     if(!animeImport.ok){
       return Response.json({ ok: false, source: 'jikan-schedules', animeImport, hint: 'Не удалось добавить новые тайтлы из расписания в anime. Проверь схему Supabase.' }, { status: 500 })
@@ -381,11 +443,12 @@ export async function GET(req){
       animeImport,
       database,
       cleanup,
+      weekCleanup,
       auth: cronAuth.mode,
       startedAt: startedAt.toISOString(),
       finishedAt,
       hint: database.ok
-        ? 'Реальное расписание Jikan/MAL сохранено в Supabase anime_schedule. Главная и /schedule читают эту таблицу.'
+        ? 'Расписание сохранено: только онгоинги, которые есть в каталоге AIanime. Для принудительного импорта новых MAL-тайтлов добавь importMissing=1.'
         : 'Проверь, что применена миграция supabase/anime_schedule_migration.sql.',
     }, { status: database.ok ? 200 : 500 })
   }catch(error){
