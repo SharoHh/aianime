@@ -9,7 +9,8 @@ import HomeCollectionsClient from '@/components/HomeCollectionsClient'
 import HomeScheduleWidgetClient from '@/components/HomeScheduleWidgetClient'
 import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import OnboardingClient from '@/components/OnboardingClient'
-import SidebarProfileClient from '@/components/SidebarProfileClient'
+import SidebarAccountClient from '@/components/SidebarAccountClient'
+import HeaderAccountClient from '@/components/HeaderAccountClient'
 import SiteStatsClient from '@/components/SiteStatsClient'
 
 const icons = ['home','catalog','schedule','collections','ai','favorites','profile','settings']
@@ -52,13 +53,8 @@ function Sidebar(){return <aside className="sidebar">
   </div>
   <nav className="sidebar-nav">
     {nav.slice(0,6).map((n,i)=><Link className={'nav '+(i===0?'active':'')} href={i===1?'/catalog':i===2?'/schedule':i===3?'/collections':i===4?'/ai':i===5?'/favorites':'/'} key={n}><span className="nav-icon"><SidebarIcon type={icons[i]}/></span>{n}</Link>)}
-    <div className="sidebar-separator"/>
-    {nav.slice(6).map((n,index)=>{
-      const i = index + 6
-      return <Link className="nav" href={i===6?'/profile':'/settings'} key={n}><span className="nav-icon"><SidebarIcon type={icons[i]}/></span>{n}</Link>
-    })}
   </nav>
-  <SidebarProfileClient/>
+  <SidebarAccountClient/>
 </aside>}
 function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
 function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
@@ -92,7 +88,7 @@ function RightPanel({anime}){return <aside className="rightcol">
   <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><em>★ {a.rating}</em></Link>)}</div>
   <SiteStatsWidget anime={anime}/>
 </aside>}
-export default async function Home(){const anime = await getAnimeList({limit:180}); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><Link href="/profile" className="avatar-link"><img src="/posters/oshi.svg"/></Link></div></header><section className="hero ai-hero ai-hero-image">
+export default async function Home(){const anime = await getAnimeList({limit:180}); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
   <div className="hero-image-overlay" />
   <div className="hero-copy">
     <span>AI РЕКОМЕНДАЦИЯ ДНЯ</span>

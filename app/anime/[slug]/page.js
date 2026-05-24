@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/animeRepository'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
+import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import { encodeSlug } from '@/lib/routeSlugs'
@@ -70,7 +71,7 @@ export default async function AnimePage({ params }){
       </div>
       <div className="title-nav-actions">
         <Link href="/ai" className="title-nav-ai">AI-подбор</Link>
-        <Link href="/profile" className="title-nav-profile">Профиль</Link>
+        <TitleAuthActionClient/>
       </div>
     </nav>
     <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" src={item.poster} alt=""/>

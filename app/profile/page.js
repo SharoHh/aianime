@@ -1,12 +1,11 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import ProfileEditorClient from '@/components/ProfileEditorClient'
-import AccountSyncClient from '@/components/AccountSyncClient'
+import ProfileAuthGateClient from '@/components/ProfileAuthGateClient'
 
 export const metadata = {
   title: 'Профиль — Aianime',
-  description: 'Настройки профиля, аватар, фон и синхронизация аккаунта.'
+  description: 'Профиль Aianime, аватар, фон и синхронизация аккаунта.'
 }
 
 export default function ProfilePage(){
@@ -14,9 +13,8 @@ export default function ProfilePage(){
     <div className="page-head profile-clean-page-head">
       <Link href="/">← На главную</Link>
       <h1>Профиль</h1>
-      <p>Настрой внешний вид профиля и синхронизацию аккаунта.</p>
+      <p>Личный профиль, избранное, история, оценки и синхронизация.</p>
     </div>
-    <ProfileEditorClient/>
-    <AccountSyncClient/>
+    <ProfileAuthGateClient/>
   </main>
 }
