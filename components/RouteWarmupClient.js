@@ -23,16 +23,46 @@ function toPrefetchPath(href){
   }
 }
 
+function shouldHandleClick(event, link){
+  if(!link) return false
+  if(event.defaultPrevented) return false
+  if(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false
+  if(link.target && link.target !== '_self') return false
+  if(link.hasAttribute('download')) return false
+  const href = link.getAttribute('href')
+  if(!isInternalHref(href)) return false
+  try{
+    const url = new URL(href, window.location.origin)
+    if(url.pathname === window.location.pathname && url.search === window.location.search) return false
+    return true
+  }catch{
+    return false
+  }
+}
+
 export default function RouteWarmupClient(){
   const router = useRouter()
   const pathname = usePathname()
   const [active,setActive] = useState(false)
   const prefetchedRef = useRef(new Set())
   const timerRef = useRef(null)
+  const finishTimerRef = useRef(null)
+
+  function clearTimers(){
+    if(timerRef.current) clearTimeout(timerRef.current)
+    if(finishTimerRef.current) clearTimeout(finishTimerRef.current)
+    timerRef.current = null
+    finishTimerRef.current = null
+  }
+
+  function finishTransition(){
+    if(finishTimerRef.current) clearTimeout(finishTimerRef.current)
+    finishTimerRef.current = setTimeout(()=>setActive(false), 90)
+  }
 
   useEffect(()=>{
-    setActive(false)
-    if(timerRef.current) clearTimeout(timerRef.current)
+    finishTransition()
+    return ()=>clearTimers()
   }, [pathname])
 
   useEffect(()=>{
@@ -53,6 +83,10 @@ export default function RouteWarmupClient(){
       warmLink(findLink(event.target))
     }
 
+    function onPointerOver(event){
+      warmLink(findLink(event.target))
+    }
+
     function onFocusIn(event){
       warmLink(findLink(event.target))
     }
@@ -63,20 +97,29 @@ export default function RouteWarmupClient(){
 
     function onClick(event){
       const link = findLink(event.target)
-      if(!link) return
-      const href = link.getAttribute('href')
-      if(!isInternalHref(href)) return
-      const url = new URL(href, window.location.origin)
-      if(url.pathname === window.location.pathname && url.search === window.location.search) return
+      if(!shouldHandleClick(event, link)) return
+      warmLink(link)
       setActive(true)
       if(timerRef.current) clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(()=>setActive(false), 1800)
+      // Страховка: если навигация отменится или ответ сервера затянется, экран не зависнет.
+      timerRef.current = setTimeout(()=>setActive(false), 2400)
+    }
+
+    function onPageShow(){
+      finishTransition()
+    }
+
+    function onVisibilityChange(){
+      if(document.visibilityState === 'visible') finishTransition()
     }
 
     document.addEventListener('pointerenter', onPointerEnter, true)
+    document.addEventListener('pointerover', onPointerOver, true)
     document.addEventListener('focusin', onFocusIn, true)
     document.addEventListener('touchstart', onTouchStart, { capture:true, passive:true })
     document.addEventListener('click', onClick, true)
+    window.addEventListener('pageshow', onPageShow)
+    document.addEventListener('visibilitychange', onVisibilityChange)
 
     const observer = 'IntersectionObserver' in window ? new IntersectionObserver((entries)=>{
       entries.forEach(entry=>{
@@ -85,21 +128,39 @@ export default function RouteWarmupClient(){
           observer.unobserve(entry.target)
         }
       })
-    }, { rootMargin:'220px 0px' }) : null
+    }, { rootMargin:'260px 0px' }) : null
 
-    if(observer){
+    function observeLinks(){
+      if(!observer) return
       document.querySelectorAll('a[href^="/"], a[href^="https://aianime.ru"], a[href^="http://aianime.ru"]').forEach(link=>observer.observe(link))
     }
 
+    observeLinks()
+    const mutationObserver = 'MutationObserver' in window ? new MutationObserver(()=>observeLinks()) : null
+    mutationObserver?.observe(document.body, { childList:true, subtree:true })
+
     return ()=>{
       document.removeEventListener('pointerenter', onPointerEnter, true)
+      document.removeEventListener('pointerover', onPointerOver, true)
       document.removeEventListener('focusin', onFocusIn, true)
       document.removeEventListener('touchstart', onTouchStart, true)
       document.removeEventListener('click', onClick, true)
+      window.removeEventListener('pageshow', onPageShow)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       observer?.disconnect()
-      if(timerRef.current) clearTimeout(timerRef.current)
+      mutationObserver?.disconnect()
+      clearTimers()
     }
   }, [router, pathname])
 
-  return <div className={`route-progress-bar ${active ? 'is-active' : ''}`} aria-hidden="true" />
+  return <>
+    <div className={`route-progress-bar ${active ? 'is-active' : ''}`} aria-hidden="true" />
+    <div className={`route-transition-surface ${active ? 'is-visible' : ''}`} aria-hidden="true">
+      <div className="route-transition-card">
+        <span />
+        <span />
+        <span />
+      </div>
+    </div>
+  </>
 }
