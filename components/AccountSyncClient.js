@@ -108,7 +108,7 @@ export default function AccountSyncClient(){
 
   if(!user){
     return <section className="widget account-sync">
-      <div><b>Войди в аккаунт</b><p>После входа можно сохранить историю, избранное и оценки в Supabase.</p></div>
+      <div><b>Войди в аккаунт</b><p>После входа профиль, история, избранное и оценки будут доступны для синхронизации.</p></div>
       <Link className="primary" href="/auth">Войти</Link>
     </section>
   }

@@ -2,26 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { pushToast } from '@/components/ToastCenter'
-
-const defaults = {
-  name: 'Haruno',
-  level: 'Уровень 12',
-  avatar: '/posters/oshi.svg',
-  cover: '/images/profile-sidebar-bg.png'
-}
-
-function readProfile(){
-  try{
-    return { ...defaults, ...JSON.parse(localStorage.getItem('anime:profile') || '{}') }
-  }catch{
-    return defaults
-  }
-}
-
-function saveProfile(profile){
-  localStorage.setItem('anime:profile', JSON.stringify(profile))
-  window.dispatchEvent(new Event('anime:user-updated'))
-}
+import { getProfileDefaults, readStoredProfile, saveStoredProfile } from '@/components/AuthStateClient'
 
 function fileToDataUrl(file){
   return new Promise((resolve, reject) => {
@@ -32,13 +13,13 @@ function fileToDataUrl(file){
   })
 }
 
-export default function ProfileEditorClient(){
+export default function ProfileEditorClient({ user }){
   const [profile,setProfile] = useState(null)
 
-  useEffect(()=>setProfile(readProfile()), [])
+  useEffect(()=>setProfile(readStoredProfile(user)), [user])
 
   function update(key, value){
-    setProfile(prev => ({ ...(prev || defaults), [key]: value }))
+    setProfile(prev => ({ ...(prev || getProfileDefaults(user)), [key]: value }))
   }
 
   async function upload(key, file){
@@ -87,13 +68,14 @@ export default function ProfileEditorClient(){
   }
 
   function save(){
-    saveProfile(profile || defaults)
+    saveStoredProfile(user, profile || getProfileDefaults(user))
     pushToast('Профиль обновлён', 'success')
   }
 
   function reset(){
+    const defaults = getProfileDefaults(user)
     setProfile(defaults)
-    saveProfile(defaults)
+    saveStoredProfile(user, defaults)
     pushToast('Профиль сброшен', 'success')
   }
 
@@ -118,12 +100,12 @@ export default function ProfileEditorClient(){
       <div className="profile-clean-head">
         <span>настройки</span>
         <h3>Профиль</h3>
-        <p>Меняй имя, уровень, аватар и фон. Данные сохраняются локально и сразу обновляют левое меню.</p>
+        <p>Меняй имя, уровень, аватар и фон аккаунта. Профиль виден только после входа и сразу обновляет меню.</p>
       </div>
 
       <div className="profile-clean-grid">
-        <label><span>Имя</span><input value={profile.name} onChange={e=>update('name', e.target.value)} placeholder="Haruno"/></label>
-        <label><span>Уровень</span><input value={profile.level} onChange={e=>update('level', e.target.value)} placeholder="Уровень 12"/></label>
+        <label><span>Имя</span><input value={profile.name} onChange={e=>update('name', e.target.value)} placeholder="Имя профиля"/></label>
+        <label><span>Уровень</span><input value={profile.level} onChange={e=>update('level', e.target.value)} placeholder="Аккаунт подключён"/></label>
         <label><span>Аватар URL</span><input value={profile.avatar} onChange={e=>update('avatar', e.target.value)} placeholder="/posters/oshi.svg"/></label>
         <label><span>Фон URL</span><input value={profile.cover} onChange={e=>update('cover', e.target.value)} placeholder="/images/profile-sidebar-bg.png"/></label>
         <label><span>Загрузить аватар</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>upload('avatar', e.target.files?.[0])}/></label>
