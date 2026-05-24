@@ -19,7 +19,7 @@ export default function ContinueWatchingClient({ fallback = [] }){
 
   return <div className="continue-row">
     {items.map(item => <Link href={`/anime/${item.slug}#player`} className="continue-card" key={item.slug}>
-      <img src={item.poster} alt="Аниме"/>
+      <img loading="lazy" decoding="async" src={item.poster} alt="Аниме"/>
       <div className="play">▶</div>
       <div className="continue-info"><b>{item.title}</b><span>{item.episode ? `Серия ${item.episode}` : item.meta}</span><div className="bar"><i style={{width:(item.progress || 18)+'%'}}/></div></div>
       <em>{item.progress || 18}%</em>

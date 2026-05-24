@@ -31,7 +31,7 @@ export default async function StudioPage({ params }){
   return <main className="page seo-page">
     <div className="page-head seo-head"><Link href="/studios">← Все студии</Link><h1>{studio}</h1><p>{items.length} тайтлов студии.</p></div>
     <div className="poster-row seo-poster-row">
-      {items.slice(0,20).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}><img src={a.poster}/><div className="rating">★ {a.rating}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div></Link>)}
+      {items.slice(0,20).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}><img loading="lazy" decoding="async" src={a.poster}/><div className="rating">★ {a.rating}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div></Link>)}
     </div>
   </main>
 }

@@ -23,7 +23,7 @@ export default function LocalAnimeList({ storageKey, emptyTitle, emptyText }){
     <div className="filter-summary"><b>{items.length}</b> тайтлов <button onClick={clear}>Очистить</button></div>
     <div className="catalog-grid">
       {items.map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}>
-        <img src={a.poster}/><div className="rating">★ {a.rating}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
+        <img loading="lazy" decoding="async" src={a.poster}/><div className="rating">★ {a.rating}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
       </Link>)}
     </div>
   </>

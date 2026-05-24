@@ -29,8 +29,8 @@ function genreSlug(text){
 
 export default async function AnimePage({ params }){
   const resolvedParams = await params
-  const allAnime = await getAnimeList({limit:500})
-  const item = allAnime.find(a => a.slug === resolvedParams.slug) || await getAnimeBySlugFromRepo(resolvedParams.slug)
+  const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
+  const allAnime = await getAnimeList({limit:220})
   const episodes = await getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
   const currentEpisode = episodes[0]
   const nextEpisode = episodes[1] || episodes[0]
@@ -64,7 +64,7 @@ export default async function AnimePage({ params }){
         <Link href="/profile" className="title-nav-profile">Профиль</Link>
       </div>
     </nav>
-    <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" src={item.poster} alt=""/>
+    <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" src={item.poster} alt=""/>
       <div className="anime-compact-left">
         <nav className="compact-breadcrumb"><Link href="/">← На главную</Link><span>/</span><Link href="/catalog">Каталог</Link></nav>
 
@@ -104,7 +104,7 @@ export default async function AnimePage({ params }){
       </div>
 
       <aside className="anime-compact-poster">
-        <img src={item.poster} alt={item.title}/>
+        <img loading="eager" decoding="async" src={item.poster} alt={item.title}/>
         <div className="poster-rank">AI рекомендация</div>
       </aside>
     </section>
@@ -134,7 +134,7 @@ export default async function AnimePage({ params }){
       <div className="compact-section-head"><h2>Похожие тайтлы</h2><Link href={`/ai?similar=${item.slug}`}>Ещё через AI ›</Link></div>
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
-          <img src={a.poster}/>
+          <img loading="lazy" decoding="async" src={a.poster} alt={a.title}/>
           <b>{a.title}</b>
           <span>{a.meta}</span>
         </Link>)}

@@ -67,7 +67,7 @@ export default function CatalogClient({ items }){
       </aside>
       <div className="catalog-results">
         {filtered.slice(0, visible).map(a=><Link className="catalog-card catalog-card-live" href={`/anime/${a.slug}`} key={a.slug}>
-          <div className="catalog-cover"><img loading="lazy" src={a.poster} alt="Аниме"/><span>★ {a.rating}</span></div>
+          <div className="catalog-cover"><img loading="lazy" decoding="async" src={a.poster} alt={a.title || "Аниме"}/><span>★ {a.rating}</span></div>
           <div className="catalog-body"><b>{a.title}</b><em>{a.originalTitle}</em><p>{a.description}</p><div>{a.genres.slice(0,3).map(g=><i key={g}>{g}</i>)}</div><small>{a.year} · {a.meta} · {statusLabels[a.status] || a.status}</small></div>
           <div className="catalog-hover-preview">
             <strong>{a.title}</strong>

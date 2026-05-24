@@ -36,7 +36,7 @@ export default function UserStats(){
     <div className="section-title"><h2><span>◷</span>Последние просмотры</h2><Link href="/history">История ›</Link></div>
     <div className="poster-row">
       {history.slice(0,5).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}>
-        <img src={a.poster}/><div className="rating">серия {a.episode || 1}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
+        <img loading="lazy" decoding="async" src={a.poster}/><div className="rating">серия {a.episode || 1}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
       </Link>)}
     </div>
   </>

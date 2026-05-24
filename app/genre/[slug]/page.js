@@ -28,7 +28,7 @@ export default async function GenrePage({ params }){
   return <main className="page seo-page">
     <div className="page-head seo-head"><Link href="/genres">← Все жанры</Link><h1>{genre}</h1><p>{items.length} тайтлов в этом жанре. Отсортировано по рейтингу и популярности.</p></div>
     <div className="poster-row seo-poster-row">
-      {items.slice(0,20).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}><img src={a.poster}/><div className="rating">★ {a.rating}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div></Link>)}
+      {items.slice(0,20).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}><img loading="lazy" decoding="async" src={a.poster}/><div className="rating">★ {a.rating}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div></Link>)}
     </div>
   </main>
 }

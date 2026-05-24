@@ -60,8 +60,8 @@ function Sidebar(){return <aside className="sidebar">
   </nav>
   <SidebarProfileClient/>
 </aside>}
-function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img src={item.poster}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
-function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img src={item.poster}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
+function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
+function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
 function SectionTitle({icon,title}){return <div className="section-title"><h2><span>{icon}</span>{title}</h2><Link href="/catalog">Смотреть все ›</Link></div>}
 
 function formatStat(value){
@@ -89,10 +89,10 @@ function SiteStatsWidget({anime}){
 function RightPanel({anime}){return <aside className="rightcol">
   <HomeScheduleWidgetClient schedule={schedule}/>
   <HomeMoodPickerClient anime={anime.slice(0,40)}/>
-  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img src={a.poster}/><div><b>{a.title}</b><span>{a.meta}</span></div><em>★ {a.rating}</em></Link>)}</div>
+  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><em>★ {a.rating}</em></Link>)}</div>
   <SiteStatsWidget anime={anime}/>
 </aside>}
-export default async function Home(){const anime = await getAnimeList({limit:360}); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><Link href="/profile" className="avatar-link"><img src="/posters/oshi.svg"/></Link></div></header><section className="hero ai-hero ai-hero-image">
+export default async function Home(){const anime = await getAnimeList({limit:180}); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><Link href="/profile" className="avatar-link"><img src="/posters/oshi.svg"/></Link></div></header><section className="hero ai-hero ai-hero-image">
   <div className="hero-image-overlay" />
   <div className="hero-copy">
     <span>AI РЕКОМЕНДАЦИЯ ДНЯ</span>

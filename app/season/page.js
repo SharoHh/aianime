@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 
 function Poster({item}){
-  return <Link href={`/anime/${item.slug}`} className="poster"><img src={item.poster}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>
+  return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>
 }
 
 export const metadata = {

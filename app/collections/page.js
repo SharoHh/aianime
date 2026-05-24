@@ -13,7 +13,7 @@ const collectionRules = [
 
 function Poster({item}){
   return <Link href={`/anime/${item.slug}`} className="poster">
-    <img src={item.poster}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
+    <img loading="lazy" decoding="async" src={item.poster}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
   </Link>
 }
 

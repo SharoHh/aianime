@@ -26,7 +26,7 @@ export default function RightContinueWatchingClient({ fallback = [] }){
   return <div className="widget watch">
     <div className="widget-head"><h3>▷ Продолжить просмотр</h3><Link href="/history">Смотреть все</Link></div>
     <Link className="watch-banner" href={`/anime/${item.slug}#player`}>
-      <img src={item.banner || item.poster}/>
+      <img loading="lazy" decoding="async" src={item.banner || item.poster}/>
       <div><b>{item.title}</b><span>{item.episode ? `Серия ${item.episode}` : (item.meta || 'Продолжить')}</span><div className="bar"><i style={{width:`${progress}%`}}/></div></div>
       <button type="button">▶</button>
     </Link>

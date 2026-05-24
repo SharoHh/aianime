@@ -22,7 +22,7 @@ export default async function TopListPage(){
     <section className="top-list">
       {items.map((a,index)=><Link className="top-list-item widget" href={`/anime/${a.slug}`} key={a.slug}>
         <strong>{index+1}</strong>
-        <img src={a.poster}/>
+        <img loading="lazy" decoding="async" src={a.poster}/>
         <div><b>{a.title}</b><span>{a.year} · {a.meta} · {(a.genres || []).slice(0,3).join(' · ')}</span></div>
         <em>★ {a.rating}</em>
       </Link>)}
