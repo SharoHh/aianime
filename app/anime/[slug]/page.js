@@ -1,15 +1,23 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/animeRepository'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
+import { encodeSlug } from '@/lib/routeSlugs'
 
 export async function generateMetadata({ params }){
   const resolvedParams = await params
   const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
+  if(!item){
+    return {
+      title: 'Тайтл не найден — Aianime',
+      description: 'Этот тайтл удалён или больше не доступен в каталоге Aianime.'
+    }
+  }
   return {
     title: `${item.title} смотреть онлайн — Aianime`,
     description: item.description?.slice(0, 160) || 'Аниме онлайн: описание, серии, комментарии и похожие тайтлы.',
@@ -23,15 +31,16 @@ function statusLabel(status){
   return 'Завершён'
 }
 
-function genreSlug(text){
-  return String(text).toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9]+/gi,'-').replace(/^-|-$/g,'')
-}
 
 export default async function AnimePage({ params }){
   const resolvedParams = await params
+  if(String(resolvedParams.slug || '').startsWith('catalog-title-')) notFound()
   const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
-  const allAnime = await getAnimeList({limit:220})
-  const episodes = await getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
+  if(!item) notFound()
+  const [allAnime, episodes] = await Promise.all([
+    getAnimeList({limit:220}),
+    getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
+  ])
   const currentEpisode = episodes[0]
   const nextEpisode = episodes[1] || episodes[0]
   const similar = recommendAnime(allAnime, `похожие на ${item.title}`, { baseAnime: item, limit: 6 })
@@ -91,7 +100,7 @@ export default async function AnimePage({ params }){
         </div>
 
         <div className="compact-genres">
-          {item.genres.slice(0,8).map(g=><Link href={`/genre/${genreSlug(g)}`} key={g}>{g}</Link>)}
+          {item.genres.slice(0,8).map(g=><Link href={`/genre/${encodeSlug(g)}`} key={g}>{g}</Link>)}
         </div>
 
         <p className="compact-description">{item.description}</p>

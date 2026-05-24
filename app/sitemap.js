@@ -1,7 +1,8 @@
 import { getAnimeList } from '@/lib/animeRepository'
+import { encodeSlug } from '@/lib/routeSlugs'
 
 function slugify(text){
-  return String(text || 'unknown').toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9]+/gi,'-').replace(/^-|-$/g,'') || 'unknown'
+  return encodeSlug(text || 'unknown') || 'unknown'
 }
 
 export default async function sitemap(){

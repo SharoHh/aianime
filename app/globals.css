@@ -11451,3 +11451,166 @@ html body .site-stat-row.online strong{
 @media(max-width:680px){
   .admin-token-check-card{flex-direction:column;align-items:stretch}
 }
+
+/* AIanime UX speed layer: route skeletons, poster placeholders and Kodik loading state */
+@keyframes aianimeShimmer{
+  0%{background-position:120% 0}
+  100%{background-position:-120% 0}
+}
+@keyframes aianimePulseSoft{
+  0%,100%{opacity:.58;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.035)}
+}
+.sk{
+  position:relative;
+  overflow:hidden;
+  border-radius:18px;
+  background:linear-gradient(90deg,#f3effb 0%,#fff 32%,#f0e8fb 64%,#f3effb 100%);
+  background-size:260% 100%;
+  animation:aianimeShimmer 1.25s ease-in-out infinite;
+  box-shadow:inset 0 0 0 1px rgba(238,229,249,.7);
+}
+.app-route-loading{
+  min-height:100vh;
+  background:linear-gradient(135deg,#fff8fd 0%,#f7f1ff 42%,#fffdf9 100%);
+  color:#2a2240;
+}
+.home-route-loading{
+  display:grid;
+  grid-template-columns:250px minmax(0,1fr);
+}
+.skeleton-sidebar{
+  min-height:100vh;
+  padding:24px 18px;
+  display:grid;
+  align-content:start;
+  gap:12px;
+  border-right:1px solid #eee6f8;
+  background:rgba(255,255,255,.62);
+}
+.sk-brand{width:168px;height:48px;border-radius:18px;margin-bottom:18px}
+.sk-nav{height:44px;border-radius:16px}
+.skeleton-content{padding:22px 26px 56px;display:grid;gap:18px;align-content:start}
+.sk-topbar{height:54px;border-radius:22px;max-width:640px}
+.sk-hero{height:360px;border-radius:32px;background-size:300% 100%}
+.skeleton-title-row{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:8px}
+.sk-title{width:260px;height:32px;border-radius:14px}
+.sk-title.small{width:210px;height:28px}
+.sk-link{width:104px;height:24px;border-radius:999px}
+.skeleton-poster-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.sk-poster{height:300px;border-radius:20px}
+.skeleton-card-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.sk-wide-card{height:160px;border-radius:20px}
+.route-skeleton{min-height:100vh}
+.sk-back{width:130px;height:22px;border-radius:999px;margin-bottom:22px}
+.sk-page-title{width:min(460px,70vw);height:54px;border-radius:18px;margin:16px 0 10px}
+.sk-page-text{width:min(720px,85vw);height:24px;border-radius:999px;margin-bottom:24px}
+.sk-catalog-tools{height:150px;border-radius:24px;margin:22px 0 18px}
+.skeleton-catalog-layout{display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start}
+.sk-catalog-aside{height:360px;border-radius:24px}
+.skeleton-catalog-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.sk-catalog-card{height:238px;border-radius:22px}
+.skeleton-title-nav{gap:18px}
+.sk-nav-logo{width:190px;height:52px;border-radius:18px}
+.sk-nav-pill{width:280px;height:42px;border-radius:999px}
+.sk-nav-pill.short{width:140px;margin-left:auto}
+.skeleton-anime-card{min-height:520px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:34px;align-items:start}
+.sk-breadcrumb{width:220px;height:22px;border-radius:999px;margin-bottom:18px}
+.sk-anime-title{width:min(620px,70vw);height:68px;border-radius:22px;margin-bottom:14px}
+.sk-anime-alias{width:min(480px,62vw);height:24px;border-radius:999px;margin-bottom:20px}
+.skeleton-chip-row{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.sk-chip{width:94px;height:42px;border-radius:16px}
+.skeleton-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:720px;margin:16px 0}
+.sk-info-line{height:36px;border-radius:14px}
+.skeleton-chip-row.compact{margin-top:18px}
+.sk-genre-chip{width:84px;height:34px;border-radius:999px}
+.sk-description{width:min(720px,80vw);height:92px;border-radius:20px;margin:20px 0}
+.skeleton-action-row{display:flex;gap:12px;flex-wrap:wrap}
+.sk-action{width:148px;height:48px;border-radius:16px}
+.sk-action.secondary{width:190px}
+.skeleton-big-poster{width:100%;height:430px;border-radius:30px}
+.skeleton-player-section{margin-top:22px}
+.skeleton-player{height:420px;border-radius:30px}
+.genre-loading-row{margin-top:24px}
+
+.poster img,.catalog-cover img,.continue-card img,.mini img,.anime-compact-poster img,.compact-bg-glow,.compact-player>img,.compact-similar img{
+  background:#f3efff;
+}
+.poster,.catalog-cover,.continue-card,.mini img,.anime-compact-poster,.compact-player,.compact-similar a{
+  position:relative;
+}
+.poster::before,.catalog-cover::before,.continue-card::before,.anime-compact-poster::before,.compact-player::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.42) 46%,rgba(255,255,255,0) 100%);
+  transform:translateX(-120%);
+  animation:aianimeCardLight 1.8s ease-in-out infinite;
+  opacity:.42;
+}
+@keyframes aianimeCardLight{
+  0%{transform:translateX(-120%)}
+  60%,100%{transform:translateX(120%)}
+}
+.poster img,.catalog-cover img,.continue-card img,.anime-compact-poster img,.compact-bg-glow,.compact-player>img{
+  position:relative;
+  z-index:1;
+}
+.kodik-iframe-skeleton{
+  position:absolute;
+  inset:0;
+  z-index:4;
+  display:grid;
+  place-content:center;
+  justify-items:center;
+  gap:10px;
+  text-align:center;
+  color:#fff;
+  background:
+    radial-gradient(circle at 50% 35%,rgba(236,109,188,.32),transparent 30%),
+    linear-gradient(135deg,#171228 0%,#211634 48%,#120f20 100%);
+}
+.kodik-iframe-skeleton strong{
+  font-size:18px;
+  font-weight:850;
+  letter-spacing:-.03em;
+}
+.kodik-iframe-skeleton span{
+  color:rgba(255,255,255,.7);
+  font-size:13px;
+  font-weight:700;
+}
+.kodik-loader-orb{
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#ec6dbc,#8d55ee);
+  box-shadow:0 0 0 12px rgba(236,109,188,.12),0 20px 55px rgba(125,67,219,.38);
+  animation:aianimePulseSoft 1.05s ease-in-out infinite;
+}
+.compact-player-kodik.iframe-loading .kodik-player-iframe{
+  opacity:0;
+}
+.compact-player-kodik.iframe-ready .kodik-player-iframe{
+  opacity:1;
+  transition:opacity .22s ease;
+}
+.player-loading-button{
+  animation:aianimePulseSoft 1.05s ease-in-out infinite;
+}
+.player-progress-dots{display:flex;gap:6px;justify-content:center;margin-top:12px}
+.player-progress-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.78);animation:aianimePulseSoft .9s ease-in-out infinite}
+.player-progress-dots i:nth-child(2){animation-delay:.12s}.player-progress-dots i:nth-child(3){animation-delay:.24s}
+
+@media(max-width:1100px){
+  .home-route-loading{grid-template-columns:84px minmax(0,1fr)}
+  .skeleton-poster-row{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .skeleton-card-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .skeleton-catalog-layout{grid-template-columns:1fr}.sk-catalog-aside{display:none}.skeleton-catalog-results{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .skeleton-anime-card{grid-template-columns:1fr}.skeleton-big-poster{display:none}
+}
+@media(max-width:720px){
+  .home-route-loading{display:block}.skeleton-sidebar{display:none}.skeleton-content{padding:16px 14px 96px}.sk-hero{height:310px}.skeleton-poster-row{grid-template-columns:repeat(2,minmax(0,1fr))}.sk-poster{height:285px}.skeleton-card-row,.skeleton-catalog-results{grid-template-columns:1fr}.sk-catalog-card{height:210px}.skeleton-player{height:340px}.sk-anime-title{height:52px}.skeleton-info-grid{grid-template-columns:1fr}
+}
