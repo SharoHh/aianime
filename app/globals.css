@@ -12749,3 +12749,34 @@ body{
   color:#fff !important;
   border-color:transparent !important;
 }
+
+/* Home schedule: keep the sidebar card compact while preserving full list scroll */
+.schedule-reference-list{
+  max-height:380px !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  padding-right:2px !important;
+  scrollbar-width:thin !important;
+  scrollbar-color:#d7c6f6 transparent !important;
+}
+
+.schedule-reference-list::-webkit-scrollbar{
+  width:6px;
+}
+
+.schedule-reference-list::-webkit-scrollbar-track{
+  background:transparent;
+}
+
+.schedule-reference-list::-webkit-scrollbar-thumb{
+  background:#d7c6f6;
+  border-radius:999px;
+}
+
+.schedule-reference-list::-webkit-scrollbar-thumb:hover{
+  background:#bd9ef2;
+}
+
+.schedule-reference-list .schedule-empty{
+  min-height:126px !important;
+}
