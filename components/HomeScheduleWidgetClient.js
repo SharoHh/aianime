@@ -4,26 +4,35 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { pushToast } from '@/components/ToastCenter'
 
-const dayLabels = [
-  ['Пн', '13'],
-  ['Вт', '14'],
-  ['Ср', '15'],
-  ['Чт', '16'],
-  ['Пт', '17'],
-  ['Сб', '18'],
-  ['Вс', '19'],
+const legacyDayLabels = [
+  ['Пн', '1'],
+  ['Вт', '2'],
+  ['Ср', '3'],
+  ['Чт', '4'],
+  ['Пт', '5'],
+  ['Сб', '6'],
+  ['Вс', '7'],
 ]
 
-function normalizeSchedule(schedule = []) {
-  const base = schedule.map((item, index) => ({
-    time: item[0],
-    title: item[1],
-    meta: item[2],
-    poster: item[3],
-    slug: item[4] || item[1]?.toLowerCase?.().replace(/[^a-zа-яё0-9]+/gi, '-').replace(/^-|-$/g, '') || `schedule-${index}`,
-  }))
+function fallbackSlug(title, index){
+  return title?.toLowerCase?.().replace(/[^a-zа-яё0-9]+/gi, '-').replace(/^-|-$/g, '') || `schedule-${index}`
+}
 
-  return {
+function legacyScheduleToDays(schedule = []){
+  const base = schedule.map((item, index) => {
+    const slug = item[4] || fallbackSlug(item[1], index)
+    return {
+      time: item[0],
+      title: item[1],
+      meta: item[2],
+      poster: item[3] || '/posters/magic2.svg',
+      slug,
+      href: `/anime/${slug}`,
+      notifyKey: `${slug}-${item[0]}`,
+    }
+  })
+
+  const legacyByDay = {
     0: [base[0], base[3]].filter(Boolean),
     1: base.slice(0, 3),
     2: [base[1], base[4], base[2]].filter(Boolean),
@@ -32,6 +41,14 @@ function normalizeSchedule(schedule = []) {
     5: [base[3], base[4], base[0]].filter(Boolean),
     6: [],
   }
+
+  return legacyDayLabels.map(([shortName, date], index) => ({
+    key: `legacy-${index}`,
+    shortName,
+    date,
+    isToday: index === 0,
+    items: legacyByDay[index] || [],
+  }))
 }
 
 function BellIcon({ active }){
@@ -48,23 +65,33 @@ function readNotify(){
 
 function writeNotify(value){
   localStorage.setItem('anime:schedule-notify', JSON.stringify(value))
+  window.dispatchEvent(new Event('anime:user-updated'))
 }
 
-export default function HomeScheduleWidgetClient({ schedule = [] }) {
-  const [selectedDay, setSelectedDay] = useState(1)
+export default function HomeScheduleWidgetClient({ schedule = [], scheduleDays = null, initialDay = 0 }) {
+  const preparedDays = useMemo(() => {
+    return Array.isArray(scheduleDays) && scheduleDays.length ? scheduleDays : legacyScheduleToDays(schedule)
+  }, [schedule, scheduleDays])
+  const safeInitialDay = Math.max(0, Math.min(preparedDays.length - 1, Number(initialDay) || 0))
+  const [selectedDay, setSelectedDay] = useState(safeInitialDay)
   const [notify, setNotify] = useState(null)
-  const byDay = useMemo(() => normalizeSchedule(schedule), [schedule])
-  const items = byDay[selectedDay] || []
+  const currentDay = preparedDays[selectedDay] || preparedDays[0] || { items: [] }
+  const items = currentDay.items || []
+  const allWeekEmpty = preparedDays.every((day) => !Array.isArray(day?.items) || day.items.length === 0)
 
   useEffect(() => {
     setNotify(readNotify())
   }, [])
 
+  useEffect(() => {
+    if(selectedDay >= preparedDays.length) setSelectedDay(0)
+  }, [preparedDays.length, selectedDay])
+
   function toggleNotify(event, item){
     event.preventDefault()
     event.stopPropagation()
     const current = notify || readNotify()
-    const key = `${item.slug}-${item.time}`
+    const key = item.notifyKey || `${item.slug}-${item.time}`
     const next = { ...current, [key]: !current[key] }
     if(!next[key]) delete next[key]
     writeNotify(next)
@@ -82,16 +109,16 @@ export default function HomeScheduleWidgetClient({ schedule = [] }) {
       </div>
 
       <div className="days schedule-reference-days" role="tablist" aria-label="Дни недели">
-        {dayLabels.map(([day, date], index) => (
+        {preparedDays.map((day, index) => (
           <button
             type="button"
             className={index === selectedDay ? 'sel' : ''}
-            key={`${day}-${date}`}
+            key={day.key || `${day.shortName}-${day.date}`}
             onClick={() => setSelectedDay(index)}
             aria-pressed={index === selectedDay}
           >
-            <span>{day}</span>
-            <b>{date}</b>
+            <span>{day.shortName}</span>
+            <b>{day.date}</b>
           </button>
         ))}
       </div>
@@ -99,11 +126,11 @@ export default function HomeScheduleWidgetClient({ schedule = [] }) {
       <div className="schedule-list schedule-reference-list">
         {items.length > 0 ? (
           items.map((item, index) => {
-            const key = `${item.slug}-${item.time}`
+            const key = item.notifyKey || `${item.slug}-${item.time}`
             const active = Boolean(actualNotify[key])
-            return <Link className="sch schedule-reference-item" href={`/anime/${item.slug}`} key={`${item.time}-${item.title}-${index}`}>
+            return <Link className="sch schedule-reference-item" href={item.href || `/anime/${item.slug}`} key={`${key}-${index}`}>
               <time>{item.time}</time>
-              <img loading="lazy" decoding="async" src={item.poster} alt="Аниме" />
+              <img loading="lazy" decoding="async" src={item.poster || '/posters/magic2.svg'} alt={item.title || 'Аниме'} />
               <div>
                 <b>{item.title}</b>
                 <span>{item.meta}</span>
@@ -120,8 +147,8 @@ export default function HomeScheduleWidgetClient({ schedule = [] }) {
           })
         ) : (
           <div className="schedule-empty">
-            <b>На этот день серий нет</b>
-            <span>Проверь расписание позже или открой полный календарь.</span>
+            <b>{allWeekEmpty ? 'Расписание обновляется' : 'На этот день серий нет'}</b>
+            <span>{allWeekEmpty ? 'После cron-синхронизации здесь появятся реальные эфиры.' : 'Проверь расписание позже или открой полный календарь.'}</span>
           </div>
         )}
       </div>
