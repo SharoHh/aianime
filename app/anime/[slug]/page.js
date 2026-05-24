@@ -29,8 +29,8 @@ function genreSlug(text){
 
 export default async function AnimePage({ params }){
   const resolvedParams = await params
-  const allAnime = await getAnimeList({limit:1000})
-  const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
+  const allAnime = await getAnimeList({limit:500})
+  const item = allAnime.find(a => a.slug === resolvedParams.slug) || await getAnimeBySlugFromRepo(resolvedParams.slug)
   const episodes = await getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
   const currentEpisode = episodes[0]
   const nextEpisode = episodes[1] || episodes[0]

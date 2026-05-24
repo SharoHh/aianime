@@ -52,12 +52,11 @@ export async function GET(req){
     const type = res.headers.get('content-type') || ''
     if(!res.ok || !type.toLowerCase().startsWith('image/')) return fallback(req)
 
-    const bytes = await res.arrayBuffer()
-    return new Response(bytes, {
+    return new Response(res.body, {
       status: 200,
       headers: {
         'Content-Type': type,
-        'Cache-Control': 'public, max-age=604800, s-maxage=1209600, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=604800',
         'X-Aianime-Image-Proxy': '1'
       }
     })
