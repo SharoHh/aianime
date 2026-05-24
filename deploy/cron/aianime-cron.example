@@ -15,3 +15,6 @@ CRON_SECRET=YOUR_CRON_SECRET
 
 # Player embeds sync — every 8 hours
 40 */8 * * * root curl -fsS "$AIANIME_URL/api/cron/players?enable=1&limit=30&token=$CRON_SECRET" >> /var/log/aianime-cron.log 2>&1
+
+# Real Jikan/MAL release schedule — every 3 hours
+10 */3 * * * root curl -fsS "$AIANIME_URL/api/cron/schedule?enable=1&limit=25&pages=1&token=$CRON_SECRET" >> /var/log/aianime-cron.log 2>&1
