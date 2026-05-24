@@ -22,6 +22,9 @@ case "$ACTION" in
   kodik)
     call_api "/api/cron/sync-kodik?enable=1&limit=${KODIK_SYNC_LIMIT:-30}&all=1"
     ;;
+  titles)
+    call_api "/api/cron/russify-titles?enable=1&limit=${KODIK_TITLE_RU_LIMIT:-80}"
+    ;;
   players)
     call_api "/api/cron/players?enable=1&limit=${PLAYERS_SYNC_LIMIT:-30}"
     ;;
@@ -29,7 +32,7 @@ case "$ACTION" in
     call_api "/api/cron/schedule?enable=1&limit=${JIKAN_SCHEDULE_LIMIT:-25}&pages=${JIKAN_SCHEDULE_PAGES:-1}"
     ;;
   *)
-    echo "Usage: $0 {sync|kodik|players|schedule}"
+    echo "Usage: $0 {sync|kodik|titles|players|schedule}"
     exit 1
     ;;
 esac
