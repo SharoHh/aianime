@@ -11614,3 +11614,134 @@ html body .site-stat-row.online strong{
 @media(max-width:720px){
   .home-route-loading{display:block}.skeleton-sidebar{display:none}.skeleton-content{padding:16px 14px 96px}.sk-hero{height:310px}.skeleton-poster-row{grid-template-columns:repeat(2,minmax(0,1fr))}.sk-poster{height:285px}.skeleton-card-row,.skeleton-catalog-results{grid-template-columns:1fr}.sk-catalog-card{height:210px}.skeleton-player{height:340px}.sk-anime-title{height:52px}.skeleton-info-grid{grid-template-columns:1fr}
 }
+
+/* AIANIME FINAL TITLE PAGE LAYOUT FIX
+   Возвращает страницу тайтла в стабильную двухколоночную сетку:
+   постер слева, информация справа, плеер ниже на всю ширину. */
+.anime-compact-card.compact-card-polished{
+  display:grid!important;
+  grid-template-columns:minmax(260px,360px) minmax(0,1fr)!important;
+  grid-template-areas:"poster content"!important;
+  gap:30px!important;
+  align-items:start!important;
+  max-width:1180px!important;
+  min-height:auto!important;
+  padding:24px!important;
+  overflow:hidden!important;
+}
+
+.compact-bg-glow{
+  display:none!important;
+}
+
+.anime-compact-left{
+  grid-area:content!important;
+  min-width:0!important;
+  width:100%!important;
+}
+
+.anime-compact-poster{
+  grid-area:poster!important;
+  width:100%!important;
+  max-width:360px!important;
+  min-width:0!important;
+  position:sticky!important;
+  top:18px!important;
+  align-self:start!important;
+}
+
+.anime-compact-poster img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:2/3!important;
+  min-height:0!important;
+  max-height:560px!important;
+  object-fit:cover!important;
+  border-radius:22px!important;
+}
+
+.poster-rank{
+  border-radius:0 0 22px 22px!important;
+}
+
+.anime-compact-left h1{
+  max-width:760px!important;
+  overflow-wrap:anywhere!important;
+}
+
+.compact-description{
+  max-width:780px!important;
+}
+
+.compact-info-list{
+  max-width:780px!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px 16px!important;
+}
+
+.compact-info-list div{
+  grid-template-columns:112px minmax(0,1fr)!important;
+  gap:8px!important;
+}
+
+.compact-info-list b,
+.compact-info-list span{
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+}
+
+.compact-player-section,
+.compact-episodes,
+.compact-similar,
+.compact-comments{
+  max-width:1180px!important;
+}
+
+@media(max-width:980px){
+  .anime-compact-card.compact-card-polished{
+    grid-template-columns:1fr!important;
+    grid-template-areas:"poster" "content"!important;
+    gap:20px!important;
+  }
+
+  .anime-compact-poster{
+    position:relative!important;
+    top:auto!important;
+    max-width:320px!important;
+    width:min(320px,100%)!important;
+    margin:0 auto!important;
+  }
+
+  .compact-info-list{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media(max-width:640px){
+  .anime-compact-card.compact-card-polished{
+    padding:14px!important;
+  }
+
+  .anime-compact-poster{
+    max-width:260px!important;
+  }
+
+  .compact-info-list div{
+    grid-template-columns:1fr!important;
+    gap:3px!important;
+  }
+}
+
+/* Instant navigation polish: no white flash between App Router pages */
+html,body{min-height:100%;background:#fdfcff;overscroll-behavior-y:none}
+body{background-attachment:fixed;background-image:radial-gradient(circle at 16% 0%,rgba(205,185,255,.20),transparent 34%),radial-gradient(circle at 100% 12%,rgba(255,196,226,.18),transparent 30%),linear-gradient(180deg,#fffbff 0%,#fdfcff 48%,#fbf8ff 100%)}
+.route-progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:2147483640;pointer-events:none;opacity:0;transform:scaleX(.12);transform-origin:left center;background:linear-gradient(90deg,#ff4ca8,#8d55ee,#49d68f);box-shadow:0 8px 28px rgba(141,85,238,.28);transition:opacity .14s ease,transform 1.4s cubic-bezier(.2,.8,.2,1)}
+html.is-route-changing .route-progress{opacity:1;transform:scaleX(.86);animation:routeProgressPulse 1.15s ease-in-out infinite alternate}
+html.is-route-changing body{cursor:progress}
+@keyframes routeProgressPulse{from{filter:saturate(1);transform:scaleX(.72)}to{filter:saturate(1.25);transform:scaleX(.96)}}
+.app-route-loading,.route-skeleton{background:linear-gradient(180deg,#fffbff 0%,#fdfcff 48%,#fbf8ff 100%);color:#2e294b}
+.shell,.page,.anime-compact-page,.seo-page{animation:routeContentIn .16s ease both;will-change:opacity,transform}
+@keyframes routeContentIn{from{opacity:.985;transform:translateY(2px)}to{opacity:1;transform:none}}
+a[href]{-webkit-tap-highlight-color:transparent}
+@media (prefers-reduced-motion: reduce){.shell,.page,.anime-compact-page,.seo-page{animation:none}.route-progress{transition:none;animation:none!important}}

@@ -1,5 +1,6 @@
 import './globals.css'
 import ToastCenter from '@/components/ToastCenter'
+import InstantNavigation from '@/components/InstantNavigation'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
@@ -18,6 +19,6 @@ export default function RootLayout({ children }) {
       <link rel="preconnect" href="https://cdn.myanimelist.net" crossOrigin="anonymous" />
       <link rel="dns-prefetch" href="https://cdn.myanimelist.net" />
     </head>
-    <body>{children}<ToastCenter/></body>
+    <body><InstantNavigation/>{children}<ToastCenter/></body>
   </html>
 }
