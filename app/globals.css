@@ -11615,13 +11615,14 @@ html body .site-stat-row.online strong{
   .home-route-loading{display:block}.skeleton-sidebar{display:none}.skeleton-content{padding:16px 14px 96px}.sk-hero{height:310px}.skeleton-poster-row{grid-template-columns:repeat(2,minmax(0,1fr))}.sk-poster{height:285px}.skeleton-card-row,.skeleton-catalog-results{grid-template-columns:1fr}.sk-catalog-card{height:210px}.skeleton-player{height:340px}.sk-anime-title{height:52px}.skeleton-info-grid{grid-template-columns:1fr}
 }
 
-/* AIANIME FINAL TITLE PAGE LAYOUT FIX
-   Возвращает страницу тайтла в стабильную двухколоночную сетку:
-   постер слева, информация справа, плеер ниже на всю ширину. */
+/* AIANIME FINAL TITLE PAGE LAYOUT FIX — RIGHT POSTER
+   База: Aianime-title-page-layout-repair-fix.
+   Страница тайтла держит стабильную двухколоночную сетку:
+   информация слева, постер справа, плеер ниже на всю ширину. */
 .anime-compact-card.compact-card-polished{
   display:grid!important;
-  grid-template-columns:minmax(260px,360px) minmax(0,1fr)!important;
-  grid-template-areas:"poster content"!important;
+  grid-template-columns:minmax(0,1fr) minmax(260px,360px)!important;
+  grid-template-areas:"content poster"!important;
   gap:30px!important;
   align-items:start!important;
   max-width:1180px!important;
@@ -11730,5 +11731,55 @@ html body .site-stat-row.online strong{
   .compact-info-list div{
     grid-template-columns:1fr!important;
     gap:3px!important;
+  }
+}
+
+
+/* AIANIME SAFE INSTANT NAVIGATION LAYER
+   Только UX: прогрев внутренних ссылок + тонкий progress bar.
+   Не меняет data-loader, каталог, Supabase и seed fallback. */
+html,body{
+  background:#fdfcff!important;
+}
+.route-progress-bar{
+  position:fixed;
+  left:0;
+  top:0;
+  width:100%;
+  height:3px;
+  z-index:2147483000;
+  pointer-events:none;
+  opacity:0;
+  transform:scaleX(.08);
+  transform-origin:left center;
+  background:linear-gradient(90deg,#ec6dbc,#8d55ee,#54e6b5);
+  box-shadow:0 0 18px rgba(141,85,238,.35);
+  transition:opacity .12s ease, transform 1.2s cubic-bezier(.2,.8,.2,1);
+}
+.route-progress-bar.is-active{
+  opacity:1;
+  transform:scaleX(.82);
+}
+.route-progress-bar.is-active::after{
+  content:"";
+  position:absolute;
+  right:0;
+  top:0;
+  width:90px;
+  height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.72));
+  filter:blur(.5px);
+}
+.anime-compact-card.compact-card-polished.skeleton-anime-card{
+  grid-template-columns:minmax(0,1fr) minmax(240px,320px)!important;
+  grid-template-areas:"content poster"!important;
+}
+.skeleton-anime-card .skeleton-big-poster{
+  grid-area:poster!important;
+}
+@media(max-width:980px){
+  .anime-compact-card.compact-card-polished.skeleton-anime-card{
+    grid-template-columns:1fr!important;
+    grid-template-areas:"poster" "content"!important;
   }
 }
