@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { collections, anime } from '@/lib/data'
+import { collections } from '@/lib/data'
+import { getAnimeList } from '@/lib/animeRepository'
 
 const collectionRules = [
   { q:'эмоциональное тёплое аниме', filter:a => (a.genres || []).some(g => ['Драма','Романтика','Повседневность'].includes(g)) },
@@ -13,11 +14,13 @@ const collectionRules = [
 
 function Poster({item}){
   return <Link href={`/anime/${item.slug}`} className="poster">
-    <img loading="lazy" decoding="async" src={item.poster}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
+    <img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
   </Link>
 }
 
-export default function CollectionsPage(){
+export default async function CollectionsPage(){
+  const anime = await getAnimeList({ limit: 1000 })
+
   return <main className="page">
     <div className="page-head"><Link href="/">← На главную</Link><h1>Подборки</h1><p>Живые подборки связаны с каталогом и AI-запросами. Открой подборку или сразу запусти AI-подбор.</p></div>
     {collections.map((c, i) => {
