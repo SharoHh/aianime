@@ -48,7 +48,7 @@ async function testKodikToken(token){
   search.set('title', 'Naruto')
 
   try{
-    const res = await fetchWithTimeout(`https://kodikapi.com/search?${search.toString()}`, { timeout: 8500 })
+    const res = await fetchWithTimeout(`https://kodik-api.com/search?${search.toString()}`, { timeout: 8500 })
     const results = Array.isArray(res.body?.results) ? res.body.results.length : 0
     const apiError = res.body?.error || res.body?.message || null
 
@@ -70,7 +70,7 @@ async function testKodikToken(token){
       results:0,
       tokenMask:maskToken(cleanToken),
       message:error?.name === 'AbortError'
-        ? 'Kodik не ответил за timeout. Проверь VPN/доступ к kodikapi.com.'
+        ? 'Kodik не ответил за timeout. Проверь VPN/доступ к kodik-api.com.'
         : (error?.message || String(error))
     }
   }

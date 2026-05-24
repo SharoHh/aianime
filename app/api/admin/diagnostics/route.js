@@ -148,7 +148,7 @@ async function checkKodik(deep){
     search.set('types', 'anime,anime-serial')
     search.set('with_material_data', 'false')
     search.set('title', 'Naruto')
-    const res = await fetchWithTimeout(`https://kodikapi.com/search?${search.toString()}`, { timeout: 7500 })
+    const res = await fetchWithTimeout(`https://kodik-api.com/search?${search.toString()}`, { timeout: 7500 })
     const results = Array.isArray(res.body?.results) ? res.body.results.length : 0
     return {
       checked:true,
