@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, startTransition } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 function isInternalHref(href){
@@ -23,25 +23,12 @@ function toPrefetchPath(href){
   }
 }
 
-function getNavigationPath(event, link){
-  if(!link) return null
-  if(event.defaultPrevented) return null
-  if(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return null
-  if(link.target && link.target !== '_self') return null
-  if(link.hasAttribute('download')) return null
-  const href = link.getAttribute('href')
-  if(!isInternalHref(href)) return null
+function isHashOnlyNavigation(href){
   try{
     const url = new URL(href, window.location.origin)
-    const currentPath = `${window.location.pathname}${window.location.search}`
-    const nextPath = `${url.pathname}${url.search}`
-    if(nextPath === currentPath){
-      // Обычные якоря внутри текущей страницы не перехватываем.
-      return null
-    }
-    return `${url.pathname}${url.search}${url.hash || ''}`
+    return url.pathname === window.location.pathname && url.search === window.location.search && Boolean(url.hash)
   }catch{
-    return null
+    return false
   }
 }
 
@@ -50,24 +37,26 @@ export default function RouteWarmupClient(){
   const pathname = usePathname()
   const [active,setActive] = useState(false)
   const prefetchedRef = useRef(new Set())
-  const timerRef = useRef(null)
   const finishTimerRef = useRef(null)
+  const safetyTimerRef = useRef(null)
 
-  function clearTimers(){
-    if(timerRef.current) clearTimeout(timerRef.current)
+  function finishTransition(delay = 90){
     if(finishTimerRef.current) clearTimeout(finishTimerRef.current)
-    timerRef.current = null
-    finishTimerRef.current = null
+    finishTimerRef.current = setTimeout(()=>setActive(false), delay)
   }
 
-  function finishTransition(){
-    if(finishTimerRef.current) clearTimeout(finishTimerRef.current)
-    finishTimerRef.current = setTimeout(()=>setActive(false), 90)
+  function startSoftProgress(){
+    setActive(true)
+    if(safetyTimerRef.current) clearTimeout(safetyTimerRef.current)
+    safetyTimerRef.current = setTimeout(()=>setActive(false), 1600)
   }
 
   useEffect(()=>{
     finishTransition()
-    return ()=>clearTimers()
+    return ()=>{
+      if(finishTimerRef.current) clearTimeout(finishTimerRef.current)
+      if(safetyTimerRef.current) clearTimeout(safetyTimerRef.current)
+    }
   }, [pathname])
 
   useEffect(()=>{
@@ -102,21 +91,24 @@ export default function RouteWarmupClient(){
 
     function onClick(event){
       const link = findLink(event.target)
-      const nextPath = getNavigationPath(event, link)
-      if(!nextPath) return
+      const href = link?.getAttribute?.('href')
+      if(!href || !isInternalHref(href) || isHashOnlyNavigation(href)) return
+      if(event.defaultPrevented) return
+      if(typeof event.button === 'number' && event.button !== 0) return
+      if(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      if(link.target && link.target !== '_self') return
+      if(link.hasAttribute('download')) return
 
-      // Важно: перехватываем даже обычные <a>, чтобы не было полной перезагрузки
-      // документа и белого кадра браузера между страницами.
-      event.preventDefault()
+      // Не перехватываем переходы router.push здесь. Пусть Next.js Link/браузер
+      // сами выполняют навигацию — так не появляется зависание при back/forward
+      // и не ломается возврат с профиля на главную. Здесь только лёгкий индикатор.
       warmLink(link)
-      setActive(true)
+      startSoftProgress()
+    }
 
-      if(timerRef.current) clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(()=>setActive(false), 1800)
-
-      startTransition(()=>{
-        router.push(nextPath)
-      })
+    function onPopState(){
+      startSoftProgress()
+      finishTransition(700)
     }
 
     function onPageShow(){
@@ -132,6 +124,7 @@ export default function RouteWarmupClient(){
     document.addEventListener('focusin', onFocusIn, true)
     document.addEventListener('touchstart', onTouchStart, { capture:true, passive:true })
     document.addEventListener('click', onClick, true)
+    window.addEventListener('popstate', onPopState)
     window.addEventListener('pageshow', onPageShow)
     document.addEventListener('visibilitychange', onVisibilityChange)
 
@@ -152,7 +145,7 @@ export default function RouteWarmupClient(){
     observeLinks()
 
     const warmCoreLinks = ()=>{
-      ['/', '/catalog', '/genres', '/top', '/ai', '/schedule', '/collections'].forEach(path=>{
+      ['/', '/catalog', '/genres', '/top', '/ai', '/schedule', '/collections', '/profile'].forEach(path=>{
         if(prefetchedRef.current.has(path)) return
         prefetchedRef.current.add(path)
         try{ router.prefetch(path) }catch{}
@@ -173,13 +166,15 @@ export default function RouteWarmupClient(){
       document.removeEventListener('focusin', onFocusIn, true)
       document.removeEventListener('touchstart', onTouchStart, true)
       document.removeEventListener('click', onClick, true)
+      window.removeEventListener('popstate', onPopState)
       window.removeEventListener('pageshow', onPageShow)
       document.removeEventListener('visibilitychange', onVisibilityChange)
       observer?.disconnect()
       mutationObserver?.disconnect()
-      clearTimers()
+      if(finishTimerRef.current) clearTimeout(finishTimerRef.current)
+      if(safetyTimerRef.current) clearTimeout(safetyTimerRef.current)
     }
-  }, [router, pathname])
+  }, [router])
 
   return <div className={`route-progress-bar ${active ? 'is-active' : ''}`} aria-hidden="true" />
 }

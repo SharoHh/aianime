@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { createBrowserSupabase, hasSupabaseBrowser } from '@/lib/supabaseClient'
+import { useAuthState } from '@/components/AuthStateClient'
 import { getFavorites, getHistory, getRatings, readJson } from '@/lib/userStorage'
 
 function normalizeFavorite(userId, item){
@@ -47,23 +47,36 @@ function normalizeAi(userId, query){
   }
 }
 
+function readLocalCounts(){
+  return {
+    favorites:getFavorites().length,
+    history:getHistory().length,
+    ratings:Object.entries(getRatings()).filter(([,v]) => Number(v)).length,
+    ai:readJson('ai_query_history', []).length
+  }
+}
+
 export default function AccountSyncClient(){
-  const [user,setUser] = useState(null)
+  const { configured, user, supabase } = useAuthState()
   const [status,setStatus] = useState('idle')
   const [message,setMessage] = useState('')
-  const configured = hasSupabaseBrowser()
-  const supabase = createBrowserSupabase()
+  const [counts,setCounts] = useState({ favorites:0, history:0, ratings:0, ai:0 })
 
   useEffect(()=>{
-    if(!supabase) return
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null))
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user || null))
-    return () => sub?.subscription?.unsubscribe?.()
+    const updateCounts = () => setCounts(readLocalCounts())
+    updateCounts()
+    window.addEventListener('storage', updateCounts)
+    window.addEventListener('anime:user-updated', updateCounts)
+    return () => {
+      window.removeEventListener('storage', updateCounts)
+      window.removeEventListener('anime:user-updated', updateCounts)
+    }
   }, [])
+
 
   async function sync(){
     if(!supabase || !user){
-      setMessage('Нужно войти в аккаунт.')
+      setMessage('Сначала войди в аккаунт.')
       return
     }
     setStatus('loading')
@@ -91,30 +104,50 @@ export default function AccountSyncClient(){
         if(error) throw error
       }
 
+      setCounts({ favorites:favorites.length, history:history.length, ratings:ratings.length, ai:ai.length })
       setStatus('done')
-      setMessage(`Синхронизировано: избранное ${favorites.length}, история ${history.length}, оценки ${ratings.length}, AI ${ai.length}.`)
+      setMessage(`Сохранено: избранное ${favorites.length}, история ${history.length}, оценки ${ratings.length}, AI ${ai.length}.`)
     }catch(error){
       setStatus('error')
-      setMessage(error?.message || 'Ошибка синхронизации.')
+      setMessage(error?.message || 'Не удалось сохранить данные аккаунта.')
     }
   }
 
   if(!configured){
-    return <section className="widget account-sync">
-      <div><b>Аккаунт не подключён</b><p>Добавь Supabase env, чтобы включить вход и синхронизацию.</p></div>
-      <Link className="secondary" href="/auth">Настроить вход</Link>
+    return <section className="widget account-sync profile-sync-card-v7">
+      <div>
+        <span>аккаунт</span>
+        <b>Авторизация не подключена</b>
+        <p>Добавь переменные окружения авторизации, чтобы включить вход и сохранение данных аккаунта.</p>
+      </div>
+      <Link className="secondary" href="/auth">Войти</Link>
     </section>
   }
 
   if(!user){
-    return <section className="widget account-sync">
-      <div><b>Войди в аккаунт</b><p>После входа профиль, история, избранное и оценки будут доступны для синхронизации.</p></div>
+    return <section className="widget account-sync profile-sync-card-v7">
+      <div>
+        <span>аккаунт</span>
+        <b>Войди в аккаунт</b>
+        <p>После входа можно сохранить избранное, историю и оценки в личном профиле.</p>
+      </div>
       <Link className="primary" href="/auth">Войти</Link>
     </section>
   }
 
-  return <section className="widget account-sync">
-    <div><b>{user.email}</b><p>Синхронизируй локальные данные с Supabase, чтобы не потерять их.</p>{message ? <span>{message}</span> : null}</div>
-    <button className={status === 'done' ? 'secondary' : 'primary'} onClick={sync} disabled={status === 'loading'}>{status === 'loading' ? 'Синхронизация…' : 'Синхронизировать'}</button>
+  return <section className="widget account-sync profile-sync-card-v7">
+    <div className="profile-sync-content-v7">
+      <span>данные аккаунта</span>
+      <b>Сохранить прогресс</b>
+      <p>Избранное, история просмотра, оценки и AI-запросы будут привязаны к аккаунту и останутся доступны после входа на другом устройстве.</p>
+      <div className="profile-sync-stats-v7">
+        <i>{counts.favorites} избранное</i>
+        <i>{counts.history} история</i>
+        <i>{counts.ratings} оценки</i>
+        <i>{counts.ai} AI</i>
+      </div>
+      {message ? <em className={status === 'error' ? 'is-error' : ''}>{message}</em> : null}
+    </div>
+    <button className={status === 'done' ? 'secondary' : 'primary'} onClick={sync} disabled={status === 'loading'}>{status === 'loading' ? 'Сохраняю…' : 'Сохранить данные'}</button>
   </section>
 }

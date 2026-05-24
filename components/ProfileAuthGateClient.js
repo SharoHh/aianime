@@ -38,14 +38,18 @@ export default function ProfileAuthGateClient(){
   const displayName = useMemo(() => getUserDisplayName(user), [user])
 
   if(loading){
-    return <section className="profile-clean-card widget profile-loading-card" aria-hidden="true" />
+    return <section className="auth-required-card widget profile-auth-check-card">
+      <span>профиль</span>
+      <h2>Проверяем вход</h2>
+      <p>Секунду, открываем данные аккаунта.</p>
+    </section>
   }
 
   if(!configured){
     return <section className="auth-required-card widget">
       <span>авторизация</span>
-      <h2>Supabase Auth не включён</h2>
-      <p>Профиль скрыт до подключения Supabase Auth. Проверь переменные NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY и NEXT_PUBLIC_ENABLE_SUPABASE_RUNTIME=1.</p>
+      <h2>Авторизация не подключена</h2>
+      <p>Профиль скрыт, пока не подключены переменные авторизации на сервере.</p>
       <Link className="secondary" href="/">На главную</Link>
     </section>
   }
@@ -65,11 +69,12 @@ export default function ProfileAuthGateClient(){
   const safeProfile = profile || readStoredProfile(user)
 
   return <>
-    <section className="profile-account-hero widget">
+    <section className="profile-account-hero widget profile-account-hero-v7">
+      <img className="profile-account-cover-v7" src={safeProfile.cover} alt="" aria-hidden="true"/>
       <div className="profile-account-main">
         <img src={safeProfile.avatar} alt="Аватар"/>
         <div>
-          <span>аккаунт подключён</span>
+          <span>профиль активен</span>
           <h2>{safeProfile.name || displayName}</h2>
           <p>{user.email}</p>
         </div>
@@ -79,7 +84,10 @@ export default function ProfileAuthGateClient(){
         <Link href="/history"><b>{stats.history}</b><span>История</span></Link>
         <Link href="/profile"><b>{stats.ratings}</b><span>Оценки</span></Link>
       </div>
-      <button className="secondary" onClick={signOut}>Выйти</button>
+      <div className="profile-account-actions-v7">
+        <Link className="secondary" href="/catalog">Каталог</Link>
+        <button className="secondary" onClick={signOut}>Выйти</button>
+      </div>
     </section>
 
     <ProfileEditorClient user={user}/>

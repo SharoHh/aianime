@@ -3,9 +3,9 @@
 import Link from 'next/link'
 
 const routes = [
-  '/ai?q=тёплые%20добрые%20аниме%20когда%20грустно',
-  '/catalog?genre=Приключения&sort=rating',
-  '/ai?q=лёгкое%20уютное%20аниме%20для%20отдыха',
+  `/ai?q=${encodeURIComponent('тёплые добрые аниме когда грустно')}`,
+  `/catalog?genre=${encodeURIComponent('Приключения')}&sort=rating`,
+  `/ai?q=${encodeURIComponent('лёгкое уютное аниме для отдыха')}`,
   '/catalog?year=2024&sort=rating',
   '/catalog?sort=rating',
 ]
