@@ -1,4 +1,4 @@
-export const revalidate = 120
+export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { collections, anime } from '@/lib/data'

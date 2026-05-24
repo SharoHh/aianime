@@ -11732,16 +11732,3 @@ html body .site-stat-row.online strong{
     gap:3px!important;
   }
 }
-
-/* Instant navigation polish: no white flash between App Router pages */
-html,body{min-height:100%;background:#fdfcff;overscroll-behavior-y:none}
-body{background-attachment:fixed;background-image:radial-gradient(circle at 16% 0%,rgba(205,185,255,.20),transparent 34%),radial-gradient(circle at 100% 12%,rgba(255,196,226,.18),transparent 30%),linear-gradient(180deg,#fffbff 0%,#fdfcff 48%,#fbf8ff 100%)}
-.route-progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:2147483640;pointer-events:none;opacity:0;transform:scaleX(.12);transform-origin:left center;background:linear-gradient(90deg,#ff4ca8,#8d55ee,#49d68f);box-shadow:0 8px 28px rgba(141,85,238,.28);transition:opacity .14s ease,transform 1.4s cubic-bezier(.2,.8,.2,1)}
-html.is-route-changing .route-progress{opacity:1;transform:scaleX(.86);animation:routeProgressPulse 1.15s ease-in-out infinite alternate}
-html.is-route-changing body{cursor:progress}
-@keyframes routeProgressPulse{from{filter:saturate(1);transform:scaleX(.72)}to{filter:saturate(1.25);transform:scaleX(.96)}}
-.app-route-loading,.route-skeleton{background:linear-gradient(180deg,#fffbff 0%,#fdfcff 48%,#fbf8ff 100%);color:#2e294b}
-.shell,.page,.anime-compact-page,.seo-page{animation:routeContentIn .16s ease both;will-change:opacity,transform}
-@keyframes routeContentIn{from{opacity:.985;transform:translateY(2px)}to{opacity:1;transform:none}}
-a[href]{-webkit-tap-highlight-color:transparent}
-@media (prefers-reduced-motion: reduce){.shell,.page,.anime-compact-page,.seo-page{animation:none}.route-progress{transition:none;animation:none!important}}
