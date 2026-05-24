@@ -1,0 +1,17 @@
+# Install:
+# sudo cp deploy/cron/aianime-cron.example /etc/cron.d/aianime
+# sudo nano /etc/cron.d/aianime   # replace YOUR_CRON_SECRET
+# sudo systemctl restart cron
+
+SHELL=/bin/bash
+AIANIME_URL=http://127.0.0.1:3000
+CRON_SECRET=YOUR_CRON_SECRET
+
+# Jikan/MAL catalog sync — every 6 hours
+0 */6 * * * root curl -fsS "$AIANIME_URL/api/cron/sync?enable=1&limit=25&token=$CRON_SECRET" >> /var/log/aianime-cron.log 2>&1
+
+# Kodik metadata sync — every 8 hours
+20 */8 * * * root curl -fsS "$AIANIME_URL/api/cron/sync-kodik?enable=1&limit=30&all=1&token=$CRON_SECRET" >> /var/log/aianime-cron.log 2>&1
+
+# Player embeds sync — every 8 hours
+40 */8 * * * root curl -fsS "$AIANIME_URL/api/cron/players?enable=1&limit=30&token=$CRON_SECRET" >> /var/log/aianime-cron.log 2>&1
