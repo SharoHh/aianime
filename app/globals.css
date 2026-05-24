@@ -11868,3 +11868,58 @@ body::before{
     animation:none!important;
   }
 }
+
+/* AIANIME TITLE INFO + NAVIGATION PATCH V3
+   Возвращаем характеристики в одну колонку, как было до двухколоночного разбиения.
+   Убираем полноэкранный белёсый overlay при переходе: остаётся только тонкий progress bar,
+   а навигация перехватывается client-side через router.push. */
+html,
+body{
+  background:#f7f4fb!important;
+}
+body{
+  background:
+    radial-gradient(circle at 16% 0%, rgba(237,109,188,.07), transparent 34%),
+    radial-gradient(circle at 88% 4%, rgba(143,86,238,.06), transparent 32%),
+    #f7f4fb!important;
+}
+body::before{
+  background:
+    radial-gradient(circle at 18% 0%, rgba(237,109,188,.09), transparent 36%),
+    radial-gradient(circle at 90% 0%, rgba(143,86,238,.08), transparent 34%),
+    #f7f4fb!important;
+}
+
+.compact-info-list{
+  grid-template-columns:1fr!important;
+  max-width:680px!important;
+  gap:9px!important;
+}
+.compact-info-list div{
+  grid-template-columns:170px minmax(0,1fr)!important;
+  gap:14px!important;
+  align-items:start!important;
+}
+.compact-info-list span{
+  white-space:normal!important;
+}
+.skeleton-info-grid{
+  grid-template-columns:1fr!important;
+  max-width:680px!important;
+}
+.route-transition-surface,
+.route-transition-card{
+  display:none!important;
+}
+.route-skeleton,
+.anime-compact-page,
+.catalog-page,
+.page{
+  background:#f7f4fb!important;
+}
+@media(max-width:640px){
+  .compact-info-list div{
+    grid-template-columns:1fr!important;
+    gap:3px!important;
+  }
+}

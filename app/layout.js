@@ -12,8 +12,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return <html lang="ru">
     <head>
-      <meta name="theme-color" content="#fdfcff" />
-      <style dangerouslySetInnerHTML={{__html:'html{background:#fdfcff;color-scheme:light;}body{margin:0;background:#fdfcff;}body::selection{background:#eadcff;color:#15122d;}'}} />
+      <meta name="theme-color" content="#f7f4fb" />
+      <style dangerouslySetInnerHTML={{__html:'html{background:#f7f4fb;color-scheme:light;}body{margin:0;background:#f7f4fb;}body::selection{background:#eadcff;color:#15122d;}'}} />
       <link rel="preconnect" href="https://kodikplayer.com" crossOrigin="anonymous" />
       <link rel="dns-prefetch" href="https://kodikplayer.com" />
       <link rel="preconnect" href="https://i.kodikres.com" crossOrigin="anonymous" />

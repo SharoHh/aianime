@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, startTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 function isInternalHref(href){
@@ -23,20 +23,25 @@ function toPrefetchPath(href){
   }
 }
 
-function shouldHandleClick(event, link){
-  if(!link) return false
-  if(event.defaultPrevented) return false
-  if(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false
-  if(link.target && link.target !== '_self') return false
-  if(link.hasAttribute('download')) return false
+function getNavigationPath(event, link){
+  if(!link) return null
+  if(event.defaultPrevented) return null
+  if(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return null
+  if(link.target && link.target !== '_self') return null
+  if(link.hasAttribute('download')) return null
   const href = link.getAttribute('href')
-  if(!isInternalHref(href)) return false
+  if(!isInternalHref(href)) return null
   try{
     const url = new URL(href, window.location.origin)
-    if(url.pathname === window.location.pathname && url.search === window.location.search) return false
-    return true
+    const currentPath = `${window.location.pathname}${window.location.search}`
+    const nextPath = `${url.pathname}${url.search}`
+    if(nextPath === currentPath){
+      // Обычные якоря внутри текущей страницы не перехватываем.
+      return null
+    }
+    return `${url.pathname}${url.search}${url.hash || ''}`
   }catch{
-    return false
+    return null
   }
 }
 
@@ -97,12 +102,21 @@ export default function RouteWarmupClient(){
 
     function onClick(event){
       const link = findLink(event.target)
-      if(!shouldHandleClick(event, link)) return
+      const nextPath = getNavigationPath(event, link)
+      if(!nextPath) return
+
+      // Важно: перехватываем даже обычные <a>, чтобы не было полной перезагрузки
+      // документа и белого кадра браузера между страницами.
+      event.preventDefault()
       warmLink(link)
       setActive(true)
+
       if(timerRef.current) clearTimeout(timerRef.current)
-      // Страховка: если навигация отменится или ответ сервера затянется, экран не зависнет.
-      timerRef.current = setTimeout(()=>setActive(false), 2400)
+      timerRef.current = setTimeout(()=>setActive(false), 1800)
+
+      startTransition(()=>{
+        router.push(nextPath)
+      })
     }
 
     function onPageShow(){
@@ -136,6 +150,20 @@ export default function RouteWarmupClient(){
     }
 
     observeLinks()
+
+    const warmCoreLinks = ()=>{
+      ['/', '/catalog', '/genres', '/top', '/ai', '/schedule', '/collections'].forEach(path=>{
+        if(prefetchedRef.current.has(path)) return
+        prefetchedRef.current.add(path)
+        try{ router.prefetch(path) }catch{}
+      })
+    }
+    if('requestIdleCallback' in window){
+      window.requestIdleCallback(warmCoreLinks, { timeout:1400 })
+    }else{
+      setTimeout(warmCoreLinks, 350)
+    }
+
     const mutationObserver = 'MutationObserver' in window ? new MutationObserver(()=>observeLinks()) : null
     mutationObserver?.observe(document.body, { childList:true, subtree:true })
 
@@ -153,14 +181,5 @@ export default function RouteWarmupClient(){
     }
   }, [router, pathname])
 
-  return <>
-    <div className={`route-progress-bar ${active ? 'is-active' : ''}`} aria-hidden="true" />
-    <div className={`route-transition-surface ${active ? 'is-visible' : ''}`} aria-hidden="true">
-      <div className="route-transition-card">
-        <span />
-        <span />
-        <span />
-      </div>
-    </div>
-  </>
+  return <div className={`route-progress-bar ${active ? 'is-active' : ''}`} aria-hidden="true" />
 }
