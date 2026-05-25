@@ -16,6 +16,12 @@ function cleanSlug(value){
   return String(value || '').trim().slice(0, 220)
 }
 
+function cleanClientId(value){
+  return String(value || '')
+    .replace(/[^a-zA-Z0-9:_-]/g, '')
+    .slice(0, 120)
+}
+
 function readBearer(request){
   const header = request.headers.get('authorization') || ''
   return header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : ''
@@ -54,6 +60,30 @@ function mapComment(item){
     createdAt:item.created_at,
     status:item.status || 'published'
   }
+}
+
+async function readLikesCount(commentId){
+  const res = await supabaseRequest(`anime_comment_likes?comment_id=eq.${encodeURIComponent(commentId)}&select=id`, { timeout:10000 })
+  const text = await res.text()
+  let data = []
+  try{ data = text ? JSON.parse(text) : [] }catch{}
+  if(!res.ok) return null
+  return Array.isArray(data) ? data.length : 0
+}
+
+async function syncCommentLikes(commentId, count){
+  const res = await supabaseRequest(`anime_comments?id=eq.${encodeURIComponent(commentId)}`, {
+    method:'PATCH',
+    headers:{ 'Content-Type':'application/json', Prefer:'return=representation' },
+    body: JSON.stringify({ likes:count, updated_at:new Date().toISOString() }),
+    timeout:10000
+  })
+  const text = await res.text()
+  let data = null
+  try{ data = text ? JSON.parse(text) : null }catch{}
+  if(!res.ok) throw new Error(text || `Supabase error ${res.status}`)
+  const item = Array.isArray(data) ? data[0] : data
+  return item ? mapComment(item) : null
 }
 
 export async function GET(request){
@@ -119,6 +149,63 @@ export async function POST(request){
 
     const item = Array.isArray(data) ? data[0] : data
     return json({ ok:true, comment: mapComment(item || payload) })
+  }catch(error){
+    return json({ ok:false, error:error?.message || 'Unknown error' }, 500)
+  }
+}
+
+export async function PATCH(request){
+  try{
+    if(!hasSupabase()) return json({ ok:false, error:'Supabase env is not configured' }, 400)
+
+    const body = await request.json()
+    const id = Number(body.id)
+    const action = cleanText(body.action, 40)
+    if(!id) return json({ ok:false, error:'id is required' }, 400)
+    if(action !== 'like') return json({ ok:false, error:'unsupported action' }, 400)
+
+    const token = readBearer(request)
+    const user = await getUserByToken(token)
+    const clientId = cleanClientId(body.clientId)
+    if(!user?.id && !clientId){
+      return json({ ok:false, error:'client id is required' }, 400)
+    }
+
+    const voterKey = user?.id ? `user:${user.id}` : `browser:${clientId}`
+    const payload = {
+      comment_id: id,
+      user_id: user?.id || null,
+      client_id: user?.id ? null : clientId,
+      voter_key: voterKey,
+      created_at: new Date().toISOString()
+    }
+
+    const insert = await supabaseRequest('anime_comment_likes', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Prefer:'return=representation' },
+      body: JSON.stringify(payload),
+      timeout:10000
+    })
+    const insertText = await insert.text()
+    const duplicate = insert.status === 409 || /duplicate key|23505/i.test(insertText || '')
+    if(!insert.ok && !duplicate){
+      return json({ ok:false, error:insertText || `Supabase error ${insert.status}` }, 500)
+    }
+
+    const count = await readLikesCount(id)
+    const likes = Number.isFinite(count) ? count : null
+    let comment = null
+    if(likes !== null){
+      comment = await syncCommentLikes(id, likes)
+    }
+
+    return json({
+      ok:true,
+      liked:true,
+      duplicate,
+      likes: likes ?? comment?.likes ?? 0,
+      comment
+    })
   }catch(error){
     return json({ ok:false, error:error?.message || 'Unknown error' }, 500)
   }

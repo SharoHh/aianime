@@ -62,7 +62,7 @@ export default function AdminCommentsClient(){
   const filteredItems = useMemo(() => {
     const clean = query.trim().toLowerCase()
     if(!clean) return items
-    return items.filter(item => [item.slug, item.author, item.text].some(value => String(value || '').toLowerCase().includes(clean)))
+    return items.filter(item => [item.slug, item.animeTitle, item.author, item.text].some(value => String(value || '').toLowerCase().includes(clean)))
   }, [items, query])
 
   async function updateStatus(item, nextStatus){
@@ -117,7 +117,7 @@ export default function AdminCommentsClient(){
         ['hidden', 'Скрытые'],
         ['deleted', 'Удалённые']
       ].map(([value,label]) => <button key={value} className={status === value ? 'active' : ''} onClick={()=>setStatus(value)}>{label}</button>)}
-      <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Поиск по slug, автору или тексту" />
+      <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Поиск по названию, slug, автору или тексту" />
     </div>
 
     {error ? <div className="admin-warning-v25"><b>Supabase-комментарии не загрузились</b><span>{error}</span></div> : null}
@@ -125,11 +125,17 @@ export default function AdminCommentsClient(){
     {loading ? <div className="empty-state">Загружаем комментарии…</div> : filteredItems.length ? <div className="admin-simple-list comment-admin-list comment-admin-list-v25">
       {filteredItems.map(item=><article key={item.id}>
         <div>
-          <b>{item.author} · <Link href={`/anime/${item.slug}`}>{item.slug}</Link></b>
+          <div className="admin-comment-title-row-v26">
+            <b>{item.author}</b>
+            <span className={`admin-comment-status-v26 ${item.status || 'published'}`}>{statusLabel(item.status)}</span>
+            <span className="admin-comment-likes-v26">♥ {item.likes || 0}</span>
+          </div>
+          <Link className="admin-comment-anime-link-v26" href={`/anime/${item.slug}`}>{item.animeTitle || item.slug}</Link>
           <span>{item.text}</span>
-          <em>{statusLabel(item.status)} · {new Date(item.createdAt).toLocaleString('ru-RU')}</em>
+          <em>{new Date(item.createdAt).toLocaleString('ru-RU')} · {item.slug}</em>
         </div>
         <div className="admin-comment-actions-v25">
+          <Link href={`/anime/${item.slug}`}>Открыть тайтл</Link>
           {item.status !== 'published' ? <button onClick={()=>updateStatus(item, 'published')}>Опубликовать</button> : null}
           {item.status !== 'hidden' ? <button onClick={()=>updateStatus(item, 'hidden')}>Скрыть</button> : null}
           <button onClick={()=>removeCloud(item)}>Удалить</button>

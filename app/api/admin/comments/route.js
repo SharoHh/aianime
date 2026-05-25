@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
+import { cleanPublicText } from '@/lib/ruContent'
 
 function json(data, status = 200){
   return NextResponse.json(data, { status })
@@ -9,10 +10,18 @@ function clean(value, max = 500){
   return String(value || '').trim().slice(0, max)
 }
 
-function mapComment(item){
+function cleanTitle(value){
+  return cleanPublicText(String(value || '').trim())
+}
+
+function mapComment(item, animeMap = new Map()){
+  const anime = animeMap.get(item.anime_slug) || null
+  const animeTitle = cleanTitle(anime?.title_ru || anime?.title || item.anime_slug)
   return {
     id:item.id,
     slug:item.anime_slug,
+    animeTitle,
+    animePoster:item.poster_url || anime?.poster_url || '',
     userId:item.user_id,
     author:item.user_name || 'Пользователь Aianime',
     text:item.text || '',
@@ -21,6 +30,22 @@ function mapComment(item){
     createdAt:item.created_at,
     updatedAt:item.updated_at
   }
+}
+
+function quotedIn(values){
+  return values.map(value => `"${String(value).replaceAll('"', '')}"`).join(',')
+}
+
+async function loadAnimeMap(slugs){
+  if(!slugs.length) return new Map()
+  const chunk = slugs.slice(0, 200)
+  const filter = encodeURIComponent(quotedIn(chunk))
+  const res = await supabaseRequest(`anime?slug=in.(${filter})&select=slug,title,title_ru,poster_url`, { timeout:10000 })
+  const text = await res.text()
+  let data = []
+  try{ data = text ? JSON.parse(text) : [] }catch{}
+  if(!res.ok || !Array.isArray(data)) return new Map()
+  return new Map(data.map(item => [item.slug, item]))
 }
 
 export async function GET(request){
@@ -43,7 +68,11 @@ export async function GET(request){
     try{ data = text ? JSON.parse(text) : [] }catch{}
     if(!res.ok) return json({ ok:false, error:text || `Supabase error ${res.status}` }, 500)
 
-    return json({ ok:true, comments:Array.isArray(data) ? data.map(mapComment) : [] })
+    const comments = Array.isArray(data) ? data : []
+    const slugs = Array.from(new Set(comments.map(item => item.anime_slug).filter(Boolean)))
+    const animeMap = await loadAnimeMap(slugs)
+
+    return json({ ok:true, comments:comments.map(item => mapComment(item, animeMap)) })
   }catch(error){
     return json({ ok:false, error:error?.message || 'Unknown error' }, 500)
   }
@@ -71,7 +100,8 @@ export async function PATCH(request){
     try{ data = text ? JSON.parse(text) : null }catch{}
     if(!res.ok) return json({ ok:false, error:text || `Supabase error ${res.status}` }, 500)
     const item = Array.isArray(data) ? data[0] : data
-    return json({ ok:true, comment:item ? mapComment(item) : null })
+    const animeMap = await loadAnimeMap(item?.anime_slug ? [item.anime_slug] : [])
+    return json({ ok:true, comment:item ? mapComment(item, animeMap) : null })
   }catch(error){
     return json({ ok:false, error:error?.message || 'Unknown error' }, 500)
   }
