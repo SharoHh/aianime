@@ -54,8 +54,8 @@ function normalizeOptions(options = []){
     if(!usable(option)) continue
     const key = `${option.provider}:${option.voice}:${option.episodeNumber}`
     const current = map.get(key)
-    const score = (option.source === 'kodik-api-episode' ? 10 : 0) + (option.embedUrl ? 5 : 0)
-    const currentScore = current ? (current.source === 'kodik-api-episode' ? 10 : 0) + (current.embedUrl ? 5 : 0) : -1
+    const score = (option.source === 'kodik-api-episode' ? 20 : option.source === 'kodik-api-season-episode' ? 12 : 0) + (option.embedUrl ? 5 : 0)
+    const currentScore = current ? (current.source === 'kodik-api-episode' ? 20 : current.source === 'kodik-api-season-episode' ? 12 : 0) + (current.embedUrl ? 5 : 0) : -1
     if(!current || score >= currentScore) map.set(key, option)
   }
   const rows = Array.from(map.values())
@@ -277,7 +277,7 @@ export default function KodikPlayerClient({
       <div className="native-kodik-topline">
         <div>
           <b>Озвучка и серии</b>
-          <span>{hasRealEpisodeButtons ? `${voices.length} озвучек · ${activeEpisodes.length} серий в выбранной` : canUseVoiceSelector ? `${voices.length} озвучек · серии внутри Kodik` : isRefreshingOptions ? 'Подтягиваем список из Kodik…' : 'Kodik'}</span>
+          <span>{hasRealEpisodeButtons ? `${voices.length} озвучек · ${uniqueNativeEpisodes.size} серий в выбранной` : canUseVoiceSelector ? `${voices.length} озвучек · серии внутри Kodik` : isRefreshingOptions ? 'Подтягиваем список из Kodik…' : 'Kodik'}</span>
         </div>
         {currentQuality ? <em>{currentQuality}</em> : null}
       </div>
