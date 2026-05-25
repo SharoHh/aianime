@@ -22,6 +22,40 @@ function getStoredKodikLink(item){
   return normalizeKodikPlayerUrl(item?.kodikLink || item?.kodik_link || item?.embed_url)
 }
 
+
+function dedupeEpisodeRows(rows){
+  const best = new Map()
+  for(const row of Array.isArray(rows) ? rows : []){
+    if(!row?.anime_slug || !row?.episode_number || !row?.provider || !row?.voice || !row?.embed_url) continue
+    const episodeNumber = Number(row.episode_number) || 1
+    const provider = String(row.provider || 'kodik').trim() || 'kodik'
+    const voice = String(row.voice || 'Kodik').trim() || 'Kodik'
+    const key = `${row.anime_slug}::${episodeNumber}::${provider.toLowerCase()}::${voice.toLowerCase()}`
+    const candidate = { ...row, episode_number:episodeNumber, provider, voice }
+    const existing = best.get(key)
+    if(!existing){
+      best.set(key, candidate)
+      continue
+    }
+
+    const candidateScore = Number(candidate?.raw?.match_score || candidate?.raw?.kodik_match_score || 0)
+    const existingScore = Number(existing?.raw?.match_score || existing?.raw?.kodik_match_score || 0)
+    const candidateIsEpisode = String(candidate.source || '').includes('episode') ? 1 : 0
+    const existingIsEpisode = String(existing.source || '').includes('episode') ? 1 : 0
+
+    if(candidateIsEpisode > existingIsEpisode || candidateScore > existingScore){
+      best.set(key, candidate)
+    }
+  }
+  return Array.from(best.values()).sort((a,b) => {
+    const slugCmp = String(a.anime_slug).localeCompare(String(b.anime_slug))
+    if(slugCmp) return slugCmp
+    const epCmp = Number(a.episode_number || 0) - Number(b.episode_number || 0)
+    if(epCmp) return epCmp
+    return String(a.voice || '').localeCompare(String(b.voice || ''))
+  })
+}
+
 function rowFromProvider(item, p, episode){
   return {
     anime_slug:item.slug,
@@ -159,12 +193,14 @@ export async function GET(req){
     }
   }
 
+  const uniqueRows = dedupeEpisodeRows(rows)
   result.resolved = rows.length
+  result.deduped = uniqueRows.length
 
-  if(supabaseOk && rows.length){
+  if(supabaseOk && uniqueRows.length){
     const res = await supabaseRequest('anime_episodes?on_conflict=anime_slug,episode_number,provider,voice', {
       method:'POST',
-      body: JSON.stringify(rows),
+      body: JSON.stringify(uniqueRows),
       headers:{ Prefer:'resolution=merge-duplicates,return=representation' },
       timeout:20000
     })
@@ -173,13 +209,13 @@ export async function GET(req){
       return Response.json({ ...result, ok:false, error:text, hint:'Проверь supabase/kodik_player_migration.sql и unique constraint anime_episodes(anime_slug, episode_number, provider, voice).' }, { status:200 })
     }
     const saved = await res.json().catch(() => [])
-    result.saved = Array.isArray(saved) ? saved.length : rows.length
+    result.saved = Array.isArray(saved) ? saved.length : uniqueRows.length
   }
 
-  result.ok = Boolean(rows.length && supabaseOk ? result.saved > 0 : rows.length > 0)
-  result.rows = rows.slice(0,5)
+  result.ok = Boolean(uniqueRows.length && supabaseOk ? result.saved > 0 : uniqueRows.length > 0)
+  result.rows = uniqueRows.slice(0,5)
 
-  if(rows.length){
+  if(uniqueRows.length){
     result.hint = supabaseOk
       ? (detailed ? 'Kodik voice/episode links сохранены в anime_episodes. UI строит родной выбор озвучек и серий.' : 'Kodik player embeds сохранены в anime_episodes. UI читает /api/player и вставляет Kodik iframe автоматически.')
       : 'Dry-run: Kodik embeds найдены, но не сохранены, потому что Supabase env не настроен.'
