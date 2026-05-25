@@ -50,6 +50,49 @@ export default function AuthClient(){
     }
   }, [supabase])
 
+
+  function sleep(ms){
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  async function withSoftTimeout(promise, ms, fallback){
+    return Promise.race([
+      promise,
+      sleep(ms).then(() => fallback)
+    ])
+  }
+
+  async function signInWithServerProxy(cleanEmail){
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 10000)
+    try{
+      const response = await fetch('/api/auth/password-login', {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body:JSON.stringify({ email:cleanEmail, password }),
+        signal:controller.signal,
+        cache:'no-store'
+      })
+      const data = await response.json().catch(() => ({}))
+      if(!response.ok || !data?.ok){
+        throw new Error(data?.error || 'Ошибка авторизации.')
+      }
+
+      const session = data.session
+      if(session?.access_token && session?.refresh_token){
+        await withSoftTimeout(
+          supabase.auth.setSession({ access_token:session.access_token, refresh_token:session.refresh_token }),
+          1200,
+          { timedOut:true }
+        )
+      }
+
+      return { data:{ user:data.user || session?.user || null, session }, error:null, via:'server-proxy' }
+    }finally{
+      clearTimeout(timer)
+    }
+  }
+
   async function submit(e){
     e.preventDefault()
     setMessage('')
@@ -62,13 +105,25 @@ export default function AuthClient(){
     try{
       const cleanEmail = email.trim()
       const cleanName = name.trim()
-      const result = mode === 'login'
-        ? await supabase.auth.signInWithPassword({ email:cleanEmail, password })
-        : await supabase.auth.signUp({
-            email:cleanEmail,
-            password,
-            options:{ data:{ name:cleanName || cleanEmail.split('@')[0] } }
-          })
+      let result
+      if(mode === 'login'){
+        // Основной вход идёт через серверный same-origin proxy. Для пользователя это
+        // обычно быстрее и стабильнее, чем прямой запрос браузера к Supabase Auth.
+        try{
+          result = await signInWithServerProxy(cleanEmail)
+        }catch(proxyError){
+          // Fallback оставляем на случай, если endpoint ещё не задеплоен или Supabase
+          // поменял ответ auth/v1/token.
+          result = await supabase.auth.signInWithPassword({ email:cleanEmail, password })
+          if(result.error && proxyError?.message) result.error.message = proxyError.message
+        }
+      }else{
+        result = await supabase.auth.signUp({
+          email:cleanEmail,
+          password,
+          options:{ data:{ name:cleanName || cleanEmail.split('@')[0] } }
+        })
+      }
 
       if(result.error){
         setMessage(authErrorMessage(result.error.message))
@@ -81,6 +136,7 @@ export default function AuthClient(){
       if(nextUser) setImmediateAuthUser(nextUser)
 
       if(mode === 'login' || hasSession){
+        setMessage('Готово, открываем профиль…')
         window.location.replace(getNextUrl())
         return
       }
@@ -129,7 +185,7 @@ export default function AuthClient(){
       {mode === 'signup' ? <label><span>Имя профиля</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Например, Haruno" /></label> : null}
       <label><span>Email</span><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" required /></label>
       <label><span>Пароль</span><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Минимум 6 символов" minLength={6} required /></label>
-      <button className="primary" disabled={loading}>{loading ? 'Подождите…' : mode === 'login' ? 'Войти' : 'Создать аккаунт'}</button>
+      <button className="primary" disabled={loading}>{loading ? (mode === 'login' ? 'Входим…' : 'Создаём…') : mode === 'login' ? 'Войти' : 'Создать аккаунт'}</button>
     </form>
 
     {message ? <div className="auth-message">{message}</div> : null}
