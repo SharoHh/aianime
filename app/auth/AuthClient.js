@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { createBrowserSupabase, hasSupabaseBrowser } from '@/lib/supabaseClient'
-import { getUserDisplayName } from '@/components/AuthStateClient'
+import { getUserDisplayName, setImmediateAuthUser } from '@/components/AuthStateClient'
 
 function authErrorMessage(message){
   const text = String(message || '')
@@ -78,9 +78,10 @@ export default function AuthClient(){
       const nextUser = result.data?.user || null
       const hasSession = Boolean(result.data?.session)
       setUser(nextUser)
+      if(nextUser) setImmediateAuthUser(nextUser)
 
       if(mode === 'login' || hasSession){
-        window.location.assign(getNextUrl())
+        window.location.replace(getNextUrl())
         return
       }
 
