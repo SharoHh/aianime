@@ -41,8 +41,9 @@ export default function KodikPlayerClient({
   initialSource = null
 }){
   const [state, setState] = useState(() => initialPlayerState({ initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality }))
-  const [iframeReady, setIframeReady] = useState(Boolean(initialEmbedUrl))
+  const [iframeReady, setIframeReady] = useState(false)
   const [iframeSlow, setIframeSlow] = useState(false)
+  const [iframeKey, setIframeKey] = useState(0)
   const src = useMemo(() => playerEndpoint(slug, episode), [slug, episode])
 
   useEffect(() => {
@@ -51,8 +52,12 @@ export default function KodikPlayerClient({
     const hasInitialEmbed = Boolean(String(initialEmbedUrl || '').trim())
 
     setIframeSlow(false)
-    setIframeReady(hasInitialEmbed)
+    setIframeReady(false)
     setState(initialPlayerState({ initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality }))
+
+    const revealTimer = setTimeout(() => {
+      if(!cancelled && hasInitialEmbed) setIframeReady(true)
+    }, 900)
 
     const requestTimeout = setTimeout(() => {
       try{ controller?.abort() }catch{}
@@ -60,7 +65,7 @@ export default function KodikPlayerClient({
 
     const slowIframeTimer = setTimeout(() => {
       if(!cancelled) setIframeSlow(true)
-    }, 6500)
+    }, 8000)
 
     fetch(src, { cache:'no-store', signal: controller?.signal })
       .then(res => res.json())
@@ -94,6 +99,7 @@ export default function KodikPlayerClient({
 
     return () => {
       cancelled = true
+      clearTimeout(revealTimer)
       clearTimeout(requestTimeout)
       clearTimeout(slowIframeTimer)
       try{ controller?.abort() }catch{}
@@ -107,26 +113,36 @@ export default function KodikPlayerClient({
   }, [state.ok, state.embedUrl, iframeReady])
 
   if(state.ok && state.embedUrl){
-    return <div className={`compact-player compact-player-kodik is-ready ${iframeReady ? 'iframe-ready' : 'iframe-loading'}`}>
+    return <div className={`compact-player compact-player-kodik is-ready ${iframeReady ? 'iframe-ready' : 'iframe-loading'} ${iframeSlow ? 'iframe-slow' : ''}`}>
       {!iframeReady ? <div className="kodik-iframe-skeleton">
         <div className="kodik-loader-orb" />
         <strong>Загружаем плеер Kodik…</strong>
         <span>{state.voice || translationTitle || voice || 'Подключаем озвучку'}</span>
-        {iframeSlow ? <a className="kodik-open-link" href={state.embedUrl} target="_blank" rel="noreferrer">Открыть плеер отдельно</a> : null}
       </div> : null}
       <iframe
+        key={iframeKey}
         className="kodik-player-iframe"
         src={state.embedUrl}
         title={`${title} — серия ${episode}`}
+        loading="eager"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
         allowFullScreen
-        referrerPolicy="no-referrer-when-downgrade"
+        referrerPolicy="origin-when-cross-origin"
         onLoad={() => setIframeReady(true)}
       />
+      {iframeSlow ? <div className="kodik-player-rescue">
+        <strong>Kodik долго отвечает</strong>
+        <span>Ссылка на плеер есть, но сам iframe может зависать из-за Kodik/сети/блокировщика.</span>
+        <div>
+          <button type="button" onClick={() => { setIframeSlow(false); setIframeReady(false); setIframeKey(key => key + 1); setTimeout(() => setIframeReady(true), 900); setTimeout(() => setIframeSlow(true), 8000) }}>Перезагрузить</button>
+          <a href={state.embedUrl} target="_blank" rel="noreferrer">Открыть отдельно</a>
+        </div>
+      </div> : null}
       <div className="kodik-player-meta">
         <span>Источник: Kodik</span>
         <span>{state.voice || 'Озвучка подключена'}</span>
         {state.quality ? <span>{state.quality}</span> : null}
+        <button type="button" onClick={() => { setIframeSlow(false); setIframeReady(false); setIframeKey(key => key + 1); setTimeout(() => setIframeReady(true), 900); setTimeout(() => setIframeSlow(true), 8000) }}>Обновить плеер</button>
         <a href={state.embedUrl} target="_blank" rel="noreferrer">Открыть отдельно</a>
       </div>
     </div>

@@ -54,7 +54,7 @@ export default function ProfileDashboardClient(){
         <div>
           <span>локальный профиль</span>
           <h2>Haruno</h2>
-          <p>Твои избранные тайтлы, история просмотра и оценки хранятся на этом устройстве. Позже можно подключить авторизацию и синхронизацию между устройствами.</p>
+          <p>Твои избранные тайтлы, история просмотра и оценки сохраняются в профиле. Если ты вошёл в аккаунт, данные синхронизируются через Supabase.</p>
           <div className="profile-actions">
             <Link className="primary" href="/catalog">Найти аниме</Link>
             {last ? <Link className="secondary" href={`/anime/${last.slug}#player`}>Продолжить</Link> : <Link className="secondary" href="/ai">AI-подбор</Link>}
