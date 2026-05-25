@@ -2,21 +2,12 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import { scoreCatalogItem } from '@/lib/searchRelevance'
 
 function score(item, query){
-  const q = query.toLowerCase().trim()
-  if(!q) return 0
-  const title = `${item.title || ''} ${item.originalTitle || ''}`.toLowerCase()
-  const text = `${title} ${(item.genres || []).join(' ')} ${item.description || ''}`.toLowerCase()
-  let value = 0
-  if(title.includes(q)) value += 40
-  for(const part of q.split(/\s+/).filter(Boolean)){
-    if(title.includes(part)) value += 16
-    if(text.includes(part)) value += 5
-  }
-  value += Number(item.score || item.rating || 0)
-  return value
+  return scoreCatalogItem(item, query)
 }
+
 
 export default function GlobalSearchOverlay({ items = [] }){
   const [open,setOpen] = useState(false)
@@ -61,14 +52,14 @@ export default function GlobalSearchOverlay({ items = [] }){
         </div>
 
         <div className="global-search-chips">
-          {['романтика','экшен','психология','короткое','онгоинг'].map(x=><button key={x} onClick={()=>setQuery(x)}>{x}</button>)}
+          {['лёгкое позитивное','романтика','экшен','психология','короткое','онгоинг'].map(x=><button key={x} onClick={()=>setQuery(x)}>{x}</button>)}
         </div>
 
         <div className="global-search-results">
           {results.length ? results.map(item=><Link onClick={()=>setOpen(false)} href={`/anime/${item.slug}`} className="global-search-item" key={item.slug}>
             <img loading="lazy" decoding="async" src={item.poster} alt="Аниме"/>
             <div><b>{item.title}</b><span>{item.year} · {item.meta} · ★ {item.rating}</span><p>{(item.genres || []).slice(0,3).join(' · ')}</p></div>
-          </Link>) : <div className="global-search-empty">Ничего не найдено. Попробуй написать жанр или похожий тайтл.</div>}
+          </Link>) : <div className="global-search-empty">Ничего не найдено. Попробуй название, жанр, настроение или похожий тайтл.</div>}
         </div>
 
         <Link onClick={()=>setOpen(false)} href={`/ai?q=${encodeURIComponent(query || 'что посмотреть вечером')}`} className="global-search-ai">✦ Подобрать через AI</Link>

@@ -38,7 +38,8 @@ export default function KodikPlayerClient({
   initialEmbedUrl = null,
   initialVoice = null,
   initialQuality = null,
-  initialSource = null
+  initialSource = null,
+  historyItem = null
 }){
   const [state, setState] = useState(() => initialPlayerState({ initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality }))
   const [iframeReady, setIframeReady] = useState(false)
@@ -158,6 +159,6 @@ export default function KodikPlayerClient({
       {state.loading ? <div className="player-progress-dots"><i/><i/><i/></div> : null}
       {!state.loading && state.error ? <small className="kodik-player-error">{state.error}</small> : null}
     </div>
-    <PlayerControlsClient slug={slug} episode={episode} nextEpisode={nextEpisode} voice={state.voice || voice}/>
+    <PlayerControlsClient slug={slug} episode={episode} nextEpisode={nextEpisode} voice={state.voice || voice} historyItem={historyItem}/>
   </div>
 }

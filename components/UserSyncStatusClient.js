@@ -11,7 +11,16 @@ function label(state){
 }
 
 export default function UserSyncStatusClient(){
-  const [status,setStatus] = useState(() => getUserSyncStatus())
+  const [status,setStatus] = useState(() => {
+    const current = getUserSyncStatus()
+    if(current?.state === 'syncing' && current?.updatedAt){
+      const startedAt = new Date(current.updatedAt).getTime()
+      if(Number.isFinite(startedAt) && Date.now() - startedAt > 4500){
+        return { ...current, state:'idle', message:'Данные аккаунта обновляются в фоне. Можно пользоваться сайтом.' }
+      }
+    }
+    return current
+  })
 
   useEffect(()=>{
     const update = event => setStatus(event?.detail || getUserSyncStatus())

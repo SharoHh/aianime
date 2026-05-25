@@ -1,12 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { pushToast } from '@/components/ToastCenter'
+import { saveHistoryItem } from '@/lib/userStorage'
+import { useAuthState } from '@/components/AuthStateClient'
 
 function key(slug, episode){ return `anime:watch-progress:${slug}:${episode}` }
 
-export default function PlayerControlsClient({ slug, episode, nextEpisode, voice = 'default' }){
+export default function PlayerControlsClient({ slug, episode, nextEpisode, voice = 'default', historyItem = null }){
+  const { user } = useAuthState()
+  const lastCloudProgress = useRef(-1)
   const [progress,setProgress] = useState(0)
   const [paused,setPaused] = useState(true)
   const [autoNext,setAutoNext] = useState(true)
@@ -57,6 +61,15 @@ export default function PlayerControlsClient({ slug, episode, nextEpisode, voice
     return () => clearInterval(id)
   }, [paused, autoNext])
 
+
+  useEffect(()=>{
+    if(!user?.id || !historyItem?.slug) return
+    const rounded = Math.max(0, Math.min(100, Math.round(progress || 0)))
+    const shouldCloudSync = rounded === 0 || rounded >= 95 || lastCloudProgress.current < 0 || Math.abs(rounded - lastCloudProgress.current) >= 10
+    saveHistoryItem(historyItem, episode, rounded, { cloud:shouldCloudSync })
+    if(shouldCloudSync) lastCloudProgress.current = rounded
+  }, [progress, episode, historyItem?.slug, user?.id])
+
   return <div className={theatre ? 'player-ui-overlay theatre-on' : 'player-ui-overlay'}>
     {theatre ? <div className="watch-theatre-backdrop"/> : null}
 
@@ -73,7 +86,7 @@ export default function PlayerControlsClient({ slug, episode, nextEpisode, voice
       <span>{progress}%</span>
       <button type="button" className={autoNext ? 'player-toggle active' : 'player-toggle'} onClick={()=>setAutoNext(v=>!v)}>Auto</button>
       <button type="button" className={theatre ? 'player-toggle active' : 'player-toggle'} onClick={()=>setTheatre(v=>!v)}>Театр</button>
-      <Link href={`/anime/${slug}#player`}>Следующая</Link>
+      <Link href={`/anime/${slug}?episode=${nextEpisode || Number(episode || 1) + 1}#player`}>Следующая</Link>
     </div>
   </div>
 }

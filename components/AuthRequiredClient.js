@@ -3,6 +3,11 @@
 import Link from 'next/link'
 import { useAuthState } from '@/components/AuthStateClient'
 
+function loginHref(){
+  if(typeof window === 'undefined') return '/auth'
+  return `/auth?next=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`
+}
+
 export default function AuthRequiredClient({ children, title = 'Нужно войти в аккаунт', text = 'Этот раздел доступен только после авторизации.' }){
   const { loading, configured, user } = useAuthState()
 
@@ -25,7 +30,7 @@ export default function AuthRequiredClient({ children, title = 'Нужно во�
       <h2>{title}</h2>
       <p>{text}</p>
       <div className="auth-required-actions">
-        <Link className="primary" href="/auth">Войти</Link>
+        <Link className="primary" href={loginHref()}>Войти</Link>
         <Link className="secondary" href="/catalog">В каталог</Link>
       </div>
     </section>

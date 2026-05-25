@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createBrowserSupabase, hasSupabaseBrowser } from '@/lib/supabaseClient'
+import { prepareLocalAccountData, resetLocalAccountState } from '@/lib/userStorage'
 
 export const baseProfileDefaults = {
   name: 'Профиль Aianime',
@@ -138,6 +139,7 @@ const authListeners = new Set()
 
 function emitAuthState(next){
   cachedAuthState = next
+  if(next?.user?.id) prepareLocalAccountData(next.user.id)
   if(next?.user || next?.loading === false) writeCachedUser(next?.user || null)
   authListeners.forEach(listener => listener(next))
 }
@@ -350,6 +352,7 @@ export function useAuthState(){
     // UI должен выйти сразу, не ждать Supabase-сеть.
     // Сессия чистится локально, а сетевой signOut идёт в фоне.
     clearPendingAuthSession()
+    resetLocalAccountState()
     emitAuthState({ loading:false, configured:true, user:null })
     authBootstrapPromise = null
     if(typeof window !== 'undefined') window.dispatchEvent(new Event('anime:user-updated'))
