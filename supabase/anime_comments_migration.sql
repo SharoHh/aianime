@@ -65,3 +65,34 @@ on public.anime_comments
 for delete
 to authenticated
 using (auth.uid() = user_id);
+
+-- v26: persistent comment likes, one vote per user/browser key.
+create table if not exists public.anime_comment_likes (
+  id bigserial primary key,
+  comment_id bigint not null references public.anime_comments(id) on delete cascade,
+  user_id uuid,
+  client_id text,
+  voter_key text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.anime_comment_likes
+  add column if not exists comment_id bigint,
+  add column if not exists user_id uuid,
+  add column if not exists client_id text,
+  add column if not exists voter_key text,
+  add column if not exists created_at timestamptz default now();
+
+create unique index if not exists anime_comment_likes_unique_vote_idx
+  on public.anime_comment_likes (comment_id, voter_key);
+
+create index if not exists anime_comment_likes_comment_idx
+  on public.anime_comment_likes (comment_id);
+
+create index if not exists anime_comment_likes_user_idx
+  on public.anime_comment_likes (user_id);
+
+alter table public.anime_comment_likes enable row level security;
+
+-- Likes are written through /api/comments with service_role.
+-- Direct client access stays closed by default.
