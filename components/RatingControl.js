@@ -8,13 +8,21 @@ export default function RatingControl({ slug }){
   const [value,setValue] = useState(0)
 
   useEffect(()=>{
-    setValue(Number(getRatings()[slug] || 0))
+    const update = () => setValue(Number(getRatings()[slug] || 0))
+    update()
+    window.addEventListener('storage', update)
+    window.addEventListener('anime:user-updated', update)
+    return () => {
+      window.removeEventListener('storage', update)
+      window.removeEventListener('anime:user-updated', update)
+    }
   }, [slug])
 
   function rate(next){
-    setValue(next)
-    setUserRating(slug, next)
-    pushToast(`Оценка сохранена: ${next}/5`, 'success')
+    const valueToSave = value === next ? 0 : next
+    setValue(valueToSave)
+    setUserRating(slug, valueToSave)
+    pushToast(valueToSave ? `Оценка сохранена: ${valueToSave}/5` : 'Оценка удалена', 'success')
   }
 
   return <div className="rating-control" aria-label="Оценка">

@@ -67,7 +67,6 @@ export default function CommentsClient({ slug, title }){
   const [text,setText] = useState('')
   const [loading,setLoading] = useState(true)
   const [saving,setSaving] = useState(false)
-  const [liking,setLiking] = useState(null)
   const [source,setSource] = useState('local')
 
   const canUseCloud = configured && Boolean(supabase)
@@ -179,7 +178,14 @@ export default function CommentsClient({ slug, title }){
       return
     }
 
-    setLiking(cleanId)
+    likedSet.add(cleanId)
+    writeLiked(slug, likedSet)
+    setItems(prev => prev.map(item => String(item.id) === cleanId ? {
+      ...item,
+      likes:Number(item.likes || 0) + 1,
+      liked:true
+    } : item))
+
     try{
       const clientId = getClientId()
       let token = ''
@@ -199,8 +205,6 @@ export default function CommentsClient({ slug, title }){
       })
       const data = await res.json().catch(()=>null)
       if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось сохранить сердечко')
-      likedSet.add(cleanId)
-      writeLiked(slug, likedSet)
       setItems(prev => prev.map(item => String(item.id) === cleanId ? {
         ...item,
         likes:Number(data.likes ?? item.likes ?? 0),
@@ -208,9 +212,14 @@ export default function CommentsClient({ slug, title }){
       } : item))
       if(data.duplicate) pushToast('Ты уже ставил сердечко', 'info')
     }catch(error){
+      likedSet.delete(cleanId)
+      writeLiked(slug, likedSet)
+      setItems(prev => prev.map(item => String(item.id) === cleanId ? {
+        ...item,
+        likes:Math.max(0, Number(item.likes || 0) - 1),
+        liked:false
+      } : item))
       pushToast(error?.message || 'Сердечко не сохранилось', 'error')
-    }finally{
-      setLiking(null)
     }
   }
 
@@ -240,7 +249,6 @@ export default function CommentsClient({ slug, title }){
           <button
             type="button"
             className={item.liked ? 'liked' : ''}
-            disabled={liking === String(item.id)}
             aria-pressed={Boolean(item.liked)}
             onClick={()=>like(item.id)}
           >{item.liked ? '♥' : '♡'} {item.likes || 0}</button>

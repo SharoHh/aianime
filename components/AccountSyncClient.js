@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useAuthState } from '@/components/AuthStateClient'
 import { restoreCloudAnimeData, syncLocalAnimeDataToCloud } from '@/lib/userStorage'
+import { restoreProfileFromCloud } from '@/components/AuthStateClient'
 
 export default function AccountSyncClient(){
   const { configured, user, supabase } = useAuthState()
@@ -15,12 +16,13 @@ export default function AccountSyncClient(){
 
     async function runInitialSync(){
       try{
-        if(localStorage.getItem(key) === '1'){
-          await syncLocalAnimeDataToCloud()
-        }else{
-          await restoreCloudAnimeData()
-          localStorage.setItem(key, '1')
-        }
+        // На каждом старте аккуратно подтягиваем облако и потом дописываем локальные изменения.
+        // Так избранное/история/оценки не теряются между браузерами и после выхода/входа.
+        await Promise.all([
+          restoreCloudAnimeData(),
+          restoreProfileFromCloud(user, supabase).catch(() => null)
+        ])
+        localStorage.setItem(key, '1')
       }catch{}
     }
 

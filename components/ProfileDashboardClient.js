@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { getFavorites, getHistory, getRatings, writeJson } from '@/lib/userStorage'
+import { clearAnimeData, getFavorites, getHistory, getRatings } from '@/lib/userStorage'
 
 export default function ProfileDashboardClient(){
   const [favorites,setFavorites] = useState([])
@@ -33,9 +33,7 @@ export default function ProfileDashboardClient(){
   }, [ratingEntries])
 
   function clearAll(){
-    writeJson('anime:favorites', [])
-    writeJson('anime:history', [])
-    writeJson('anime:ratings', {})
+    clearAnimeData('all')
     load()
   }
 
@@ -52,8 +50,8 @@ export default function ProfileDashboardClient(){
       <div className="profile-hero-card">
         <img src="/posters/oshi.svg" alt="Haruno"/>
         <div>
-          <span>локальный профиль</span>
-          <h2>Haruno</h2>
+          <span>профиль аккаунта</span>
+          <h2>Твои данные</h2>
           <p>Твои избранные тайтлы, история просмотра и оценки сохраняются в профиле. Если ты вошёл в аккаунт, данные синхронизируются через Supabase.</p>
           <div className="profile-actions">
             <Link className="primary" href="/catalog">Найти аниме</Link>

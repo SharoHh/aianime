@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { pushToast } from '@/components/ToastCenter'
-import { getProfileDefaults, readStoredProfile, saveStoredProfile } from '@/components/AuthStateClient'
+import { getProfileDefaults, readStoredProfile, restoreProfileFromCloud, saveProfileToCloud, saveStoredProfile } from '@/components/AuthStateClient'
 
 function fileToDataUrl(file){
   return new Promise((resolve, reject) => {
@@ -16,7 +16,14 @@ function fileToDataUrl(file){
 export default function ProfileEditorClient({ user }){
   const [profile,setProfile] = useState(null)
 
-  useEffect(()=>setProfile(readStoredProfile(user)), [user])
+  useEffect(()=>{
+    let active = true
+    setProfile(readStoredProfile(user))
+    restoreProfileFromCloud(user).then(result => {
+      if(active && result?.profile) setProfile(result.profile)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [user])
 
   function update(key, value){
     setProfile(prev => ({ ...(prev || getProfileDefaults(user)), [key]: value }))
@@ -67,15 +74,22 @@ export default function ProfileEditorClient({ user }){
     pushToast(key === 'cover' ? 'Фон обновлён' : 'Аватар обновлён', 'success')
   }
 
-  function save(){
-    saveStoredProfile(user, profile || getProfileDefaults(user))
-    pushToast('Профиль сохранён', 'success')
+  async function save(){
+    const next = profile || getProfileDefaults(user)
+    saveStoredProfile(user, next)
+    try{
+      await saveProfileToCloud(user, next)
+      pushToast('Профиль сохранён в аккаунте', 'success')
+    }catch{
+      pushToast('Профиль сохранён локально. Supabase временно недоступен', 'info')
+    }
   }
 
-  function reset(){
+  async function reset(){
     const defaults = getProfileDefaults(user)
     setProfile(defaults)
     saveStoredProfile(user, defaults)
+    try{ await saveProfileToCloud(user, defaults) }catch{}
     pushToast('Профиль сброшен', 'success')
   }
 

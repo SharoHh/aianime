@@ -165,6 +165,93 @@ function bootstrapAuth(supabase, configured){
   return authBootstrapPromise
 }
 
+
+
+function normalizeProfileForCloud(user, profile){
+  const next = { ...getProfileDefaults(user), ...(profile || {}) }
+  return {
+    id: user.id,
+    email: user.email || null,
+    full_name: next.name || null,
+    username: next.name || null,
+    avatar_url: next.avatar || null,
+    banner_url: next.cover || null,
+    bio: next.bio || null,
+    profile_status: next.level || null,
+    profile_payload: next,
+    updated_at: new Date().toISOString()
+  }
+}
+
+function mapCloudProfile(user, row){
+  const defaults = getProfileDefaults(user)
+  const payload = row?.profile_payload && typeof row.profile_payload === 'object' ? row.profile_payload : {}
+  return {
+    ...defaults,
+    ...payload,
+    name: payload.name || row?.full_name || row?.username || defaults.name,
+    level: payload.level || row?.profile_status || defaults.level,
+    avatar: payload.avatar || row?.avatar_url || defaults.avatar,
+    cover: payload.cover || row?.banner_url || defaults.cover,
+    bio: payload.bio || row?.bio || ''
+  }
+}
+
+export async function saveProfileToCloud(user, profile, supabaseInput = null){
+  if(!user?.id) return { ok:false, skipped:true }
+  const supabase = supabaseInput || createBrowserSupabase()
+  if(!supabase) return { ok:false, skipped:true }
+  const payload = normalizeProfileForCloud(user, profile)
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert(payload, { onConflict:'id' })
+
+  if(!error) return { ok:true }
+
+  // На старой схеме может не быть profile_status/profile_payload. Сохраняем базовые поля.
+  const fallback = {
+    id: user.id,
+    email: user.email || null,
+    full_name: payload.full_name,
+    username: payload.username,
+    avatar_url: payload.avatar_url,
+    banner_url: payload.banner_url,
+    bio: payload.bio,
+    updated_at: payload.updated_at
+  }
+  const retry = await supabase.from('profiles').upsert(fallback, { onConflict:'id' })
+  if(retry.error) throw retry.error
+  return { ok:true, fallback:true }
+}
+
+export async function restoreProfileFromCloud(user, supabaseInput = null){
+  if(!user?.id) return { ok:false, skipped:true }
+  const supabase = supabaseInput || createBrowserSupabase()
+  if(!supabase) return { ok:false, skipped:true }
+
+  let result = await supabase
+    .from('profiles')
+    .select('id,email,full_name,username,avatar_url,banner_url,bio,profile_status,profile_payload,updated_at')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if(result.error){
+    result = await supabase
+      .from('profiles')
+      .select('id,email,full_name,username,avatar_url,banner_url,bio,updated_at')
+      .eq('id', user.id)
+      .maybeSingle()
+  }
+
+  if(result.error) throw result.error
+  if(!result.data) return { ok:false, missing:true }
+
+  const profile = mapCloudProfile(user, result.data)
+  saveStoredProfile(user, profile)
+  return { ok:true, profile }
+}
+
 export function useAuthState(){
   const configured = hasSupabaseBrowser()
   const supabase = useMemo(() => createBrowserSupabase(), [])

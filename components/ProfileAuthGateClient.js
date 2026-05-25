@@ -6,6 +6,7 @@ import { getFavorites, getHistory, getRatings } from '@/lib/userStorage'
 import { getUserDisplayName, readStoredProfile, useAuthState } from '@/components/AuthStateClient'
 import ProfileEditorClient from '@/components/ProfileEditorClient'
 import AccountSyncClient from '@/components/AccountSyncClient'
+import UserSyncStatusClient from '@/components/UserSyncStatusClient'
 
 function readStats(){
   return {
@@ -90,6 +91,7 @@ export default function ProfileAuthGateClient(){
       </div>
     </section>
 
+    <UserSyncStatusClient/>
     <ProfileEditorClient user={user}/>
     <AccountSyncClient/>
   </>
