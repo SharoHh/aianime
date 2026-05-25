@@ -154,23 +154,62 @@ function episodeVoiceLabel(value){
   return voice
 }
 
-function buildEpisodeOptions(episodes = []){
-  const byNumber = new Map()
-  for(const episode of episodes || []){
-    const number = Math.max(1, Number(episode?.episodeNumber || 0) || 1)
-    const current = byNumber.get(number)
-    const candidate = { ...episode, episodeNumber:number, voice:episodeVoiceLabel(episode?.voice) }
-    if(!current){
-      byNumber.set(number, candidate)
-      continue
-    }
 
-    const candidateScore = (candidate.embedUrl ? 10 : 0) + (String(candidate.voice || '').toLowerCase() !== 'kodik' ? 2 : 0) + (candidate.status === 'published' ? 1 : 0)
-    const currentScore = (current.embedUrl ? 10 : 0) + (String(current.voice || '').toLowerCase() !== 'kodik' ? 2 : 0) + (current.status === 'published' ? 1 : 0)
-    if(candidateScore > currentScore) byNumber.set(number, candidate)
+function hasUsableEpisodeLink(episode){
+  const embed = String(episode?.embedUrl || '').trim()
+  if(!embed) return false
+  if(episode?.status === 'placeholder') return false
+  if(episode?.source === 'fallback') return false
+  return true
+}
+
+function buildNativePlayerOptions(episodes = []){
+  const rows = (episodes || [])
+    .filter(hasUsableEpisodeLink)
+    .map((episode) => ({
+      id: episode.id || `${episode.voice || 'kodik'}-${episode.episodeNumber}`,
+      episodeNumber: Math.max(1, Number(episode?.episodeNumber || 1) || 1),
+      title: episode.title || `Серия ${episode.episodeNumber || 1}`,
+      provider: episode.provider || 'kodik',
+      voice: episodeVoiceLabel(episode?.voice),
+      embedUrl: String(episode?.embedUrl || '').trim(),
+      status: episode.status || 'published',
+      source: episode.source || 'anime_episodes',
+      quality: episode.quality || episode.raw?.quality || null,
+      translationType: episode.translationType || episode.raw?.translation_type || null,
+      translationId: episode.translationId || episode.raw?.translation_id || null,
+      seasonNumber: episode.seasonNumber || episode.raw?.season_number || null,
+      updatedAt: episode.updatedAt || null
+    }))
+
+  if(!rows.length) return []
+
+  const unique = new Map()
+  for(const row of rows){
+    const key = `${row.provider}:${row.voice}:${row.episodeNumber}`
+    const current = unique.get(key)
+    const score = (row.embedUrl ? 10 : 0) + (row.source === 'kodik-api-episode' ? 5 : 0) + (row.translationType === 'voice' ? 2 : 0)
+    const currentScore = current ? (current.embedUrl ? 10 : 0) + (current.source === 'kodik-api-episode' ? 5 : 0) + (current.translationType === 'voice' ? 2 : 0) : -1
+    if(!current || score >= currentScore) unique.set(key, row)
   }
 
-  return Array.from(byNumber.values()).sort((a,b) => Number(a.episodeNumber) - Number(b.episodeNumber))
+  const cleaned = Array.from(unique.values()).sort((a,b) => {
+    const voice = String(a.voice || '').localeCompare(String(b.voice || ''), 'ru')
+    if(voice) return voice
+    return Number(a.episodeNumber) - Number(b.episodeNumber)
+  })
+
+  // Старые строки players-sync могли создать 28 фейковых серий с одной и той же iframe-ссылкой.
+  // Для родного выбора такие строки не используем как список серий: либо ждём детальные episode links,
+  // либо показываем один базовый iframe и клиент сам подтянет /api/player/options?refresh=1.
+  const urls = new Set(cleaned.map(row => row.embedUrl).filter(Boolean))
+  const episodeNumbers = new Set(cleaned.map(row => row.episodeNumber))
+  const hasDetailedEpisodes = urls.size > 1 && episodeNumbers.size > 1
+  if(!hasDetailedEpisodes && cleaned.length > 1){
+    return [cleaned[0]]
+  }
+
+  return cleaned
 }
 
 function statusLabel(status){
@@ -199,14 +238,23 @@ export default async function AnimePage({ params, searchParams }){
     getAnimeList({limit:220}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
   ])
-  const episodeOptions = buildEpisodeOptions(episodes)
+  const playerOptions = buildNativePlayerOptions(episodes)
   const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
-  const currentEpisode = episodeOptions.find(e => Number(e.episodeNumber) === selectedEpisodeNumber) || episodeOptions[0] || episodes[0]
+  const selectedVoice = String(resolvedSearchParams?.voice || '').trim()
+  const currentEpisode = playerOptions.find(e => selectedVoice && e.voice === selectedVoice && Number(e.episodeNumber) === selectedEpisodeNumber)
+    || playerOptions.find(e => Number(e.episodeNumber) === selectedEpisodeNumber)
+    || playerOptions[0]
+    || episodes.find(hasUsableEpisodeLink)
+    || null
   const currentEpisodeNumber = Number(currentEpisode?.episodeNumber || selectedEpisodeNumber || 1)
-  const nextEpisode = episodeOptions.find(e => Number(e.episodeNumber) > currentEpisodeNumber) || null
-  const titleEpisodeHref = (number) => `/anime/${encodeURIComponent(item.slug)}?episode=${Math.max(1, Number(number) || 1)}#player`
+  const titleEpisodeHref = (number, voice = currentEpisode?.voice) => {
+    const params = new URLSearchParams()
+    params.set('episode', String(Math.max(1, Number(number) || 1)))
+    if(voice) params.set('voice', voice)
+    return `/anime/${encodeURIComponent(item.slug)}?${params.toString()}#player`
+  }
   const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
-  const externalRatings = await getExternalRatings(item)
+  const siteRating = await getSiteRatingStats(item?.slug)
 
   const info = visibleInfoRows([
     ['Статус', statusLabel(item.status)],
@@ -216,9 +264,9 @@ export default async function AnimePage({ params, searchParams }){
     ['Первоисточник', item.source || 'Манга / оригинал'],
     ['Студия', item.studio || '—'],
     ['Режиссёр', item.director || 'Будет добавлено'],
-    ['Количество серий', item.episodes || item.episodesList?.length || episodes.length],
+    ['Количество серий', Math.max(item.episodes || 0, ...playerOptions.map(e => Number(e.episodeNumber || 0)), episodes.length) || item.episodes || episodes.length],
     ['Перевод', item.translationTitle || 'Kodik / будет добавлено'],
-    ['Озвучка', item.translationTitle || currentEpisode?.voice || 'default'],
+    ['Озвучка', currentEpisode?.voice || item.translationTitle || 'Kodik'],
   ])
 
   return <main className="anime-compact-page">
@@ -248,11 +296,11 @@ export default async function AnimePage({ params, searchParams }){
           <span>{item.year || '—'}</span>
         </div>
 
-        <div className="compact-rating-row" aria-label="Рейтинги и быстрые ссылки">
-          <div className="main-rate site-rate" title={externalRatings.site.count ? `Средняя оценка пользователей AIanime: ${externalRatings.site.count}` : 'Оценок пользователей AIanime пока нет'}><b>{ratingLabel(externalRatings.site.value)}</b><span>{externalRatings.site.count ? `${externalRatings.site.count} оценок` : 'наш рейтинг'}</span></div>
-          <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki {ratingLabel(externalRatings.shiki)}</a>
-          <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI {aiMatchPercent(item)}</Link>
-          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL {ratingLabel(externalRatings.mal)}</a>
+        <div className="compact-rating-row" aria-label="Рейтинг AIanime и внешние ссылки">
+          <div className="main-rate site-rate" title={siteRating.count ? `Средняя оценка пользователей AIanime: ${siteRating.count}` : 'Оценок пользователей AIanime пока нет'}><b>{ratingLabel(siteRating.value)}</b><span>{siteRating.count ? `${siteRating.count} оценок` : 'наш рейтинг'}</span></div>
+          <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki ↗</a>
+          <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI-похожие</Link>
+          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL ↗</a>
         </div>
 
         <div className="compact-info-list">
@@ -282,56 +330,24 @@ export default async function AnimePage({ params, searchParams }){
     </section>
 
     <section className="compact-player-section" id="player">
-      <div className="compact-section-head"><h2>Плеер</h2><a href="#episodes">Серии ↓</a></div>
+      <div className="compact-section-head"><h2>Плеер</h2><span className="compact-player-hint">Озвучки и серии</span></div>
       <KodikPlayerClient
         slug={item.slug}
         title={title}
         banner={item.banner || item.poster}
         episode={currentEpisodeNumber}
-        nextEpisode={nextEpisode?.episodeNumber || currentEpisodeNumber + 1}
-        voice={item.translationTitle || currentEpisode?.voice || 'Kodik'}
+        selectedVoice={currentEpisode?.voice || selectedVoice || item.translationTitle || 'Kodik'}
+        voice={currentEpisode?.voice || item.translationTitle || 'Kodik'}
         translationTitle={item.translationTitle}
-        quality={item.quality}
+        quality={currentEpisode?.quality || item.quality}
+        playerOptions={playerOptions}
         initialEmbedUrl={currentEpisode?.embedUrl || item.kodikLink || null}
         initialVoice={currentEpisode?.voice || item.translationTitle || null}
-        initialQuality={item.quality || null}
-        initialSource={currentEpisode?.embedUrl ? 'anime_episodes' : item.kodikLink ? 'anime.kodik_link' : null}
+        initialQuality={currentEpisode?.quality || item.quality || null}
+        initialSource={currentEpisode?.embedUrl ? currentEpisode.source || 'anime_episodes' : item.kodikLink ? 'anime.kodik_link' : null}
         historyItem={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }}
       />
-      <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }} episode={currentEpisodeNumber}/>
-    </section>
-
-    <section className="compact-episodes episode-picker-clean" id="episodes">
-      <div className="compact-section-head episode-picker-head">
-        <div>
-          <h2>Серии</h2>
-          <p>{episodeOptions.length ? `${episodeOptions.length} серий · сейчас ${currentEpisodeNumber}` : 'Список серий обновляется'}</p>
-        </div>
-        <a href="#player">К плееру ↑</a>
-      </div>
-
-      {episodeOptions.length ? <div className="episode-picker-toolbar">
-        <span>Выбрана серия <b>{currentEpisodeNumber}</b></span>
-        {nextEpisode ? <Link href={titleEpisodeHref(nextEpisode.episodeNumber)}>Следующая серия →</Link> : <span>Последняя серия</span>}
-      </div> : null}
-
-      <div className="episode-picker-grid" aria-label="Выбор серии">
-        {episodeOptions.slice(0,64).map((e)=>{
-          const number = Number(e.episodeNumber || 1)
-          const active = number === currentEpisodeNumber
-          const voiceLabel = episodeVoiceLabel(e.voice || item.translationTitle)
-          return <Link
-            className={active ? 'active' : ''}
-            href={titleEpisodeHref(number)}
-            key={`episode-${number}`}
-            prefetch={false}
-            aria-current={active ? 'true' : undefined}
-          >
-            <span>{number}</span>
-            <em>{active ? 'сейчас' : voiceLabel}</em>
-          </Link>
-        })}
-      </div>
+      <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>
     </section>
 
     <section className="compact-similar compact-ai-recs">

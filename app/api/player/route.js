@@ -13,10 +13,11 @@ function runtimeResolveEnabled(req){
   return req.nextUrl.searchParams.get('resolve') === '1' || process.env.ENABLE_KODIK_PLAYER_RUNTIME === '1'
 }
 
-async function readEpisodeFromDb(slug, episode){
+async function readEpisodeFromDb(slug, episode, voice = null){
   if(!hasSupabase()) return null
   try{
-    const query = `anime_episodes?select=*&anime_slug=eq.${encodeURIComponent(slug)}&episode_number=eq.${encodeURIComponent(String(episode))}&order=updated_at.desc&limit=1`
+    const voiceFilter = voice ? `&voice=eq.${encodeURIComponent(String(voice))}` : ''
+    const query = `anime_episodes?select=*&anime_slug=eq.${encodeURIComponent(slug)}&episode_number=eq.${encodeURIComponent(String(episode))}${voiceFilter}&order=updated_at.desc&limit=1`
     const res = await supabaseRequest(query, { method: 'GET', timeout: 9000 })
     if(!res.ok) return null
     const rows = await res.json().catch(() => [])
@@ -70,10 +71,11 @@ async function saveResolvedPlayer(slug, episode, player){
 export async function GET(req){
   const slug = String(req.nextUrl.searchParams.get('slug') || '').trim()
   const episode = Math.max(Number(req.nextUrl.searchParams.get('episode') || 1), 1)
+  const voice = String(req.nextUrl.searchParams.get('voice') || '').trim() || null
 
   if(!slug) return json({ ok:false, error:'slug is required' }, 400)
 
-  const dbEpisode = await readEpisodeFromDb(slug, episode)
+  const dbEpisode = await readEpisodeFromDb(slug, episode, voice)
   const episodeEmbed = normalizeKodikPlayerUrl(dbEpisode?.embed_url)
   if(episodeEmbed){
     return json({
@@ -84,7 +86,8 @@ export async function GET(req){
       episode,
       embedUrl: episodeEmbed,
       voice: dbEpisode.voice || 'Kodik',
-      quality: Array.isArray(dbEpisode.quality) ? dbEpisode.quality.join(', ') : dbEpisode.quality || null
+      translationType: dbEpisode.raw?.translation_type || null,
+      quality: dbEpisode.raw?.quality || (Array.isArray(dbEpisode.quality) ? dbEpisode.quality.join(', ') : dbEpisode.quality || null)
     })
   }
 

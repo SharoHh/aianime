@@ -1,5 +1,5 @@
 import { getAnimeList } from '@/lib/animeRepository'
-import { hasKodik, normalizeKodikPlayerUrl } from '@/lib/kodik'
+import { hasKodik, normalizeKodikPlayerUrl, resolveKodikEpisodeRowsForAnime } from '@/lib/kodik'
 import { resolvePlayers } from '@/lib/playerProviders'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { verifyCronAccess, cronAuthError } from '@/lib/cronAuth'
@@ -12,6 +12,10 @@ function externalResolveEnabled(req){
   // По умолчанию НЕ ходим в Kodik для каждого тайтла.
   // Правильная цепочка: sync-kodik сохраняет kodik_link -> players sync сохраняет embed в anime_episodes.
   return req.nextUrl.searchParams.get('resolve') === '1' || req.nextUrl.searchParams.get('external') === '1'
+}
+
+function detailedKodikEnabled(req){
+  return req.nextUrl.searchParams.get('details') === '1' || req.nextUrl.searchParams.get('voices') === '1' || req.nextUrl.searchParams.get('translations') === '1'
 }
 
 function getStoredKodikLink(item){
@@ -40,6 +44,7 @@ export async function GET(req){
 
   const enabled = playerSyncEnabled(req)
   const allowExternal = externalResolveEnabled(req)
+  const detailed = detailedKodikEnabled(req)
   const limit = Math.min(Math.max(Number(req.nextUrl.searchParams.get('limit') || 30), 1), 80)
   const episode = Math.max(Number(req.nextUrl.searchParams.get('episode') || 1), 1)
   const supabaseOk = hasSupabase()
@@ -54,7 +59,7 @@ export async function GET(req){
     databaseOk:supabaseOk,
     provider:'kodik-player',
     auth:cronAuth.mode,
-    requested:{ enabled, limit, episode, allowExternal },
+    requested:{ enabled, limit, episode, allowExternal, detailed },
     env:{ hasKodikToken:kodikOk, hasSupabase:supabaseOk },
     checked:0,
     storedLinks:0,
@@ -89,6 +94,29 @@ export async function GET(req){
 
   for(const item of selected){
     const storedLink = getStoredKodikLink(item)
+
+    if(detailed){
+      if(!kodikOk){
+        result.errors.push({ slug:item.slug, title:item.title, error:'KODIK_TOKEN is not configured for detailed player sync' })
+        continue
+      }
+      try{
+        const detailedRows = await resolveKodikEpisodeRowsForAnime({
+          slug:item.slug,
+          title:item.title,
+          title_ru:item.titleRu,
+          original_title:item.originalTitle,
+          year:item.year,
+          episodes:item.episodes || item.episodesList?.length || 1
+        }, { limit:40, withEpisodes:true, withEpisodesData:false, minScore:22, maxEpisodes:800 })
+        if(detailedRows.length){
+          rows.push(...detailedRows)
+          continue
+        }
+      }catch(error){
+        result.errors.push({ slug:item.slug, title:item.title, error:error?.message || String(error) })
+      }
+    }
 
     if(storedLink){
       result.storedLinks += 1
@@ -153,7 +181,7 @@ export async function GET(req){
 
   if(rows.length){
     result.hint = supabaseOk
-      ? 'Kodik player embeds сохранены в anime_episodes. UI читает /api/player и вставляет Kodik iframe автоматически.'
+      ? (detailed ? 'Kodik voice/episode links сохранены в anime_episodes. UI строит родной выбор озвучек и серий.' : 'Kodik player embeds сохранены в anime_episodes. UI читает /api/player и вставляет Kodik iframe автоматически.')
       : 'Dry-run: Kodik embeds найдены, но не сохранены, потому что Supabase env не настроен.'
   }else if(!allowExternal){
     result.hint = 'Плееры не сохранены, потому что у выбранных тайтлов нет anime.kodik_link. Сначала запусти Kodik metadata sync, потом повтори players sync.'

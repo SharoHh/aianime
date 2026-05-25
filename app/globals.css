@@ -14738,3 +14738,185 @@ a.rate-chip.is-link:focus-visible{
     grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
+
+/* v41: honest Kodik episode handling */
+.episode-picker-native-note{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px 18px;
+  border:1px solid rgba(136,103,196,.16);
+  border-radius:18px;
+  background:linear-gradient(135deg,rgba(250,248,255,.92),rgba(255,255,255,.9));
+  color:#282340;
+}
+.episode-picker-native-note b{font-size:14px;font-weight:780;letter-spacing:-.02em;white-space:nowrap;}
+.episode-picker-native-note span{flex:1;font-size:13px;line-height:1.45;color:rgba(63,55,83,.7);font-weight:650;}
+.episode-picker-native-note a{padding:10px 14px;border-radius:999px;background:#8d4ef6;color:white;text-decoration:none;font-weight:800;font-size:12px;white-space:nowrap;}
+.compact-rating-row .rate-chip{cursor:pointer;}
+.compact-rating-row .site-rate span{letter-spacing:-.01em;}
+@media (max-width:720px){
+  .episode-picker-native-note{align-items:flex-start;flex-direction:column;padding:14px;}
+  .episode-picker-native-note b{white-space:normal;}
+  .episode-picker-native-note a{width:100%;text-align:center;}
+}
+
+/* v42 native Kodik voice/episode selector */
+.native-kodik-shell{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.native-kodik-panel{
+  border:1px solid rgba(132,94,194,.14);
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(249,247,255,.92));
+  border-radius:24px;
+  padding:14px;
+  box-shadow:0 14px 38px rgba(44,32,78,.06);
+}
+.native-kodik-topline{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.native-kodik-topline b{
+  display:block;
+  font-size:15px;
+  letter-spacing:-.02em;
+  color:#211a3b;
+}
+.native-kodik-topline span{
+  display:block;
+  margin-top:3px;
+  font-size:12px;
+  font-weight:700;
+  color:rgba(44,38,72,.58);
+}
+.native-kodik-topline em{
+  flex:0 0 auto;
+  border-radius:999px;
+  padding:7px 10px;
+  background:#f1ecff;
+  color:#7b4fe8;
+  font-style:normal;
+  font-size:11px;
+  font-weight:850;
+}
+.native-voice-row{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding-bottom:8px;
+  scrollbar-width:thin;
+}
+.native-voice-row button,
+.native-episode-row button,
+.native-player-actions button{
+  border:1px solid rgba(132,94,194,.16);
+  background:#fff;
+  color:#2d2547;
+  font-family:inherit;
+  cursor:pointer;
+  transition:transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.native-voice-row button{
+  min-width:128px;
+  border-radius:18px;
+  padding:10px 12px;
+  text-align:left;
+  box-shadow:0 10px 24px rgba(44,32,78,.045);
+}
+.native-voice-row button span{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  font-weight:900;
+}
+.native-voice-row button small{
+  display:block;
+  margin-top:3px;
+  font-size:10px;
+  font-weight:850;
+  color:rgba(45,37,71,.52);
+}
+.native-voice-row button:hover,
+.native-episode-row button:hover,
+.native-player-actions button:hover{
+  transform:translateY(-1px);
+  border-color:rgba(148,82,235,.34);
+  box-shadow:0 14px 30px rgba(136,80,220,.12);
+}
+.native-voice-row button.active,
+.native-episode-row button.active{
+  background:linear-gradient(135deg,#8b5cf6,#e25bc8);
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 18px 36px rgba(154,91,232,.24);
+}
+.native-voice-row button.active small{ color:rgba(255,255,255,.78); }
+.native-episode-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(46px, 1fr));
+  gap:7px;
+  max-height:164px;
+  overflow:auto;
+  padding:2px 2px 6px;
+  scrollbar-width:thin;
+}
+.native-episode-row button{
+  height:40px;
+  border-radius:14px;
+  font-size:13px;
+  font-weight:900;
+}
+.native-player-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid rgba(132,94,194,.11);
+  font-size:12px;
+  font-weight:800;
+  color:rgba(45,37,71,.62);
+}
+.native-player-actions button{
+  border-radius:14px;
+  padding:9px 12px;
+  font-weight:900;
+}
+.native-kodik-note,
+.native-kodik-warning{
+  border-radius:16px;
+  padding:10px 12px;
+  font-size:12px;
+  font-weight:800;
+  line-height:1.35;
+}
+.native-kodik-note{
+  background:#f7f2ff;
+  color:rgba(45,37,71,.68);
+}
+.native-kodik-warning{
+  margin-top:8px;
+  background:#fff7e8;
+  color:#9a6515;
+}
+.native-kodik-frame{ margin-top:0; }
+.compact-player-hint{
+  color:#8b5cf6;
+  font-size:13px;
+  font-weight:900;
+}
+@media (max-width:680px){
+  .native-kodik-panel{ border-radius:20px; padding:12px; }
+  .native-voice-row button{ min-width:116px; }
+  .native-episode-row{ grid-template-columns:repeat(auto-fill, minmax(42px, 1fr)); max-height:138px; }
+  .native-player-actions{ align-items:flex-start; flex-direction:column; }
+}
