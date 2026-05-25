@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { createBrowserSupabase, hasSupabaseBrowser } from '@/lib/supabaseClient'
-import { getUserDisplayName, setImmediateAuthUser } from '@/components/AuthStateClient'
+import { getUserDisplayName, setImmediateAuthUser, setPendingAuthSession } from '@/components/AuthStateClient'
 
 function authErrorMessage(message){
   const text = String(message || '')
@@ -79,15 +79,19 @@ export default function AuthClient(){
       }
 
       const session = data.session
+      const nextUser = data.user || session?.user || null
+
       if(session?.access_token && session?.refresh_token){
-        await withSoftTimeout(
-          supabase.auth.setSession({ access_token:session.access_token, refresh_token:session.refresh_token }),
-          1200,
-          { timedOut:true }
-        )
+        // Запоминаем сессию сразу, до сетевого setSession. Так /profile не успевает
+        // открыться гостевым экраном, если Supabase Auth отвечает медленно.
+        setPendingAuthSession(session, nextUser)
+        supabase.auth.setSession({
+          access_token:session.access_token,
+          refresh_token:session.refresh_token
+        }).catch(() => {})
       }
 
-      return { data:{ user:data.user || session?.user || null, session }, error:null, via:'server-proxy' }
+      return { data:{ user:nextUser, session }, error:null, via:'server-proxy' }
     }finally{
       clearTimeout(timer)
     }
@@ -130,14 +134,16 @@ export default function AuthClient(){
         return
       }
 
-      const nextUser = result.data?.user || null
+      const nextUser = result.data?.user || result.data?.session?.user || null
       const hasSession = Boolean(result.data?.session)
+      if(result.data?.session) setPendingAuthSession(result.data.session, nextUser)
       setUser(nextUser)
       if(nextUser) setImmediateAuthUser(nextUser)
 
       if(mode === 'login' || hasSession){
         setMessage('Готово, открываем профиль…')
-        window.location.replace(getNextUrl())
+        setLoading(false)
+        setTimeout(() => window.location.replace(getNextUrl()), 80)
         return
       }
 
