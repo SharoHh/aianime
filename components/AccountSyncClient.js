@@ -1,16 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useAuthState } from '@/components/AuthStateClient'
-import { restoreCloudAnimeData, syncLocalAnimeDataToCloud } from '@/lib/userStorage'
-import { restoreProfileFromCloud } from '@/components/AuthStateClient'
+import { useAuthState, restoreProfileFromCloud } from '@/components/AuthStateClient'
+import { restoreCloudAnimeData, setUserSyncStatus, syncLocalAnimeDataToCloud } from '@/lib/userStorage'
 
 function runWhenIdle(callback){
   if(typeof window === 'undefined') return setTimeout(callback, 250)
   if('requestIdleCallback' in window){
-    return window.requestIdleCallback(callback, { timeout:1800 })
+    return window.requestIdleCallback(callback, { timeout:1200 })
   }
-  return setTimeout(callback, 450)
+  return setTimeout(callback, 250)
 }
 
 function cancelIdleTask(id){
@@ -21,14 +20,24 @@ function cancelIdleTask(id){
   clearTimeout(id)
 }
 
+function withTimeout(promise, ms, fallback){
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(fallback), ms))
+  ])
+}
+
 export default function AccountSyncClient(){
   const { configured, user, supabase } = useAuthState()
 
   useEffect(()=>{
-    if(!configured || !user || !supabase || typeof window === 'undefined') return undefined
+    if(typeof window === 'undefined') return undefined
 
-    // В layout уже есть глобальный AccountSyncClient. Если компонент случайно
-    // смонтирован повторно, не запускаем вторую пачку запросов к Supabase.
+    if(!configured || !user || !supabase){
+      setUserSyncStatus({ state:'idle', message:'Войди в аккаунт, чтобы сохранять избранное, историю и оценки.' })
+      return undefined
+    }
+
     const ownerKey = `anime:account-sync-owner:${user.id}`
     if(window.__AIANIME_ACCOUNT_SYNC_OWNER__ && window.__AIANIME_ACCOUNT_SYNC_OWNER__ !== ownerKey){
       return undefined
@@ -47,16 +56,36 @@ export default function AccountSyncClient(){
         const lastRun = Number(localStorage.getItem(lastRunKey) || 0)
         const freshEnough = Date.now() - lastRun < 5 * 60 * 1000
 
-        // После входа UI открывается сразу. Облако подтягиваем в idle/background,
-        // чтобы авторизация и выход не ощущались тормозными.
-        await Promise.all([
-          freshEnough ? Promise.resolve({ ok:true, cached:true }) : restoreCloudAnimeData(),
-          restoreProfileFromCloud(user, supabase).catch(() => null)
-        ])
+        if(freshEnough){
+          setUserSyncStatus({ state:'ok', message:'Данные аккаунта уже загружены.' })
+          return
+        }
+
+        setUserSyncStatus({ state:'syncing', message:'Загружаем данные аккаунта' })
+
+        const result = await withTimeout(
+          Promise.all([
+            restoreCloudAnimeData(),
+            restoreProfileFromCloud(user, supabase).catch(() => null)
+          ]),
+          3500,
+          { timedOut:true }
+        )
+
         if(cancelled) return
         localStorage.setItem(readyKey, '1')
         localStorage.setItem(lastRunKey, String(Date.now()))
-      }catch{}
+
+        if(result?.timedOut){
+          setUserSyncStatus({ state:'idle', message:'Данные аккаунта загрузятся в фоне. Сайт уже готов к работе.' })
+          return
+        }
+
+        setUserSyncStatus({ state:'ok', message:'Данные аккаунта загружены.' })
+      }catch(error){
+        if(cancelled) return
+        setUserSyncStatus({ state:'error', message:error?.message || 'Не удалось быстро загрузить данные аккаунта.' })
+      }
     }
 
     idleTask = runWhenIdle(runInitialSync)
@@ -65,7 +94,7 @@ export default function AccountSyncClient(){
       clearTimeout(timer)
       timer = setTimeout(() => {
         if(!cancelled) syncLocalAnimeDataToCloud().catch(() => {})
-      }, 1400)
+      }, 1600)
     }
 
     window.addEventListener('anime:user-updated', onUserUpdate)

@@ -23,8 +23,16 @@ export default function UserSyncStatusClient(){
     }
   }, [])
 
-  const state = status?.state || 'idle'
-  const message = status?.message || 'Избранное, история, оценки и профиль сохраняются в аккаунте.'
+  let state = status?.state || 'idle'
+  let message = status?.message || 'Избранное, история, оценки и профиль сохраняются в аккаунте.'
+
+  if(state === 'syncing' && status?.updatedAt){
+    const startedAt = new Date(status.updatedAt).getTime()
+    if(Number.isFinite(startedAt) && Date.now() - startedAt > 12000){
+      state = 'idle'
+      message = 'Данные аккаунта загрузятся в фоне. Можно пользоваться сайтом.'
+    }
+  }
 
   return <div className={`user-sync-status user-sync-status-${state}`}>
     <span>{label(state)}</span>
