@@ -24,7 +24,9 @@ function normalizeHistoryItem(item){
     poster:imageSrc(item.poster || item.poster_url),
     title:item.title || item.title_ru || item.name || 'Аниме',
     meta:item.meta || `Серия ${episode}`,
-    href:`/anime/${item.slug}?episode=${episode}#player`
+    voice:item.voice || null,
+    provider:item.provider || null,
+    href:`/anime/${item.slug}?episode=${episode}${item.voice ? `&voice=${encodeURIComponent(item.voice)}` : ''}#player`
   }
 }
 
@@ -73,7 +75,7 @@ export default function ContinueWatchingClient(){
       {items.map(item => <Link href={item.href} className="continue-card" key={`${item.slug}-${item.episode}`}>
         <img loading="lazy" decoding="async" src={item.poster} alt={item.title}/>
         <div className="play">▶</div>
-        <div className="continue-info"><b>{item.title}</b><span>Серия {item.episode}</span><div className="bar"><i style={{width:`${Math.max(item.progress, 8)}%`}}/></div></div>
+        <div className="continue-info"><b>{item.title}</b><span>Серия {item.episode}{item.voice ? ` · ${item.voice}` : ''}</span><div className="bar"><i style={{width:`${Math.max(item.progress, 8)}%`}}/></div></div>
         <em>{item.progress ? `${Math.round(item.progress)}%` : 'Kodik'}</em>
       </Link>)}
     </div>

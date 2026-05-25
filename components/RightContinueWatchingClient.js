@@ -24,7 +24,9 @@ function normalizeHistoryItem(item){
     poster:imageSrc(item.poster || item.poster_url),
     banner:imageSrc(item.banner || item.poster || item.poster_url),
     title:item.title || item.title_ru || item.name || 'Аниме',
-    href:`/anime/${item.slug}?episode=${episode}#player`
+    voice:item.voice || null,
+    provider:item.provider || null,
+    href:`/anime/${item.slug}?episode=${episode}${item.voice ? `&voice=${encodeURIComponent(item.voice)}` : ''}#player`
   }
 }
 
@@ -63,7 +65,7 @@ export default function RightContinueWatchingClient(){
     <div className="widget-head"><h3>▷ Продолжить просмотр</h3><Link href="/history">Смотреть все</Link></div>
     <Link className="watch-banner" href={item.href}>
       <img loading="lazy" decoding="async" src={item.banner || item.poster} alt={item.title}/>
-      <div><b>{item.title}</b><span>Серия {item.episode}</span><div className="bar"><i style={{width:`${progress}%`}}/></div></div>
+      <div><b>{item.title}</b><span>Серия {item.episode}{item.voice ? ` · ${item.voice}` : ''}</span><div className="bar"><i style={{width:`${progress}%`}}/></div></div>
       <button type="button">▶</button>
     </Link>
   </div>
