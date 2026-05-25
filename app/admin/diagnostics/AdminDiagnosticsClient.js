@@ -55,6 +55,7 @@ export default function AdminDiagnosticsClient(){
     const db = health?.database || {}
     const schedule = health?.schedule || {}
     const env = health?.env || {}
+    const userData = health?.userData || {}
     return [
       { label:'Статус', value:healthLoading ? '…' : (health?.status || '—'), hint:health?.ok ? 'Next.js отвечает' : (health?.error || 'Health недоступен') },
       { label:'Supabase', value:env.supabaseConfigured ? 'OK' : 'OFF', hint:db.ok ? 'База читается' : (db.animeError || 'env/runtime') },
@@ -62,6 +63,11 @@ export default function AdminDiagnosticsClient(){
       { label:'Расписание', value:schedule.count ?? '—', hint:schedule.ok ? 'есть записи недели' : (schedule.error || 'нет записей') },
       { label:'Серии', value:db.episodeCount ?? '—', hint:'anime_episodes' },
       { label:'Kodik token', value:env.kodikTokenConfigured ? 'OK' : 'OFF', hint:'значение не показывается' },
+      { label:'Профили', value:userData.profilesCount ?? '—', hint:'profiles' },
+      { label:'Избранное', value:userData.favoritesCount ?? '—', hint:'user_favorites' },
+      { label:'История', value:userData.historyCount ?? '—', hint:'user_history' },
+      { label:'Оценки', value:userData.ratingsCount ?? '—', hint:'user_ratings' },
+      { label:'Лайки комм.', value:userData.commentLikesCount ?? '—', hint:'anime_comment_likes' },
     ]
   }, [health, healthLoading])
 
