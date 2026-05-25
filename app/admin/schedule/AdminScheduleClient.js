@@ -1,55 +1,71 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useState } from 'react'
 import { pushToast } from '@/components/ToastCenter'
 
-const empty = { time:'', title:'', meta:'', poster:'', slug:'' }
+export default function AdminScheduleClient({ weekly = null }){
+  const [running,setRunning] = useState(false)
+  const [lastResult,setLastResult] = useState(null)
 
-function read(initial){
-  try{
-    const saved = JSON.parse(localStorage.getItem('anime:admin-schedule') || 'null')
-    if(saved) return saved
-  }catch{}
-  return initial.map((x,i)=>({ time:x[0], title:x[1], meta:x[2], poster:x[3], slug:x[4] || `schedule-${i}` }))
-}
-
-export default function AdminScheduleClient({ initial = [] }){
-  const [items,setItems] = useState([])
-  const [form,setForm] = useState(empty)
-
-  useEffect(()=>setItems(read(initial)), [initial])
-
-  function saveList(next){
-    setItems(next)
-    localStorage.setItem('anime:admin-schedule', JSON.stringify(next))
-    pushToast('Расписание сохранено локально', 'success')
+  async function refreshSchedule(){
+    setRunning(true)
+    setLastResult(null)
+    try{
+      const res = await fetch('/admin/api/cron', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ job:'schedule', limit:25, pages:2 })
+      })
+      const payload = await res.json()
+      if(!payload.ok) throw new Error(payload.error || payload.payload?.error || 'Не удалось обновить расписание')
+      setLastResult(payload.payload)
+      pushToast('Расписание обновлено', 'success')
+    }catch(error){
+      setLastResult({ ok:false, error:error?.message || 'Ошибка' })
+      pushToast(error?.message || 'Ошибка обновления', 'error')
+    }finally{
+      setRunning(false)
+    }
   }
 
-  function add(){
-    if(!form.title || !form.time) return pushToast('Укажи время и название', 'error')
-    saveList([{...form, slug:form.slug || form.title.toLowerCase().replace(/[^a-zа-яё0-9]+/gi,'-')}, ...items])
-    setForm(empty)
-  }
+  const days = weekly?.days || []
+  const total = days.reduce((sum, day) => sum + (day.items?.length || 0), 0)
 
-  function remove(index){
-    saveList(items.filter((_,i)=>i!==index))
-  }
-
-  return <section className="admin-grid">
-    <div className="widget admin-edit-preview">
-      <div className="admin-preview-grid editable-admin-grid">
-        {Object.keys(empty).map(key=><label key={key}><span>{key}</span><input value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})}/></label>)}
+  return <section className="admin-schedule-admin">
+    <div className="widget admin-cron-wide">
+      <div>
+        <h2>Реальное расписание</h2>
+        <p>Сейчас расписание читается из Supabase `anime_schedule`. Ручные локальные заглушки убраны, чтобы админка показывала то же, что видит пользователь.</p>
       </div>
-      <div className="admin-actions-row"><button className="primary" onClick={add}>Добавить выпуск</button></div>
-      <p className="admin-muted">Сейчас сохраняется локально. Следующим шагом можно подключить таблицу Supabase schedule.</p>
+      <button onClick={refreshSchedule} disabled={running}>{running ? 'Обновляю…' : 'Обновить cron'}</button>
     </div>
-    <div className="widget admin-edit-preview">
-      <div className="widget-head"><h3>Текущие выпуски</h3><span>{items.length}</span></div>
-      <div className="admin-simple-list">{items.map((item,i)=><div key={`${item.time}-${item.title}-${i}`}>
-        <img src={item.poster || '/posters/magic2.svg'}/>
-        <div><b>{item.time} · {item.title}</b><span>{item.meta}</span></div>
-        <button onClick={()=>remove(i)}>Удалить</button>
-      </div>)}</div>
+
+    <div className="admin-hub-stats admin-schedule-stats">
+      <div><span>Неделя</span><b>{days.length || 7}</b></div>
+      <div><span>Релизы</span><b>{total}</b></div>
+      <div><span>Источник</span><b>{weekly?.hasData ? 'LIVE' : 'EMPTY'}</b></div>
+      <div><span>Часовой пояс</span><b>{weekly?.timeZone || '—'}</b></div>
     </div>
+
+    {lastResult ? <div className="widget admin-result-box">
+      <div className="widget-head"><h3>Ответ cron</h3><span>{lastResult.saved || lastResult.matched || 0} сохранено/найдено</span></div>
+      <pre>{JSON.stringify(lastResult, null, 2)}</pre>
+    </div> : null}
+
+    <section className="admin-schedule-days">
+      {days.map(day => <article className="widget admin-schedule-day" key={day.key}>
+        <header>
+          <div><b>{day.name}</b><span>{day.month} · {day.date}</span></div>
+          <em>{day.isToday ? 'сегодня' : day.countText}</em>
+        </header>
+        <div className="admin-schedule-list">
+          {day.items?.length ? day.items.map(item => <Link href={item.href || `/anime/${item.slug}`} key={item.notifyKey || `${day.key}-${item.slug}-${item.time}`}>
+            <img src={item.poster || '/posters/magic2.svg'} alt=""/>
+            <div><b>{item.time} · {item.title}</b><span>{item.meta} · {item.sourceLabel || 'Jikan/MAL'}</span></div>
+          </Link>) : <div className="admin-empty-line">Нет релизов</div>}
+        </div>
+      </article>)}
+    </section>
   </section>
 }

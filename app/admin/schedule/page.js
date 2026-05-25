@@ -1,16 +1,24 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { schedule } from '@/lib/data'
+import { getWeeklySchedule } from '@/lib/scheduleData'
 import AdminScheduleClient from './AdminScheduleClient'
 
-export const metadata = { title:'Админка расписания — Aianime' }
+export const metadata = { title:'Расписание — Aianime admin' }
 
-export default function AdminSchedulePage(){
+export default async function AdminSchedulePage(){
+  const weekly = await getWeeklySchedule()
   return <main className="admin-page">
     <section className="admin-episodes">
-      <div className="page-head"><Link href="/">← На главную</Link><h1>Расписание</h1><p>Редактирование расписания для главной и отдельной страницы.</p></div>
-      <AdminScheduleClient initial={schedule}/>
+      <div className="page-head admin-page-head-row">
+        <div>
+          <Link href="/admin">← Админка</Link>
+          <h1>Расписание</h1>
+          <p>Проверка реального расписания из Supabase и ручной запуск cron-синхронизации.</p>
+        </div>
+        <Link className="secondary" href="/schedule">Открыть на сайте</Link>
+      </div>
+      <AdminScheduleClient weekly={weekly}/>
     </section>
   </main>
 }

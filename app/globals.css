@@ -13420,3 +13420,439 @@ body{
     min-height:156px !important;
   }
 }
+
+/* Admin usability v18 */
+.admin-page-head-row{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+}
+.admin-page-head-row .secondary{
+  height:42px;
+  border-radius:14px;
+  border:1px solid #eee6fb;
+  background:#fff;
+  color:#8d55ee;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 14px;
+  font-size:13px;
+  font-weight:850;
+}
+.admin-content-layout{
+  display:grid;
+  grid-template-columns:390px minmax(0,1fr);
+  gap:18px;
+  align-items:start;
+}
+.admin-anime-left{
+  position:sticky;
+  top:18px;
+  padding:16px;
+}
+.admin-section-title{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:13px;
+}
+.admin-section-title h2{
+  margin:0;
+  color:#252144;
+  font-size:24px;
+  letter-spacing:-.04em;
+  font-weight:850;
+}
+.admin-section-title p{
+  margin:4px 0 0;
+  color:#8d849b;
+  font-size:13px;
+  font-weight:650;
+}
+.admin-section-title a{
+  height:34px;
+  border-radius:12px;
+  background:#f2e9ff;
+  color:#8d55ee;
+  display:inline-flex;
+  align-items:center;
+  padding:0 12px;
+  font-size:12px;
+  font-weight:850;
+}
+.admin-mini-stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+.admin-mini-stats button{
+  min-height:58px;
+  border:1px solid #eee6fb;
+  border-radius:16px;
+  background:#fbfaff;
+  padding:10px;
+  text-align:left;
+  color:#726b92;
+}
+.admin-mini-stats button.active{
+  background:#f1e7ff;
+  border-color:#dccaff;
+  color:#7b45df;
+}
+.admin-mini-stats span{
+  display:block;
+  font-size:10px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+.admin-mini-stats b{
+  display:block;
+  margin-top:5px;
+  color:#252144;
+  font-size:19px;
+  font-weight:850;
+}
+.admin-filter-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:13px;
+}
+.admin-filter-row button{
+  height:32px;
+  border:1px solid #eee6fb;
+  border-radius:999px;
+  background:#fff;
+  color:#746d84;
+  padding:0 10px;
+  font-size:11px;
+  font-weight:850;
+}
+.admin-filter-row button.active{
+  background:#8d55ee;
+  border-color:#8d55ee;
+  color:#fff;
+}
+.admin-anime-list{
+  max-height:calc(100vh - 270px);
+}
+.admin-anime-list button{
+  position:relative;
+}
+.admin-anime-list i{
+  position:absolute;
+  right:9px;
+  top:8px;
+  height:22px;
+  border-radius:999px;
+  background:#fff2f8;
+  color:#b44985;
+  display:inline-flex;
+  align-items:center;
+  padding:0 8px;
+  font-size:10px;
+  font-style:normal;
+  font-weight:850;
+}
+.admin-anime-editor{
+  min-height:680px;
+}
+.admin-current-wide{
+  align-items:flex-start;
+  border-radius:22px;
+  background:linear-gradient(135deg,#fff 0%,#fff8fd 55%,#f7f1ff 100%);
+  border:1px solid #eee6fb;
+  padding:16px;
+}
+.admin-current-wide small{
+  display:block;
+  margin-top:6px;
+  color:#a39bad;
+  font-size:12px;
+  font-weight:650;
+  word-break:break-all;
+}
+.admin-quality-bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 16px;
+}
+.admin-quality-bar span{
+  height:30px;
+  border-radius:999px;
+  background:#f4efff;
+  color:#746d84;
+  display:inline-flex;
+  align-items:center;
+  padding:0 11px;
+  font-size:12px;
+  font-weight:850;
+}
+.admin-quality-bar span.ok{
+  background:#eefbf4;
+  color:#238456;
+}
+.admin-quality-bar span.warn{
+  background:#fff2f8;
+  color:#b44985;
+}
+.admin-anime-form-grid label.important input{
+  border-color:#d9c6ff;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(141,85,238,.08);
+}
+.admin-sticky-actions{
+  position:sticky;
+  bottom:14px;
+  z-index:4;
+  border:1px solid rgba(238,230,251,.95);
+  background:rgba(255,255,255,.88);
+  backdrop-filter:blur(16px);
+  border-radius:20px;
+  padding:12px;
+  box-shadow:0 18px 48px rgba(79,61,127,.10);
+}
+.admin-cron-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.admin-cron-card{
+  padding:18px;
+  min-height:208px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.admin-cron-card span{
+  color:#8d55ee;
+  font-size:11px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.admin-cron-card h3{
+  margin:8px 0 8px;
+  color:#252144;
+  font-size:22px;
+  letter-spacing:-.04em;
+  font-weight:850;
+}
+.admin-cron-card p{
+  margin:0;
+  color:#6d657e;
+  font-size:13px;
+  line-height:1.48;
+  font-weight:650;
+}
+.admin-cron-card button,
+.admin-cron-wide button{
+  margin-top:auto;
+  height:42px;
+  border:0;
+  border-radius:14px;
+  background:#8d55ee;
+  color:#fff;
+  padding:0 14px;
+  font-size:13px;
+  font-weight:850;
+  box-shadow:0 14px 34px rgba(141,85,238,.18);
+}
+.admin-cron-card button:disabled,
+.admin-cron-wide button:disabled{
+  opacity:.55;
+}
+.admin-offset-input{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:#8d849b;
+  font-size:11px;
+  font-weight:850;
+  text-transform:uppercase;
+}
+.admin-offset-input input{
+  width:86px;
+  height:34px;
+  border:1px solid #eee6fb;
+  border-radius:12px;
+  background:#fbfaff;
+  color:#252144;
+  padding:0 10px;
+  font-weight:850;
+}
+.admin-cron-wide{
+  margin-top:14px;
+  padding:20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.admin-cron-wide h2{
+  margin:0 0 8px;
+  color:#252144;
+  font-size:24px;
+  letter-spacing:-.04em;
+}
+.admin-cron-wide p{
+  margin:0;
+  color:#6d657e;
+  line-height:1.55;
+  font-weight:650;
+}
+.admin-result-box{
+  margin-top:14px;
+  padding:18px;
+}
+.admin-result-box pre{
+  max-height:520px;
+  overflow:auto;
+  margin:12px 0 0;
+  border-radius:18px;
+  background:#151225;
+  color:#f6f0ff;
+  padding:16px;
+  font-size:12px;
+  line-height:1.55;
+  white-space:pre-wrap;
+}
+.admin-schedule-admin{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.admin-schedule-stats{
+  margin:0;
+}
+.admin-schedule-days{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+.admin-schedule-day{
+  padding:16px;
+}
+.admin-schedule-day header{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:12px;
+}
+.admin-schedule-day header b{
+  display:block;
+  color:#252144;
+  font-size:18px;
+  font-weight:850;
+}
+.admin-schedule-day header span{
+  display:block;
+  margin-top:4px;
+  color:#8d849b;
+  font-size:12px;
+  font-weight:650;
+}
+.admin-schedule-day header em{
+  height:30px;
+  border-radius:999px;
+  background:#f3ecff;
+  color:#8d55ee;
+  display:inline-flex;
+  align-items:center;
+  padding:0 10px;
+  font-size:12px;
+  font-style:normal;
+  font-weight:850;
+}
+.admin-schedule-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.admin-schedule-list a{
+  min-height:64px;
+  border-radius:16px;
+  background:#fbfaff;
+  border:1px solid #eee8fb;
+  display:grid;
+  grid-template-columns:48px minmax(0,1fr);
+  gap:11px;
+  align-items:center;
+  padding:8px;
+}
+.admin-schedule-list img{
+  width:48px;
+  height:48px;
+  border-radius:12px;
+  object-fit:cover;
+}
+.admin-schedule-list b,
+.admin-empty-line{
+  color:#2d294d;
+  font-size:13px;
+  font-weight:850;
+}
+.admin-schedule-list span{
+  display:block;
+  margin-top:4px;
+  color:#8d849b;
+  font-size:12px;
+  font-weight:650;
+}
+.admin-empty-line{
+  border-radius:16px;
+  background:#fbfaff;
+  border:1px dashed #eee8fb;
+  padding:14px;
+  color:#8d849b;
+}
+@media(max-width:1180px){
+  .admin-content-layout,
+  .admin-cron-grid,
+  .admin-schedule-days{
+    grid-template-columns:1fr;
+  }
+  .admin-anime-left{
+    position:static;
+  }
+  .admin-anime-list{
+    max-height:420px;
+  }
+  .admin-cron-wide,
+  .admin-page-head-row{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .admin-cron-wide button,
+  .admin-page-head-row .secondary{
+    width:100%;
+  }
+}
+@media(max-width:680px){
+  .admin-mini-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .admin-current-wide{
+    flex-direction:column;
+  }
+  .admin-current-wide img{
+    width:92px;
+    height:124px;
+  }
+  .admin-sticky-actions{
+    position:static;
+  }
+  .admin-actions-row .primary,
+  .admin-actions-row .secondary,
+  .admin-actions-row button{
+    width:100%;
+    justify-content:center;
+  }
+}

@@ -7,26 +7,45 @@ function cleanString(value){
   return text || null
 }
 
+function cleanNumber(value){
+  if(value === null || value === undefined || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
 function normalizePayload(body){
   const genres = Array.isArray(body.genres)
     ? body.genres.map(x => String(x).trim()).filter(Boolean)
     : String(body.genres || '').split(',').map(x => x.trim()).filter(Boolean)
 
   return {
-    title: cleanString(body.title),
+    title: cleanString(body.title || body.titleEnglish),
+    title_ru: cleanString(body.titleRu || body.title_ru),
     original_title: cleanString(body.originalTitle || body.original_title),
     description: cleanString(body.description),
+    description_ru: cleanString(body.descriptionRu || body.description_ru),
     poster_url: cleanString(body.posterUrl || body.poster_url),
     banner_url: cleanString(body.bannerUrl || body.banner_url),
     status: cleanString(body.status),
     kind: cleanString(body.kind),
-    year: body.year ? Number(body.year) : null,
-    episodes: body.episodes ? Number(body.episodes) : null,
-    rating: body.rating ? Number(body.rating) : null,
+    year: cleanNumber(body.year),
+    episodes: cleanNumber(body.episodes),
+    rating: cleanNumber(body.rating),
     genres,
     studio: cleanString(body.studio),
     updated_at: new Date().toISOString()
   }
+}
+
+function stripEmpty(payload){
+  const next = { ...payload }
+  Object.keys(next).forEach(key => {
+    const value = next[key]
+    if(value === undefined || value === null || (Array.isArray(value) && value.length === 0)){
+      delete next[key]
+    }
+  })
+  return next
 }
 
 export async function PATCH(request){
@@ -42,27 +61,43 @@ export async function PATCH(request){
       return NextResponse.json({ ok:false, error:'slug is required' }, { status: 400 })
     }
 
-    const payload = normalizePayload(body)
-    Object.keys(payload).forEach(key => {
-      if(payload[key] === null || payload[key] === undefined || (Array.isArray(payload[key]) && payload[key].length === 0)){
-        delete payload[key]
-      }
-    })
+    const payload = stripEmpty(normalizePayload(body))
 
-    const tryUpdate = async (table) => {
+    const tryUpdate = async (table, data = payload) => {
       const res = await supabaseRequest(`${table}?slug=eq.${encodeURIComponent(slug)}`, {
         method:'PATCH',
         headers:{ 'Content-Type':'application/json', Prefer:'return=representation' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
         timeout: 15000
       })
       const text = await res.text()
-      let data = null
-      try{ data = text ? JSON.parse(text) : null }catch{}
-      return { res, text, data, table }
+      let parsed = null
+      try{ parsed = text ? JSON.parse(text) : null }catch{}
+      return { res, text, data: parsed, table }
     }
 
     let result = await tryUpdate('anime')
+
+    // Мягкий fallback на старую схему: если какой-то новой колонки нет, пробуем сохранить базовые поля.
+    if(!result.res.ok && /column|schema cache|PGRST204|does not exist/i.test(result.text || '')){
+      const legacyPayload = stripEmpty({
+        title: payload.title_ru || payload.title,
+        original_title: payload.original_title,
+        description: payload.description_ru || payload.description,
+        poster_url: payload.poster_url,
+        banner_url: payload.banner_url,
+        status: payload.status,
+        kind: payload.kind,
+        year: payload.year,
+        episodes: payload.episodes,
+        rating: payload.rating,
+        genres: payload.genres,
+        studio: payload.studio,
+        updated_at: payload.updated_at,
+      })
+      result = await tryUpdate('anime', legacyPayload)
+    }
+
     if(!result.res.ok){
       const fallback = await tryUpdate('anime_titles')
       if(fallback.res.ok) result = fallback

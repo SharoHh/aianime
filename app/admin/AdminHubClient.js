@@ -16,7 +16,7 @@ const sections = [
     label:'Контент',
     icon:'▦',
     title:'Контент сайта',
-    text:'Аниме, эпизоды, постеры, баннеры и описания.'
+    text:'Ручная правка тайтлов, русских названий, описаний, жанров, постеров и серий.'
   },
   {
     id:'home',
@@ -43,19 +43,19 @@ const sections = [
 
 const cards = {
   overview: [
-    { title:'Аниме в базе', value:'animeCount', hint:'Загружено из Supabase/seed', href:'/admin/anime' },
-    { title:'Расписание', value:'7 дней', hint:'Главная + страница расписания', href:'/admin/schedule' },
-    { title:'Подборки', value:'Главная', hint:'Управление блоками подборок', href:'/admin/collections' },
-    { title:'Комментарии', value:'Модерация', hint:'Проверка локальных комментариев', href:'/admin/comments' },
+    { title:'Аниме в базе', value:'animeCount', hint:'Загружено из Supabase, не seed fallback', href:'/admin/anime' },
+    { title:'Русские названия', value:'titleRuCount', hint:'title_ru уже заполнены', href:'/admin/anime?filter=missingTitle' },
+    { title:'Расписание', value:'Cron', hint:'Реальные эфиры + автообновление', href:'/admin/sync' },
+    { title:'Комментарии', value:'Модерация', hint:'Проверка пользовательских сообщений', href:'/admin/comments' },
   ],
   content: [
-    { title:'Аниме', value:'Редактировать', hint:'Название, описание, постер, баннер, статус', href:'/admin/anime' },
-    { title:'Эпизоды', value:'Управлять', hint:'Добавление и подготовка серий', href:'/admin/episodes' },
-    { title:'Каталог', value:'Проверить', hint:'Фильтры, жанры, карточки', href:'/catalog' },
-    { title:'Сезонное', value:'Проверить', hint:'Онгоинги и сезонные подборки', href:'/season' },
+    { title:'Тайтлы', value:'Редактировать', hint:'title_ru, описание, жанры, постер, статус', href:'/admin/anime' },
+    { title:'Без RU названия', value:'missingTitleCount', hint:'Что нужно добить вручную', href:'/admin/anime' },
+    { title:'Серии', value:'Управлять', hint:'Плееры и episode records', href:'/admin/episodes' },
+    { title:'Каталог', value:'Проверить', hint:'Публичный каталог', href:'/catalog' },
   ],
   home: [
-    { title:'Расписание', value:'Редактировать', hint:'Время, постер, серия, колокольчики', href:'/admin/schedule' },
+    { title:'Расписание', value:'Редактировать', hint:'Проверить реальные эфиры', href:'/admin/schedule' },
     { title:'Подборки', value:'Редактировать', hint:'Карточки подборок на главной', href:'/admin/collections' },
     { title:'Уведомления', value:'Открыть', hint:'Список включённых напоминаний', href:'/notifications' },
     { title:'AI-блок', value:'Проверить', hint:'Подбор по настроению и AI-опрос', href:'/ai' },
@@ -63,24 +63,32 @@ const cards = {
   community: [
     { title:'Комментарии', value:'Модерация', hint:'Удаление нежелательных комментариев', href:'/admin/comments' },
     { title:'Профиль', value:'Проверить', hint:'Аватар, фон, имя, уровень', href:'/profile' },
-    { title:'Избранное', value:'Проверить', hint:'Локальные пользовательские списки', href:'/favorites' },
+    { title:'Избранное', value:'Проверить', hint:'Пользовательские списки', href:'/favorites' },
     { title:'История', value:'Проверить', hint:'Продолжить просмотр и история', href:'/history' },
   ],
   system: [
+    { title:'Cron-панель', value:'Запуск', hint:'Jikan, Kodik, players, schedule, title_ru', href:'/admin/sync' },
     { title:'Диагностика', value:'Проверить', hint:'Supabase / Jikan / Kodik / Player', href:'/admin/diagnostics' },
-    { title:'Синхронизация', value:'Запуск', hint:'Jikan/MAL + Kodik sync', href:'/admin/sync' },
-    { title:'Player sync', value:'API', hint:'/api/cron/players', href:'/api/cron/players?enable=1&limit=20' },
+    { title:'Расписание', value:'API', hint:'/api/cron/schedule', href:'/admin/sync' },
     { title:'Настройки', value:'Открыть', hint:'Параметры сайта и профиля', href:'/settings' },
   ],
 }
 
-export default function AdminHubClient({ animeCount = 0 }){
+export default function AdminHubClient({ animeCount = 0, qualityStats = {} }){
   const [active,setActive] = useState('overview')
   const current = sections.find(x => x.id === active) || sections[0]
   const activeCards = useMemo(()=>cards[active] || [], [active])
 
+  const stats = {
+    animeCount,
+    titleRuCount: qualityStats.titleRuCount || 0,
+    missingTitleCount: qualityStats.missingTitleCount || 0,
+    badTitleCount: qualityStats.badTitleCount || 0,
+    ongoingCount: qualityStats.ongoingCount || 0,
+  }
+
   function value(card){
-    return card.value === 'animeCount' ? animeCount : card.value
+    return stats[card.value] ?? card.value
   }
 
   return <div className="admin-hub">
@@ -98,10 +106,10 @@ export default function AdminHubClient({ animeCount = 0 }){
 
       <div className="admin-hub-mini">
         <b>Быстрые ссылки</b>
-        <Link href="/admin/anime">Аниме</Link>
+        <Link href="/admin/anime">Редактор тайтлов</Link>
+        <Link href="/admin/sync">Cron-панель</Link>
         <Link href="/admin/schedule">Расписание</Link>
         <Link href="/admin/comments">Комментарии</Link>
-        <Link href="/admin/diagnostics">Диагностика</Link>
       </div>
     </aside>
 
@@ -112,14 +120,14 @@ export default function AdminHubClient({ animeCount = 0 }){
           <h1>{current.title}</h1>
           <p>{current.text}</p>
         </div>
-        <Link className="admin-hub-open" href="/admin/diagnostics">Диагностика</Link>
+        <Link className="admin-hub-open" href="/admin/anime">Редактировать тайтлы</Link>
       </header>
 
       <section className="admin-hub-stats">
         <div><span>Тайтлы</span><b>{animeCount}</b></div>
-        <div><span>Разделы</span><b>5</b></div>
-        <div><span>Модерация</span><b>ON</b></div>
-        <div><span>Статус</span><b>LIVE</b></div>
+        <div><span>title_ru</span><b>{stats.titleRuCount}</b></div>
+        <div><span>Без RU</span><b>{stats.missingTitleCount}</b></div>
+        <div><span>Онгоинги</span><b>{stats.ongoingCount}</b></div>
       </section>
 
       <section className="admin-hub-grid">
@@ -133,17 +141,17 @@ export default function AdminHubClient({ animeCount = 0 }){
 
       <section className="admin-hub-plan">
         <div>
-          <h2>Что уже объединено</h2>
-          <p>Все отдельные админ-разделы собраны в одном месте. Старые страницы остались рабочими, но теперь к ним можно попасть через единую панель.</p>
+          <h2>Удобный порядок работы</h2>
+          <p>Сначала запускаем Kodik/русские названия в cron-панели, потом вручную добиваем проблемные тайтлы в редакторе. Публичный дизайн сайта не меняется.</p>
         </div>
         <div className="admin-hub-plan-list">
-          <span>Аниме</span>
-          <span>Эпизоды</span>
-          <span>Расписание</span>
-          <span>Подборки</span>
-          <span>Комментарии</span>
-          <span>Синхронизация</span>
-          <span>Диагностика</span>
+          <span>title_ru</span>
+          <span>description_ru</span>
+          <span>жанры</span>
+          <span>постеры</span>
+          <span>плееры</span>
+          <span>расписание</span>
+          <span>cron</span>
         </div>
       </section>
     </section>
