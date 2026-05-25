@@ -8,7 +8,7 @@ export const metadata = { title:'Модерация комментариев —
 export default function AdminCommentsPage(){
   return <main className="admin-page">
     <section className="admin-episodes">
-      <div className="page-head"><Link href="/">← На главную</Link><h1>Комментарии</h1><p>Модерация локальных комментариев.</p></div>
+      <div className="page-head"><Link href="/">← На главную</Link><h1>Комментарии</h1><p>Модерация комментариев из Supabase и старых локальных комментариев.</p></div>
       <AdminCommentsClient/>
     </section>
   </main>

@@ -10,7 +10,7 @@ const jobs = [
   { id:'players', title:'Плееры', text:'Сохранить Kodik iframe в anime_episodes.', params:{ limit:30 } },
   { id:'schedule', title:'Расписание', text:'Реальные эфиры текущей недели из Jikan schedules.', params:{ limit:25, pages:2 } },
   { id:'titles', title:'Русские названия', text:'Заполнить только пустые title_ru. Без force, ручные правки не затирает.', params:{ limit:80 } },
-  { id:'russify', title:'Описание и жанры', text:'Русификация description_ru/genres, если endpoint доступен.', params:{ limit:80 } },
+  { id:'russify', title:'Описание и жанры', text:'Русификация description_ru/genres без затирания хорошего контента.', params:{ limit:80, clean:1 } },
 ]
 
 function summarize(payload){
@@ -75,7 +75,7 @@ export default function AdminDiagnosticsClient(){
     setResult(null)
     try{
       const body = { job:job.id, ...job.params }
-      if(job.id === 'titles') body.offset = offset || 0
+      if(job.id === 'titles' || job.id === 'russify') body.offset = offset || 0
       const res = await fetch('/admin/api/cron', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
@@ -152,6 +152,31 @@ export default function AdminDiagnosticsClient(){
     }
   }
 
+  async function runContentFull(){
+    setRunning('content-full')
+    setResult(null)
+    const collected = []
+    try{
+      for(const currentOffset of [0,80,160,240,320,400,480,560,640]){
+        const res = await fetch('/admin/api/cron', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify({ job:'russify', limit:80, offset:currentOffset, clean:1 })
+        })
+        const payload = await res.json()
+        collected.push({ offset:currentOffset, result:payload })
+        if(!payload.ok) throw new Error(payload.error || payload.payload?.error || `Ошибка описаний/жанров на offset ${currentOffset}`)
+      }
+      setResult({ ok:true, job:'content-full', payload:{ batches:collected } })
+      pushToast('Описание и жанры: каталог пройден', 'success')
+    }catch(error){
+      setResult({ ok:false, error:error?.message || 'Ошибка запуска', payload:collected })
+      pushToast(error?.message || 'Ошибка запуска', 'error')
+    }finally{
+      setRunning('')
+    }
+  }
+
   return <main className="admin-page admin-tools-page">
     <section className="admin-episodes">
       <div className="page-head admin-page-head-row">
@@ -191,7 +216,7 @@ export default function AdminDiagnosticsClient(){
             <h3>{job.title}</h3>
             <p>{job.text}</p>
           </div>
-          {job.id === 'titles' ? <label className="admin-offset-input">offset<input value={offset} onChange={e=>setOffset(e.target.value)} inputMode="numeric"/></label> : null}
+          {job.id === 'titles' || job.id === 'russify' ? <label className="admin-offset-input">offset<input value={offset} onChange={e=>setOffset(e.target.value)} inputMode="numeric"/></label> : null}
           <button onClick={()=>run(job)} disabled={Boolean(running)}>{running === job.id ? 'Запуск…' : 'Запустить'}</button>
         </article>)}
       </div>
@@ -199,11 +224,12 @@ export default function AdminDiagnosticsClient(){
       <section className="widget admin-cron-wide admin-cron-wide-tools">
         <div>
           <h2>Быстрая русификация всего каталога</h2>
-          <p>Без force=1: заполняет только пустые title_ru и не затирает ручные правки. Можно сразу обновить расписание после прохода.</p>
+          <p>Без force=1: заполняет пустые title_ru, обновляет короткие/пустые description_ru и переводит английские жанры. Хорошие ручные правки не затирает.</p>
         </div>
         <div className="admin-cron-wide-buttons">
           <button onClick={runTitlesFull} disabled={Boolean(running)}>{running === 'titles-full' ? 'Идёт проход…' : 'Только title_ru'}</button>
           <button onClick={runTitlesFullAndSchedule} disabled={Boolean(running)}>{running === 'titles-full-schedule' ? 'Идёт проход…' : 'title_ru + расписание'}</button>
+          <button onClick={runContentFull} disabled={Boolean(running)}>{running === 'content-full' ? 'Идёт проход…' : 'description_ru + жанры'}</button>
         </div>
       </section>
 

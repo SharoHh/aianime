@@ -45,7 +45,7 @@ const cards = {
   overview: [
     { title:'Аниме в базе', value:'animeCount', hint:'Загружено из Supabase, не seed fallback', href:'/admin/anime' },
     { title:'Русские названия', value:'titleRuCount', hint:'title_ru уже заполнены', href:'/admin/anime?filter=missingTitle' },
-    { title:'Проблемные данные', value:'badTitleCount', hint:'Мусор/латиница/поля для ручной чистки', href:'/admin/anime?filter=badSymbols' },
+    { title:'Проблемные данные', value:'badTitleCount', hint:'Мусор/латиница/поля для ручной чистки', href:'/admin/anime?filter=needsContent' },
     { title:'Расписание', value:'Cron', hint:'Реальные эфиры + автообновление', href:'/admin/sync' },
     { title:'Комментарии', value:'Модерация', hint:'Проверка пользовательских сообщений', href:'/admin/comments' },
   ],
@@ -54,6 +54,8 @@ const cards = {
     { title:'Без RU названия', value:'missingTitleCount', hint:'Что нужно добить вручную', href:'/admin/anime?filter=missingTitle' },
     { title:'title_ru латиницей', value:'latinTitleCount', hint:'Где нужен ручной русский вариант', href:'/admin/anime?filter=latinTitle' },
     { title:'Без описания', value:'missingDescriptionCount', hint:'Пустые или заглушечные description_ru', href:'/admin/anime?filter=missingDescription' },
+    { title:'Короткие описания', value:'shortDescriptionCount', hint:'Нужно сгенерировать или дописать description_ru', href:'/admin/anime?filter=shortDescription' },
+    { title:'Английские жанры', value:'englishGenresCount', hint:'Жанры, которые нужно перевести', href:'/admin/anime?filter=englishGenres' },
     { title:'Серии', value:'Управлять', hint:'Плееры и episode records', href:'/admin/episodes' },
     { title:'Каталог', value:'Проверить', hint:'Публичный каталог', href:'/catalog' },
   ],
@@ -89,9 +91,13 @@ export default function AdminHubClient({ animeCount = 0, qualityStats = {} }){
     titleRuCount: qualityStats.titleRuCount || 0,
     missingTitleCount: qualityStats.missingTitleCount || 0,
     badTitleCount: qualityStats.badTitleCount || 0,
+    needsContentCount: qualityStats.needsContentCount || 0,
     latinTitleCount: qualityStats.latinTitleCount || 0,
     badSymbolsCount: qualityStats.badSymbolsCount || 0,
     missingDescriptionCount: qualityStats.missingDescriptionCount || 0,
+    shortDescriptionCount: qualityStats.shortDescriptionCount || 0,
+    generatedDescriptionCount: qualityStats.generatedDescriptionCount || 0,
+    englishGenresCount: qualityStats.englishGenresCount || 0,
     ongoingCount: qualityStats.ongoingCount || 0,
   }
 
@@ -136,7 +142,7 @@ export default function AdminHubClient({ animeCount = 0, qualityStats = {} }){
         <div><span>title_ru</span><b>{stats.titleRuCount}</b></div>
         <div><span>Без RU</span><b>{stats.missingTitleCount}</b></div>
         <div><span>Онгоинги</span><b>{stats.ongoingCount}</b></div>
-        <div><span>Проблемы</span><b>{stats.badTitleCount}</b></div>
+        <div><span>Проблемы</span><b>{stats.needsContentCount || stats.badTitleCount}</b></div>
       </section>
 
       <section className="admin-hub-grid">
@@ -151,7 +157,7 @@ export default function AdminHubClient({ animeCount = 0, qualityStats = {} }){
       <section className="admin-hub-plan">
         <div>
           <h2>Удобный порядок работы</h2>
-          <p>Сначала запускаем Kodik/русские названия в cron-панели, потом вручную добиваем проблемные тайтлы в редакторе. Публичный дизайн сайта не меняется.</p>
+          <p>Сначала запускаем title_ru, description_ru/жанры в cron-панели, потом вручную добиваем проблемные тайтлы в редакторе. Публичный дизайн сайта не меняется.</p>
         </div>
         <div className="admin-hub-plan-list">
           <span>title_ru</span>

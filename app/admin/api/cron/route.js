@@ -47,7 +47,7 @@ export async function POST(request){
 
   const base = process.env.AIANIME_INTERNAL_URL || process.env.AIANIME_URL || 'http://127.0.0.1:3000'
   const allowedExtra = {}
-  for(const key of ['limit','offset','pages','page','all','dry','force','onlyMissing']){
+  for(const key of ['limit','offset','pages','page','all','dry','force','onlyMissing','clean','only','minDescriptionLength']){
     if(body[key] !== undefined && body[key] !== null && body[key] !== '') allowedExtra[key] = body[key]
   }
 

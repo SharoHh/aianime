@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
+import { translateGenres, cleanPublicText } from '@/lib/ruContent'
 
 function cleanString(value){
   if(value === null || value === undefined) return null
   const text = String(value).trim()
   return text || null
+}
+
+function cleanContentString(value){
+  const text = cleanString(value)
+  if(!text) return null
+  return cleanPublicText(text) || null
 }
 
 
@@ -30,16 +37,17 @@ function cleanNumber(value){
 }
 
 function normalizePayload(body){
-  const genres = Array.isArray(body.genres)
+  const rawGenres = Array.isArray(body.genres)
     ? body.genres.map(x => String(x).trim()).filter(Boolean)
     : String(body.genres || '').split(',').map(x => x.trim()).filter(Boolean)
+  const genres = translateGenres(rawGenres)
 
   return {
-    title: cleanString(body.title || body.titleEnglish),
-    title_ru: cleanString(body.titleRu || body.title_ru),
-    original_title: cleanString(body.originalTitle || body.original_title),
-    description: cleanString(body.description),
-    description_ru: cleanString(body.descriptionRu || body.description_ru),
+    title: cleanContentString(body.title || body.titleEnglish),
+    title_ru: cleanContentString(body.titleRu || body.title_ru),
+    original_title: cleanContentString(body.originalTitle || body.original_title),
+    description: cleanContentString(body.description),
+    description_ru: cleanContentString(body.descriptionRu || body.description_ru),
     poster_url: cleanUrl(body.posterUrl || body.poster_url),
     banner_url: cleanUrl(body.bannerUrl || body.banner_url),
     status: cleanString(body.status),

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { pushToast } from '@/components/ToastCenter'
+import { translateGenres, makeRussianDescription, cleanPublicText } from '@/lib/ruContent'
 
 function hasCyrillic(value){
   return /[А-Яа-яЁё]/.test(String(value || ''))
@@ -21,6 +22,43 @@ function isPlaceholder(value){
 
 function hasBadSymbols(value){
   return /[●•]{2,}/.test(String(value || ''))
+}
+
+function asGenreList(value){
+  if(Array.isArray(value)) return value
+  return String(value || '').split(',').map(x => x.trim()).filter(Boolean)
+}
+
+function hasEnglishGenre(value){
+  return asGenreList(value).some(genre => {
+    const text = String(genre || '').trim()
+    return Boolean(text && /^[A-Za-z0-9\s()'&:/.+-]+$/.test(text))
+  })
+}
+
+function normalizeGenres(value){
+  return translateGenres(asGenreList(value)).join(', ')
+}
+
+function descriptionText(item){
+  return cleanPublicText(item?.descriptionRu || item?.description || '')
+}
+
+function isShortDescription(value){
+  const text = cleanPublicText(value)
+  return !text || text.length < 140
+}
+
+function isGeneratedDescription(value){
+  const text = String(value || '')
+  return text.includes('подойдёт зрителям') || text.includes('атмосферу истории, развитие персонажей')
+}
+
+function needsContentWork(item){
+  return isPlaceholder(item.descriptionRu || item.description)
+    || isShortDescription(item.descriptionRu || item.description)
+    || hasEnglishGenre(item.genres)
+    || hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || item.description || ''}`)
 }
 
 function cleanTitle(value){
@@ -62,9 +100,13 @@ function toForm(item){
 
 const filterLabels = {
   all: 'Все',
+  needsContent: 'Контент-проблемы',
   missingTitle: 'Без русского',
   latinTitle: 'title_ru латиницей',
   missingDescription: 'Без описания',
+  shortDescription: 'Короткое описание',
+  generatedDescription: 'Шаблонное описание',
+  englishGenres: 'Англ. жанры',
   badSymbols: 'С мусором',
   missingPoster: 'Без постера',
   ongoing: 'Онгоинги'
@@ -78,10 +120,14 @@ function itemHasPoster(item){
 }
 
 function itemMatchesFilter(item, filter){
+  if(filter === 'needsContent') return needsContentWork(item)
   if(filter === 'missingTitle') return !String(item.titleRu || '').trim()
   if(filter === 'latinTitle') return hasLatinOnly(item.titleRu)
   if(filter === 'missingDescription') return isPlaceholder(item.descriptionRu || item.description)
-  if(filter === 'badSymbols') return hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || ''}`)
+  if(filter === 'shortDescription') return isShortDescription(item.descriptionRu || item.description)
+  if(filter === 'generatedDescription') return isGeneratedDescription(item.descriptionRu || item.description)
+  if(filter === 'englishGenres') return hasEnglishGenre(item.genres)
+  if(filter === 'badSymbols') return hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || item.description || ''}`)
   if(filter === 'missingPoster') return !itemHasPoster(item)
   if(filter === 'ongoing') return item.status === 'ongoing'
   return true
@@ -105,11 +151,15 @@ export default function AdminAnimeClient({ items = [] }){
     const total = items.length
     const missingTitle = items.filter(item => !String(item.titleRu || '').trim()).length
     const latinTitle = items.filter(item => hasLatinOnly(item.titleRu)).length
-    const badSymbols = items.filter(item => hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || ''}`)).length
+    const badSymbols = items.filter(item => hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || item.description || ''}`)).length
     const ongoing = items.filter(item => item.status === 'ongoing').length
     const missingDescription = items.filter(item => isPlaceholder(item.descriptionRu || item.description)).length
+    const shortDescription = items.filter(item => isShortDescription(item.descriptionRu || item.description)).length
+    const generatedDescription = items.filter(item => isGeneratedDescription(item.descriptionRu || item.description)).length
+    const englishGenres = items.filter(item => hasEnglishGenre(item.genres)).length
     const missingPoster = items.filter(item => !itemHasPoster(item)).length
-    return { total, missingTitle, latinTitle, badSymbols, ongoing, missingDescription, missingPoster }
+    const needsContent = items.filter(item => needsContentWork(item)).length
+    return { total, missingTitle, latinTitle, badSymbols, ongoing, missingDescription, shortDescription, generatedDescription, englishGenres, missingPoster, needsContent }
   }, [items])
 
   const filteredAll = useMemo(()=>{
@@ -193,6 +243,60 @@ export default function AdminAnimeClient({ items = [] }){
     pushToast('Название и описание очищены в форме', 'success')
   }
 
+  function translateGenresInForm(){
+    const nextGenres = normalizeGenres(form.genres)
+    update('genres', nextGenres)
+    pushToast('Жанры переведены в форме', 'success')
+  }
+
+  function generateDescriptionInForm(){
+    const genres = asGenreList(form.genres)
+    const descriptionRu = makeRussianDescription({
+      title_ru: form.titleRu || form.title || selected?.titleRu || selected?.title,
+      title: form.title || selected?.englishTitle || selected?.title,
+      original_title: form.originalTitle || selected?.originalTitle,
+      genres,
+      kind: form.kind,
+      status: form.status,
+      year: form.year,
+      episodes: form.episodes,
+      studio: form.studio,
+      rating: form.rating
+    })
+    update('descriptionRu', descriptionRu)
+    pushToast('Описание RU сгенерировано', 'success')
+  }
+
+  function cleanupContentForm(){
+    const translatedGenres = normalizeGenres(form.genres)
+    const currentDescription = cleanDescription(form.descriptionRu)
+    const shouldGenerate = isPlaceholder(currentDescription) || isShortDescription(currentDescription)
+    const generatedDescription = shouldGenerate ? makeRussianDescription({
+      title_ru: cleanTitle(form.titleRu || selected?.titleRu || selected?.title),
+      title: cleanTitle(form.title || selected?.englishTitle || selected?.title),
+      original_title: cleanTitle(form.originalTitle || selected?.originalTitle),
+      genres: asGenreList(translatedGenres),
+      kind: form.kind,
+      status: form.status,
+      year: form.year,
+      episodes: form.episodes,
+      studio: form.studio,
+      rating: form.rating
+    }) : currentDescription
+
+    setForm(prev => ({
+      ...prev,
+      titleRu: cleanTitle(prev.titleRu),
+      title: cleanTitle(prev.title),
+      originalTitle: cleanTitle(prev.originalTitle),
+      genres: translatedGenres,
+      descriptionRu: generatedDescription,
+      description: cleanDescription(prev.description),
+    }))
+    setDirty(true)
+    pushToast('Контент в форме приведён в порядок', 'success')
+  }
+
   function fillRuFromCurrent(){
     if(!form.titleRu && selected?.title && hasCyrillic(selected.title)){
       update('titleRu', selected.title)
@@ -253,6 +357,55 @@ export default function AdminAnimeClient({ items = [] }){
     }
   }
 
+  async function bulkContentVisible(){
+    const targets = filteredAll.filter(item => needsContentWork(item)).slice(0,80)
+    if(!targets.length){
+      pushToast('В текущей выборке нет явных проблем с контентом', 'success')
+      return
+    }
+    const ok = window.confirm(`Русифицировать жанры и заполнить короткие/пустые описания в ${targets.length} тайтлах текущей выборки? Хорошие описания не затираются.`)
+    if(!ok) return
+
+    setBulkRunning(true)
+    let done = 0
+    let failed = 0
+    try{
+      for(const item of targets){
+        const genres = translateGenres(item.genres || [])
+        const currentDescription = descriptionText(item)
+        const shouldGenerate = isPlaceholder(currentDescription) || isShortDescription(currentDescription)
+        const payload = {
+          slug: item.slug,
+          titleRu: cleanTitle(item.titleRu || item.title),
+          title: cleanTitle(item.englishTitle || item.title),
+          originalTitle: cleanTitle(item.originalTitle),
+          genres: genres.join(', '),
+          descriptionRu: shouldGenerate ? makeRussianDescription({
+            ...item,
+            title_ru: item.titleRu || item.title,
+            title: item.englishTitle || item.title,
+            original_title: item.originalTitle,
+            genres
+          }) : cleanDescription(currentDescription),
+          description: cleanDescription(item.description),
+        }
+        const res = await fetch('/api/admin/anime', {
+          method:'PATCH',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        })
+        const data = await res.json().catch(()=>null)
+        if(res.ok && data?.ok) done += 1
+        else failed += 1
+      }
+      pushToast(`Контент обработан: ${done} сохранено${failed ? `, ошибок: ${failed}` : ''}`, failed ? 'error' : 'success')
+    }catch(error){
+      pushToast(error?.message || 'Ошибка массовой обработки контента', 'error')
+    }finally{
+      setBulkRunning(false)
+    }
+  }
+
   const visibleNotice = filteredAll.length > filtered.length
     ? `Показано ${filtered.length} из ${filteredAll.length}. Уточни поиск, чтобы список был легче.`
     : `${filtered.length} в текущей выборке`
@@ -267,13 +420,13 @@ export default function AdminAnimeClient({ items = [] }){
         <Link href="/admin/sync">Cron</Link>
       </div>
 
-      <div className="admin-mini-stats admin-mini-stats-six">
+      <div className="admin-mini-stats admin-mini-stats-six admin-mini-stats-content">
         <button onClick={()=>setFilter('all')} className={filter==='all'?'active':''}><span>Всего</span><b>{stats.total}</b></button>
+        <button onClick={()=>setFilter('needsContent')} className={filter==='needsContent'?'active':''}><span>Контент</span><b>{stats.needsContent}</b></button>
         <button onClick={()=>setFilter('missingTitle')} className={filter==='missingTitle'?'active':''}><span>Без RU</span><b>{stats.missingTitle}</b></button>
-        <button onClick={()=>setFilter('latinTitle')} className={filter==='latinTitle'?'active':''}><span>Латиница</span><b>{stats.latinTitle}</b></button>
+        <button onClick={()=>setFilter('englishGenres')} className={filter==='englishGenres'?'active':''}><span>Англ. жанры</span><b>{stats.englishGenres}</b></button>
+        <button onClick={()=>setFilter('shortDescription')} className={filter==='shortDescription'?'active':''}><span>Короткие</span><b>{stats.shortDescription}</b></button>
         <button onClick={()=>setFilter('badSymbols')} className={filter==='badSymbols'?'active':''}><span>Мусор</span><b>{stats.badSymbols}</b></button>
-        <button onClick={()=>setFilter('missingDescription')} className={filter==='missingDescription'?'active':''}><span>Без опис.</span><b>{stats.missingDescription}</b></button>
-        <button onClick={()=>setFilter('ongoing')} className={filter==='ongoing'?'active':''}><span>Онгоинги</span><b>{stats.ongoing}</b></button>
       </div>
 
       <div className="catalog-search admin-search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Найти тайтл, slug, жанр..."/></div>
@@ -282,8 +435,9 @@ export default function AdminAnimeClient({ items = [] }){
         {Object.entries(filterLabels).map(([id,label])=><button key={id} onClick={()=>setFilter(id)} className={filter===id?'active':''}>{label}</button>)}
       </div>
 
-      <div className="admin-bulk-tools">
+      <div className="admin-bulk-tools admin-bulk-tools-wrap">
         <button onClick={bulkCleanupVisible} disabled={bulkRunning || !stats.badSymbols}>{bulkRunning ? 'Очищаю…' : 'Очистить ●● в выборке'}</button>
+        <button onClick={bulkContentVisible} disabled={bulkRunning || !stats.needsContent}>{bulkRunning ? 'Обработка…' : 'Жанры + описания в выборке'}</button>
         <label><input type="checkbox" checked={autoNext} onChange={e=>setAutoNext(e.target.checked)}/> после сохранения — следующий</label>
       </div>
 
@@ -312,14 +466,15 @@ export default function AdminAnimeClient({ items = [] }){
           <span className={form.titleRu && hasCyrillic(form.titleRu) ? 'ok' : 'warn'}>{form.titleRu && hasCyrillic(form.titleRu) ? 'RU название есть' : 'Нужно RU название'}</span>
           <span className={!hasLatinOnly(form.titleRu) ? 'ok' : 'warn'}>{!hasLatinOnly(form.titleRu) ? 'title_ru не латиницей' : 'title_ru латиницей'}</span>
           <span className={!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'ok' : 'warn'}>{!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'Без мусора' : 'Есть ●●'}</span>
-          <span className={!isPlaceholder(form.descriptionRu) ? 'ok' : 'warn'}>{!isPlaceholder(form.descriptionRu) ? 'Описание есть' : 'Нужно описание'}</span>
+          <span className={!hasEnglishGenre(form.genres) ? 'ok' : 'warn'}>{!hasEnglishGenre(form.genres) ? 'Жанры RU' : 'Есть англ. жанры'}</span>
+          <span className={!isPlaceholder(form.descriptionRu) && !isShortDescription(form.descriptionRu) ? 'ok' : 'warn'}>{!isPlaceholder(form.descriptionRu) && !isShortDescription(form.descriptionRu) ? 'Описание норм' : 'Нужно описание'}</span>
           <span className={form.posterUrl ? 'ok' : 'warn'}>{form.posterUrl ? 'Постер есть' : 'Нет постера'}</span>
           {dirty ? <span className="warn">Есть несохранённые правки</span> : <span className="ok">Сохранено</span>}
         </div>
 
         <div className="admin-editor-helper">
           <b>Быстрая чистка данных</b>
-          <p>Работай по фильтрам слева: “С мусором”, “Без описания”, “title_ru латиницей”. После сохранения можно автоматически переходить к следующей проблеме.</p>
+          <p>Работай по фильтрам слева: “Контент-проблемы”, “Англ. жанры”, “Короткое описание”, “С мусором”. После сохранения можно автоматически переходить к следующему тайтлу.</p>
         </div>
 
         <div className="admin-preview-grid editable-admin-grid admin-anime-form-grid">
@@ -344,6 +499,9 @@ export default function AdminAnimeClient({ items = [] }){
           <button className="primary" onClick={()=>save()} disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить тайтл'}</button>
           <button className="primary soft" onClick={saveAndNext} disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить и дальше'}</button>
           <button className="secondary" onClick={cleanupForm}>Очистить ●●</button>
+          <button className="secondary" onClick={translateGenresInForm}>Перевести жанры</button>
+          <button className="secondary" onClick={generateDescriptionInForm}>Описание RU</button>
+          <button className="secondary" onClick={cleanupContentForm}>Контент fix</button>
           <button className="secondary" onClick={fillRuFromCurrent}>Подставить RU</button>
           <button className="secondary" onClick={goNext} disabled={!nextProblem}>Следующий</button>
           <Link className="secondary" href={`/anime/${selected.slug}`}>Открыть на сайте</Link>
