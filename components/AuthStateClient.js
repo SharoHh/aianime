@@ -11,6 +11,8 @@ export const baseProfileDefaults = {
 }
 
 const AUTH_USER_CACHE_KEY = 'anime:auth-user-cache'
+const PENDING_AUTH_SESSION_KEY = 'anime:pending-auth-session'
+const PENDING_AUTH_MAX_AGE_MS = 5 * 60 * 1000
 
 export function getUserDisplayName(user){
   const metadata = user?.user_metadata || {}
@@ -75,6 +77,53 @@ function writeCachedUser(user){
   }catch{}
 }
 
+
+function readPendingAuthSession(){
+  if(typeof window === 'undefined') return null
+  try{
+    const raw = sessionStorage.getItem(PENDING_AUTH_SESSION_KEY) || localStorage.getItem(PENDING_AUTH_SESSION_KEY)
+    if(!raw) return null
+    const parsed = JSON.parse(raw)
+    if(!parsed?.access_token || !parsed?.refresh_token) return null
+    if(parsed.createdAt && Date.now() - Number(parsed.createdAt) > PENDING_AUTH_MAX_AGE_MS){
+      sessionStorage.removeItem(PENDING_AUTH_SESSION_KEY)
+      localStorage.removeItem(PENDING_AUTH_SESSION_KEY)
+      return null
+    }
+    return parsed
+  }catch{
+    return null
+  }
+}
+
+function clearPendingAuthSession(){
+  if(typeof window === 'undefined') return
+  try{
+    sessionStorage.removeItem(PENDING_AUTH_SESSION_KEY)
+    localStorage.removeItem(PENDING_AUTH_SESSION_KEY)
+  }catch{}
+}
+
+export function setPendingAuthSession(session, user = null){
+  if(typeof window === 'undefined' || !session?.access_token || !session?.refresh_token) return null
+  const payload = {
+    access_token:session.access_token,
+    refresh_token:session.refresh_token,
+    expires_at:session.expires_at || Math.floor(Date.now() / 1000) + Number(session.expires_in || 3600),
+    expires_in:session.expires_in || 3600,
+    token_type:session.token_type || 'bearer',
+    user:user || session.user || null,
+    createdAt:Date.now()
+  }
+  try{
+    const raw = JSON.stringify(payload)
+    sessionStorage.setItem(PENDING_AUTH_SESSION_KEY, raw)
+    localStorage.setItem(PENDING_AUTH_SESSION_KEY, raw)
+  }catch{}
+  if(payload.user) writeCachedUser(payload.user)
+  return payload
+}
+
 function withTimeout(promise, ms, fallback){
   return Promise.race([
     promise,
@@ -121,7 +170,8 @@ function bootstrapAuth(supabase, configured){
   if(authBootstrapPromise) return authBootstrapPromise
 
   authBootstrapPromise = (async () => {
-    const cachedUser = readCachedUser()
+    const pendingAuth = readPendingAuthSession()
+    const cachedUser = readCachedUser() || pendingAuth?.user || null
 
     // Быстрый промежуточный стейт: если пользователь уже был известен, профиль
     // и сайдбар не исчезают на переходах, пока Supabase проверяет сессию.
@@ -136,9 +186,29 @@ function bootstrapAuth(supabase, configured){
         { data:{ session:null }, error:null, timedOut:true }
       )
 
-      const sessionUser = normalizeUserFromSession(sessionResult?.data?.session) || cachedUser || null
+      const realSession = sessionResult?.data?.session || null
+      const pendingUser = pendingAuth?.user || null
+      const sessionUser = normalizeUserFromSession(realSession) || cachedUser || pendingUser || null
       const sessionState = { loading:false, configured:true, user:sessionUser }
       emitAuthState(sessionState)
+
+      if(!realSession && pendingAuth?.access_token && pendingAuth?.refresh_token){
+        supabase.auth.setSession({
+          access_token:pendingAuth.access_token,
+          refresh_token:pendingAuth.refresh_token
+        }).then(({ data }) => {
+          const restoredUser = data?.user || data?.session?.user || pendingUser || sessionUser || null
+          clearPendingAuthSession()
+          emitAuthState({ loading:false, configured:true, user:restoredUser })
+          if(typeof window !== 'undefined') window.dispatchEvent(new Event('anime:user-updated'))
+        }).catch(() => {
+          // Если Supabase долго отвечает, оставляем быстрый pending-user, чтобы профиль не
+          // отбрасывало обратно в гостевой экран сразу после входа.
+          emitAuthState(sessionState)
+        })
+      }else if(realSession){
+        clearPendingAuthSession()
+      }
 
       // getUser полезен для свежей проверки, но он не должен держать страницу
       // профиля в бесконечном пустом skeleton, если сеть/Supabase отвечает долго.
@@ -265,7 +335,8 @@ export function useAuthState(){
   const supabase = useMemo(() => createBrowserSupabase(), [])
   const [state,setState] = useState(() => {
     if(cachedAuthState) return cachedAuthState
-    const cachedUser = readCachedUser()
+    const pendingAuth = readPendingAuthSession()
+    const cachedUser = readCachedUser() || pendingAuth?.user || null
     return cachedUser ? { loading:false, configured, user:cachedUser } : { loading:true, configured, user:null }
   })
 
@@ -278,6 +349,7 @@ export function useAuthState(){
   async function signOut(){
     // UI должен выйти сразу, не ждать Supabase-сеть.
     // Сессия чистится локально, а сетевой signOut идёт в фоне.
+    clearPendingAuthSession()
     emitAuthState({ loading:false, configured:true, user:null })
     authBootstrapPromise = null
     if(typeof window !== 'undefined') window.dispatchEvent(new Event('anime:user-updated'))
