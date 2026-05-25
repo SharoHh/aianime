@@ -140,6 +140,8 @@ export async function GET(req){
           title:item.title,
           title_ru:item.titleRu,
           original_title:item.originalTitle,
+          shikimoriId:item.shikimoriId || item.malId || null,
+          malId:item.malId || null,
           year:item.year,
           episodes:item.episodes || item.episodesList?.length || 1
         }, { limit:40, withEpisodes:true, withEpisodesData:false, minScore:22, maxEpisodes:800 })
