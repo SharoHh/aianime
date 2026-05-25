@@ -77,3 +77,18 @@ create table if not exists public.site_presence (
 
 create index if not exists site_presence_last_seen_idx
   on public.site_presence (last_seen desc);
+
+-- v28 profile/user data stability additions. Safe to run multiple times.
+alter table if exists public.profiles add column if not exists profile_status text;
+alter table if exists public.profiles add column if not exists profile_payload jsonb default '{}'::jsonb;
+alter table if exists public.profiles add column if not exists banner_url text;
+alter table if exists public.profiles add column if not exists bio text;
+alter table if exists public.profiles add column if not exists updated_at timestamptz default now();
+
+alter table if exists public.user_favorites add column if not exists updated_at timestamptz default now();
+alter table if exists public.user_history add column if not exists updated_at timestamptz default now();
+alter table if exists public.user_ratings add column if not exists updated_at timestamptz default now();
+
+create index if not exists user_favorites_user_saved_idx on public.user_favorites(user_id, saved_at desc);
+create index if not exists user_history_user_watched_idx on public.user_history(user_id, watched_at desc);
+create index if not exists user_ratings_user_updated_idx on public.user_ratings(user_id, updated_at desc);
