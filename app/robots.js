@@ -1,11 +1,27 @@
+function siteUrl(){
+  return String(process.env.NEXT_PUBLIC_SITE_URL || 'https://aianime.ru').replace(/\/$/, '')
+}
+
 export default function robots(){
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const base = siteUrl()
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin'],
+      disallow: [
+        '/admin',
+        '/admin/',
+        '/api',
+        '/api/',
+        '/auth',
+        '/profile',
+        '/settings',
+        '/favorites',
+        '/history',
+        '/notifications',
+      ],
     },
     sitemap: `${base}/sitemap.xml`,
+    host: base,
   }
 }

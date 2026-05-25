@@ -1,5 +1,11 @@
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  title: 'Подборки аниме — Aianime',
+  description: 'Готовые подборки аниме по настроению, жанрам, рейтингу, новинкам и AI-рекомендациям.',
+  openGraph: { title: 'Подборки аниме — Aianime', description: 'Живые подборки аниме из каталога AIanime.' }
+}
+
 import Link from 'next/link'
 import { collections } from '@/lib/data'
 import { getAnimeList } from '@/lib/animeRepository'

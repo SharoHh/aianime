@@ -1,12 +1,13 @@
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  title: 'Расписание выхода серий — Aianime',
+  description: 'Реальное расписание выхода новых серий аниме на текущую неделю с обновлением через cron.',
+  openGraph: { title: 'Расписание выхода серий — Aianime', description: 'Новые серии и эфиры текущей недели.' }
+}
+
 import Link from 'next/link'
 import { getWeeklySchedule } from '@/lib/scheduleData'
-
-export const metadata = {
-  title: 'Расписание — Aianime',
-  description: 'Расписание обновлений и новых серий на Aianime.'
-}
 
 export default async function Page() {
   const weeklySchedule = await getWeeklySchedule()

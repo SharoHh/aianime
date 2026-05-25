@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { pushToast } from '@/components/ToastCenter'
 
@@ -30,6 +30,40 @@ export default function AdminDiagnosticsClient(){
   const [running,setRunning] = useState('')
   const [result,setResult] = useState(null)
   const [offset,setOffset] = useState('0')
+  const [health,setHealth] = useState(null)
+  const [healthLoading,setHealthLoading] = useState(true)
+
+
+  async function loadHealth(){
+    setHealthLoading(true)
+    try{
+      const res = await fetch('/api/health', { cache:'no-store' })
+      const payload = await res.json()
+      setHealth(payload)
+    }catch(error){
+      setHealth({ ok:false, status:'error', error:error?.message || 'Не удалось получить health-check' })
+    }finally{
+      setHealthLoading(false)
+    }
+  }
+
+  useEffect(()=>{
+    loadHealth()
+  }, [])
+
+  const healthCards = useMemo(()=>{
+    const db = health?.database || {}
+    const schedule = health?.schedule || {}
+    const env = health?.env || {}
+    return [
+      { label:'Статус', value:healthLoading ? '…' : (health?.status || '—'), hint:health?.ok ? 'Next.js отвечает' : (health?.error || 'Health недоступен') },
+      { label:'Supabase', value:env.supabaseConfigured ? 'OK' : 'OFF', hint:db.ok ? 'База читается' : (db.animeError || 'env/runtime') },
+      { label:'Тайтлы', value:db.animeCount ?? '—', hint:`title_ru: ${db.titleRuCount ?? '—'} · без RU: ${db.missingTitleRu ?? '—'}` },
+      { label:'Расписание', value:schedule.count ?? '—', hint:schedule.ok ? 'есть записи недели' : (schedule.error || 'нет записей') },
+      { label:'Серии', value:db.episodeCount ?? '—', hint:'anime_episodes' },
+      { label:'Kodik token', value:env.kodikTokenConfigured ? 'OK' : 'OFF', hint:'значение не показывается' },
+    ]
+  }, [health, healthLoading])
 
   const resultText = useMemo(()=>{
     if(!result) return ''
@@ -128,6 +162,27 @@ export default function AdminDiagnosticsClient(){
         </div>
         <Link className="secondary" href="/admin/anime">Редактировать тайтлы</Link>
       </div>
+
+      <section className="widget admin-live-health">
+        <div className="admin-live-health-head">
+          <div>
+            <span>health-check</span>
+            <h2>Состояние сайта</h2>
+            <p>/api/health проверяет Next.js, Supabase, каталог, расписание, серии и env-флаги без раскрытия секретов.</p>
+          </div>
+          <button type="button" onClick={loadHealth} disabled={healthLoading}>{healthLoading ? 'Проверяем…' : 'Обновить'}</button>
+        </div>
+        <div className="admin-live-health-grid">
+          {healthCards.map(card => <div className="admin-live-health-card" key={card.label}>
+            <span>{card.label}</span>
+            <b>{card.value}</b>
+            <em>{card.hint}</em>
+          </div>)}
+        </div>
+        {health?.warnings?.length ? <div className="admin-live-health-warnings">
+          {health.warnings.map(warning => <span key={warning}>{warning}</span>)}
+        </div> : null}
+      </section>
 
       <div className="admin-cron-grid">
         {jobs.map(job => <article className="widget admin-cron-card" key={job.id}>

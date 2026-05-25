@@ -72,6 +72,8 @@ const cards = {
   system: [
     { title:'Cron-панель', value:'Запуск', hint:'Jikan, Kodik, players, schedule, title_ru', href:'/admin/sync' },
     { title:'Диагностика', value:'Проверить', hint:'Supabase / Jikan / Kodik / Player', href:'/admin/diagnostics' },
+    { title:'Health-check', value:'API', hint:'Публичный /api/health без секретов', href:'/api/health' },
+    { title:'Sitemap', value:'SEO', hint:'Публичный /sitemap.xml', href:'/sitemap.xml' },
     { title:'Расписание', value:'API', hint:'/api/cron/schedule', href:'/admin/sync' },
     { title:'Настройки', value:'Открыть', hint:'Параметры сайта и профиля', href:'/settings' },
   ],

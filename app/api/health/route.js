@@ -1,15 +1,23 @@
-import { hasSupabase } from '@/lib/supabaseServer'
-import { anime } from '@/lib/data'
+import { NextResponse } from 'next/server'
+import { collectSiteHealth } from '@/lib/siteHealth'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(){
-  return Response.json({
-    ok:true,
-    runtime:'local-safe',
-    homepageDependsOnExternalApi:false,
-    externalImagesEnabled: process.env.ENABLE_REMOTE_IMAGES === '1' || process.env.NEXT_PUBLIC_ENABLE_REMOTE_IMAGES === '1',
-    jikanSyncEnabled: process.env.ENABLE_JIKAN_SYNC === '1',
-    supabaseConfigured: hasSupabase(),
-    seedCount: anime.length,
-    hint:'Если /api/health открывается, Next.js сервер жив. Jikan sync запускается отдельно через /api/cron/sync?enable=1.'
-  })
+  try{
+    const health = await collectSiteHealth()
+    return NextResponse.json(health, {
+      status: health.status === 'degraded' ? 503 : 200,
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+        'X-Robots-Tag': 'noindex, nofollow',
+      }
+    })
+  }catch(error){
+    return NextResponse.json({
+      ok:false,
+      status:'error',
+      error:error?.message || 'Health check failed',
+    }, { status:500, headers:{ 'Cache-Control':'no-store, max-age=0', 'X-Robots-Tag':'noindex, nofollow' } })
+  }
 }
