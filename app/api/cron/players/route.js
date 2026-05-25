@@ -18,8 +18,32 @@ function detailedKodikEnabled(req){
   return req.nextUrl.searchParams.get('details') === '1' || req.nextUrl.searchParams.get('voices') === '1' || req.nextUrl.searchParams.get('translations') === '1'
 }
 
+function normalizeText(value){
+  return String(value || '').toLowerCase().replace(/ё/g, 'е')
+}
+
+function isMovieAnime(item = {}){
+  const kind = normalizeText(item?.kind || item?.kodikType || item?.kodik_type)
+  const text = normalizeText([item?.slug, item?.title, item?.titleRu, item?.originalTitle].filter(Boolean).join(' '))
+  const episodes = Number(item?.episodes || 0)
+  if(kind === 'movie' || kind === 'film' || kind === 'anime-movie') return true
+  if(/\b(movie|film)\b|фильм|кино/.test(text)) return true
+  return episodes === 1 && (/\b(movie|film)\b|фильм/.test(text))
+}
+
+function isSerialPlayerUrl(value){
+  return /\/(serial|seria)\//i.test(String(value || ''))
+}
+
+function isMoviePlayerUrl(value){
+  return /\/(video|movie)\//i.test(String(value || ''))
+}
+
 function getStoredKodikLink(item){
-  return normalizeKodikPlayerUrl(item?.kodikLink || item?.kodik_link || item?.embed_url)
+  const url = normalizeKodikPlayerUrl(item?.kodikLink || item?.kodik_link || item?.embed_url)
+  if(!url) return null
+  if(isMovieAnime(item)) return isMoviePlayerUrl(url) && !isSerialPlayerUrl(url) ? url : null
+  return url
 }
 
 
@@ -140,6 +164,8 @@ export async function GET(req){
           title:item.title,
           title_ru:item.titleRu,
           original_title:item.originalTitle,
+          kind:item.kind,
+          kodikType:item.kodikType,
           shikimoriId:item.shikimoriId || item.malId || null,
           malId:item.malId || null,
           year:item.year,

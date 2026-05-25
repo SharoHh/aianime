@@ -148,6 +148,45 @@ function externalSearchUrl(source, item){
 }
 
 
+
+function normalizeKindText(value){
+  return String(value || '').toLowerCase().replace(/ё/g, 'е')
+}
+
+function isMovieAnime(item = {}){
+  const kind = normalizeKindText(item?.kind || item?.kodikType)
+  const text = normalizeKindText([item?.slug, item?.title, item?.titleRu, item?.originalTitle, item?.englishTitle].filter(Boolean).join(' '))
+  const episodes = Number(item?.episodes || 0)
+  if(kind === 'movie' || kind === 'film' || kind === 'anime-movie') return true
+  if(/\b(movie|film)\b|фильм|кино/.test(text)) return true
+  return episodes === 1 && (/\b(movie|film)\b|фильм/.test(text))
+}
+
+function isSerialPlayerUrl(value){
+  return /\/(serial|seria)\//i.test(String(value || ''))
+}
+
+function isMoviePlayerUrl(value){
+  return /\/(video|movie)\//i.test(String(value || ''))
+}
+
+function isSerialPlayerOption(option = {}){
+  const type = String(option?.materialType || option?.raw?.material_type || '').toLowerCase()
+  return type.includes('serial') || isSerialPlayerUrl(option?.embedUrl)
+}
+
+function isMoviePlayerOption(option = {}){
+  const type = String(option?.materialType || option?.raw?.material_type || '').toLowerCase()
+  return type === 'anime' || type === 'movie' || isMoviePlayerUrl(option?.embedUrl)
+}
+
+function canUseStoredKodikLink(item = {}){
+  const url = String(item?.kodikLink || '').trim()
+  if(!url) return false
+  if(isMovieAnime(item)) return isMoviePlayerUrl(url) && !isSerialPlayerUrl(url)
+  return true
+}
+
 function episodeVoiceLabel(value){
   const voice = String(value || '').trim()
   if(!voice || voice.toLowerCase() === 'default') return 'Kodik'
@@ -163,7 +202,7 @@ function hasUsableEpisodeLink(episode){
   return true
 }
 
-function buildNativePlayerOptions(episodes = []){
+function buildNativePlayerOptions(episodes = [], item = {}){
   const rows = (episodes || [])
     .filter(hasUsableEpisodeLink)
     .map((episode) => ({
@@ -182,10 +221,14 @@ function buildNativePlayerOptions(episodes = []){
       updatedAt: episode.updatedAt || null
     }))
 
-  if(!rows.length) return []
+  const scopedRows = isMovieAnime(item)
+    ? rows.filter(row => isMoviePlayerOption(row) && !isSerialPlayerOption(row))
+    : rows
+
+  if(!scopedRows.length) return []
 
   const unique = new Map()
-  for(const row of rows){
+  for(const row of scopedRows){
     const key = `${row.provider}:${row.voice}:${row.episodeNumber}`
     const current = unique.get(key)
     const score = (row.embedUrl ? 10 : 0) + (row.source === 'kodik-api-episode' ? 5 : 0) + (row.translationType === 'voice' ? 2 : 0)
@@ -224,6 +267,26 @@ function visibleInfoRows(rows){
     .filter(([, value]) => !isPlaceholderText(value))
 }
 
+function getDisplayEpisodeCount(item = {}, playerOptions = []){
+  const optionNumbers = new Set(
+    (playerOptions || [])
+      .map(option => Number(option?.episodeNumber || 0))
+      .filter(number => Number.isFinite(number) && number > 0)
+  )
+  const maxOptionEpisode = optionNumbers.size ? Math.max(...optionNumbers) : 0
+
+  // Для страницы тайтла нельзя использовать episodes.length: в anime_episodes лежат
+  // строки "озвучка × серия", поэтому 36 озвучек × 28 серий превращались в 1000+.
+  // Показываем количество реальных серий, а не количество player rows.
+  if(maxOptionEpisode > 1) return maxOptionEpisode
+
+  const dbCount = Number(item?.episodes || 0)
+  if(Number.isFinite(dbCount) && dbCount > 0) return dbCount
+
+  if(isMovieAnime(item)) return 1
+  return maxOptionEpisode || ''
+}
+
 
 export default async function AnimePage({ params, searchParams }){
   const resolvedParams = await params
@@ -238,14 +301,14 @@ export default async function AnimePage({ params, searchParams }){
     getAnimeList({limit:220}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
   ])
-  const playerOptions = buildNativePlayerOptions(episodes)
+  const playerOptions = buildNativePlayerOptions(episodes, item)
   const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
   const selectedVoice = String(resolvedSearchParams?.voice || '').trim()
   const currentEpisode = playerOptions.find(e => selectedVoice && e.voice === selectedVoice && Number(e.episodeNumber) === selectedEpisodeNumber)
     || playerOptions.find(e => Number(e.episodeNumber) === selectedEpisodeNumber)
     || playerOptions[0]
-    || episodes.find(hasUsableEpisodeLink)
     || null
+  const storedKodikLink = canUseStoredKodikLink(item) ? item.kodikLink : null
   const currentEpisodeNumber = Number(currentEpisode?.episodeNumber || selectedEpisodeNumber || 1)
   const titleEpisodeHref = (number, voice = currentEpisode?.voice) => {
     const params = new URLSearchParams()
@@ -264,7 +327,7 @@ export default async function AnimePage({ params, searchParams }){
     ['Первоисточник', item.source || 'Манга / оригинал'],
     ['Студия', item.studio || '—'],
     ['Режиссёр', item.director || 'Будет добавлено'],
-    ['Количество серий', Math.max(item.episodes || 0, ...playerOptions.map(e => Number(e.episodeNumber || 0)), episodes.length) || item.episodes || episodes.length],
+    ['Количество серий', getDisplayEpisodeCount(item, playerOptions)],
     ['Перевод', item.translationTitle || 'Kodik / будет добавлено'],
     ['Озвучка', currentEpisode?.voice || item.translationTitle || 'Kodik'],
   ])
@@ -341,10 +404,10 @@ export default async function AnimePage({ params, searchParams }){
         translationTitle={item.translationTitle}
         quality={currentEpisode?.quality || item.quality}
         playerOptions={playerOptions}
-        initialEmbedUrl={currentEpisode?.embedUrl || item.kodikLink || null}
+        initialEmbedUrl={currentEpisode?.embedUrl || storedKodikLink || null}
         initialVoice={currentEpisode?.voice || item.translationTitle || null}
         initialQuality={currentEpisode?.quality || item.quality || null}
-        initialSource={currentEpisode?.embedUrl ? currentEpisode.source || 'anime_episodes' : item.kodikLink ? 'anime.kodik_link' : null}
+        initialSource={currentEpisode?.embedUrl ? currentEpisode.source || 'anime_episodes' : storedKodikLink ? 'anime.kodik_link' : null}
         historyItem={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }}
       />
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>

@@ -38,6 +38,32 @@ function rowToOption(row){
   }
 }
 
+
+function normalizeText(value){
+  return String(value || '').toLowerCase().replace(/ё/g, 'е')
+}
+
+function isMovieAnime(item = {}){
+  const kind = normalizeText(item?.kind || item?.type || item?.kodikType)
+  const text = normalizeText([item?.slug, item?.title, item?.titleRu, item?.originalTitle, item?.englishTitle].filter(Boolean).join(' '))
+  const episodes = Number(item?.episodes || item?.episodesCount || 0)
+  if(kind === 'movie' || kind === 'film' || kind === 'anime-movie') return true
+  if(/\b(movie|film)\b|фильм|кино/.test(text)) return true
+  return episodes === 1 && (/\b(movie|film)\b|фильм/.test(text))
+}
+
+function isSerialOption(option = {}){
+  const url = String(option?.embedUrl || '').toLowerCase()
+  const type = String(option?.materialType || '').toLowerCase()
+  return type.includes('serial') || /\/(serial|seria)\//i.test(url)
+}
+
+function isMovieOption(option = {}){
+  const url = String(option?.embedUrl || '').toLowerCase()
+  const type = String(option?.materialType || '').toLowerCase()
+  return type === 'anime' || type === 'movie' || /\/(video|movie)\//i.test(url)
+}
+
 function usable(option){
   const url = String(option?.embedUrl || '').trim()
   if(!url) return false
@@ -61,11 +87,17 @@ function filterOptionsForAnime(options, item){
   if(!valid.length) return []
 
   const expectedEpisodes = Number(item?.episodes || item?.episodesList?.length || 0) || 0
-  const isSerialAnime = expectedEpisodes > 1 || String(item?.kind || '').toLowerCase() !== 'movie'
-  const hasSerialLinks = valid.some(option => /\/serial\//i.test(String(option.embedUrl || '')) || String(option.materialType || '').includes('serial'))
+  const movieAnime = isMovieAnime(item)
+  const isSerialAnime = !movieAnime && (expectedEpisodes > 1 || String(item?.kind || '').toLowerCase() !== 'movie')
+  const hasSerialLinks = valid.some(option => isSerialOption(option))
 
   let rows = valid
-  if(isSerialAnime && hasSerialLinks){
+
+  // Если страница — фильм, не показываем найденный Kodik-сериал. Лучше честно показать,
+  // что плеера пока нет, чем включить другой тайтл/TV-сезон.
+  if(movieAnime){
+    rows = rows.filter(option => isMovieOption(option) && !isSerialOption(option))
+  }else if(isSerialAnime && hasSerialLinks){
     rows = rows.filter(option => {
       const url = String(option.embedUrl || '')
       const type = String(option.materialType || '')

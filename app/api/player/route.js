@@ -13,6 +13,35 @@ function runtimeResolveEnabled(req){
   return req.nextUrl.searchParams.get('resolve') === '1' || process.env.ENABLE_KODIK_PLAYER_RUNTIME === '1'
 }
 
+
+function normalizeText(value){
+  return String(value || '').toLowerCase().replace(/ё/g, 'е')
+}
+
+function isMovieAnime(item = {}){
+  const kind = normalizeText(item?.kind || item?.kodik_type || item?.kodikType)
+  const text = normalizeText([item?.slug, item?.title, item?.title_ru, item?.titleRu, item?.original_title, item?.originalTitle].filter(Boolean).join(' '))
+  const episodes = Number(item?.episodes || 0)
+  if(kind === 'movie' || kind === 'film' || kind === 'anime-movie') return true
+  if(/\b(movie|film)\b|фильм|кино/.test(text)) return true
+  return episodes === 1 && (/\b(movie|film)\b|фильм/.test(text))
+}
+
+function isSerialPlayerUrl(value){
+  return /\/(serial|seria)\//i.test(String(value || ''))
+}
+
+function isMoviePlayerUrl(value){
+  return /\/(video|movie)\//i.test(String(value || ''))
+}
+
+function canUsePlayerUrlForAnime(url, anime = {}){
+  const cleanUrl = String(url || '').trim()
+  if(!cleanUrl) return false
+  if(isMovieAnime(anime)) return isMoviePlayerUrl(cleanUrl) && !isSerialPlayerUrl(cleanUrl)
+  return true
+}
+
 async function readEpisodeFromDb(slug, episode, voice = null){
   if(!hasSupabase()) return null
   try{
@@ -30,7 +59,7 @@ async function readEpisodeFromDb(slug, episode, voice = null){
 async function readAnimeFromDb(slug){
   if(!hasSupabase()) return null
   try{
-    const select = 'slug,title,title_ru,original_title,year,kodik_id,kodik_link,kodik_type,translation_title,translation_type,quality,kodik_raw,episodes'
+    const select = 'slug,title,title_ru,original_title,year,kind,kodik_id,kodik_link,kodik_type,translation_title,translation_type,quality,kodik_raw,episodes'
     const res = await supabaseRequest(`anime?select=${select}&slug=eq.${encodeURIComponent(slug)}&limit=1`, { method: 'GET', timeout: 9000 })
     if(!res.ok) return null
     const rows = await res.json().catch(() => [])
@@ -75,9 +104,10 @@ export async function GET(req){
 
   if(!slug) return json({ ok:false, error:'slug is required' }, 400)
 
+  const dbAnime = await readAnimeFromDb(slug)
   const dbEpisode = await readEpisodeFromDb(slug, episode, voice)
   const episodeEmbed = normalizeKodikPlayerUrl(dbEpisode?.embed_url)
-  if(episodeEmbed){
+  if(episodeEmbed && canUsePlayerUrlForAnime(episodeEmbed, dbAnime)){
     return json({
       ok: true,
       provider: dbEpisode.provider || 'kodik',
@@ -91,9 +121,8 @@ export async function GET(req){
     })
   }
 
-  const dbAnime = await readAnimeFromDb(slug)
   const animeEmbed = normalizeKodikPlayerUrl(dbAnime?.kodik_link)
-  if(animeEmbed){
+  if(animeEmbed && canUsePlayerUrlForAnime(animeEmbed, dbAnime)){
     return json({
       ok: true,
       provider: 'kodik',
@@ -119,6 +148,8 @@ export async function GET(req){
         title: item.title,
         title_ru: item.titleRu,
         original_title: item.originalTitle,
+        kind: item.kind,
+        episodes: item.episodes,
         year: item.year
       })
 
