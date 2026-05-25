@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { getFavorites, getHistory, getRatings } from '@/lib/userStorage'
 import { getUserDisplayName, readStoredProfile, useAuthState } from '@/components/AuthStateClient'
 import ProfileEditorClient from '@/components/ProfileEditorClient'
-import AccountSyncClient from '@/components/AccountSyncClient'
 import UserSyncStatusClient from '@/components/UserSyncStatusClient'
 
 function readStats(){
@@ -93,6 +92,5 @@ export default function ProfileAuthGateClient(){
 
     <UserSyncStatusClient/>
     <ProfileEditorClient user={user}/>
-    <AccountSyncClient/>
   </>
 }

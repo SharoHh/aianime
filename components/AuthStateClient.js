@@ -103,6 +103,14 @@ function subscribeAuthState(listener){
   return () => authListeners.delete(listener)
 }
 
+export function setImmediateAuthUser(user){
+  authBootstrapPromise = null
+  const next = { loading:false, configured:hasSupabaseBrowser(), user:user || null }
+  emitAuthState(next)
+  if(typeof window !== 'undefined') window.dispatchEvent(new Event('anime:user-updated'))
+  return next
+}
+
 function bootstrapAuth(supabase, configured){
   if(!configured || !supabase){
     const next = { loading:false, configured:false, user:null }
@@ -124,7 +132,7 @@ function bootstrapAuth(supabase, configured){
     try{
       const sessionResult = await withTimeout(
         supabase.auth.getSession(),
-        900,
+        550,
         { data:{ session:null }, error:null, timedOut:true }
       )
 
@@ -136,7 +144,7 @@ function bootstrapAuth(supabase, configured){
       // профиля в бесконечном пустом skeleton, если сеть/Supabase отвечает долго.
       withTimeout(
         supabase.auth.getUser(),
-        1200,
+        900,
         { data:{ user:sessionUser }, error:null, timedOut:true }
       ).then(({ data }) => {
         const freshUser = data?.user || sessionUser || null
@@ -268,13 +276,20 @@ export function useAuthState(){
   }, [configured, supabase])
 
   async function signOut(){
+    // UI должен выйти сразу, не ждать Supabase-сеть.
+    // Сессия чистится локально, а сетевой signOut идёт в фоне.
+    emitAuthState({ loading:false, configured:true, user:null })
+    authBootstrapPromise = null
+    if(typeof window !== 'undefined') window.dispatchEvent(new Event('anime:user-updated'))
+
     if(!supabase) return
     try{
-      await supabase.auth.signOut()
-    }finally{
-      emitAuthState({ loading:false, configured:true, user:null })
-      if(typeof window !== 'undefined') window.dispatchEvent(new Event('anime:user-updated'))
-    }
+      await withTimeout(
+        supabase.auth.signOut({ scope:'local' }),
+        650,
+        { error:null, timedOut:true }
+      )
+    }catch{}
   }
 
   return { ...state, supabase, signOut }
