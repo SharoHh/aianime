@@ -37,6 +37,9 @@ function normalizeOption(option){
     translationType: option?.translationType || option?.translation_type || null,
     translationId: option?.translationId || option?.translation_id || null,
     seasonNumber: option?.seasonNumber || option?.season_number || null,
+    episodesCount: Number(option?.episodesCount || option?.episodes_count || option?.raw?.episodes_count || 0) || null,
+    materialType: option?.materialType || option?.material_type || option?.raw?.material_type || null,
+    matchScore: Number(option?.matchScore || option?.match_score || option?.raw?.match_score || 0) || null,
   }
 }
 
@@ -83,9 +86,10 @@ function groupByVoice(options){
     voice,
     episodes: episodes.sort((a,b) => a.episodeNumber - b.episodeNumber),
     count: new Set(episodes.map(item => item.episodeNumber)).size,
+    declaredCount: Math.max(...episodes.map(item => Number(item.episodesCount || 0)), 0),
     type: episodes.find(item => item.translationType)?.translationType || null,
     quality: episodes.find(item => item.quality)?.quality || null,
-  })).sort((a,b) => b.count - a.count || a.voice.localeCompare(b.voice, 'ru'))
+  })).sort((a,b) => Math.max(b.count, b.declaredCount || 0) - Math.max(a.count, a.declaredCount || 0) || a.voice.localeCompare(b.voice, 'ru'))
 }
 
 function pickInitialOption(options, episode, voice){
@@ -148,11 +152,14 @@ export default function KodikPlayerClient({
 
   const voices = useMemo(() => groupByVoice(options), [options])
   const activeVoice = selected?.voice || cleanVoice(selectedVoice || state.voice || voice)
-  const activeEpisodes = voices.find(item => item.voice === activeVoice)?.episodes || options.filter(item => item.voice === activeVoice)
+  const activeGroup = voices.find(item => item.voice === activeVoice) || null
+  const activeEpisodes = activeGroup?.episodes || options.filter(item => item.voice === activeVoice)
   const activeEpisodeNumber = Number(selected?.episodeNumber || episode || 1)
   const currentEmbedUrl = selected?.embedUrl || state.embedUrl || initialEmbedUrl || null
   const currentQuality = selected?.quality || state.quality || quality || null
-  const canUseNativeSelector = voices.length > 0 && options.length > 1
+  const uniqueNativeEpisodes = new Set(activeEpisodes.map(item => Number(item.episodeNumber || 1)))
+  const hasRealEpisodeButtons = activeEpisodes.length > 1 && uniqueNativeEpisodes.size > 1
+  const canUseVoiceSelector = voices.length > 1
 
   useEffect(() => {
     const normalized = normalizeOptions(playerOptions)
@@ -270,7 +277,7 @@ export default function KodikPlayerClient({
       <div className="native-kodik-topline">
         <div>
           <b>Озвучка и серии</b>
-          <span>{canUseNativeSelector ? `${voices.length} озвучек · ${activeEpisodes.length} серий в выбранной` : isRefreshingOptions ? 'Подтягиваем список из Kodik…' : 'Kodik'}</span>
+          <span>{hasRealEpisodeButtons ? `${voices.length} озвучек · ${activeEpisodes.length} серий в выбранной` : canUseVoiceSelector ? `${voices.length} озвучек · серии внутри Kodik` : isRefreshingOptions ? 'Подтягиваем список из Kodik…' : 'Kodik'}</span>
         </div>
         {currentQuality ? <em>{currentQuality}</em> : null}
       </div>
@@ -283,11 +290,11 @@ export default function KodikPlayerClient({
           onClick={() => chooseVoice(item.voice)}
         >
           <span>{item.voice}</span>
-          <small>{item.count} сер.</small>
+          <small>{item.count > 1 ? `${item.count} сер.` : item.declaredCount > 1 ? `${item.declaredCount} в плеере` : 'плеер'}</small>
         </button>)}
       </div> : null}
 
-      {canUseNativeSelector ? <>
+      {hasRealEpisodeButtons ? <>
         <div className="native-episode-row" aria-label="Выбор серии">
           {activeEpisodes.map(option => <button
             key={`${option.voice}-${option.episodeNumber}`}
@@ -303,7 +310,7 @@ export default function KodikPlayerClient({
           {nextEpisode ? <button type="button" onClick={() => chooseOption(nextEpisode)}>Следующая →</button> : <span>Последняя серия</span>}
         </div>
       </> : <div className="native-kodik-note">
-        {isRefreshingOptions ? 'Ищем доступные озвучки и отдельные ссылки серий. Плеер уже можно запускать.' : 'Если список серий не появился, переключай серии внутри Kodik-плеера.'}
+        {isRefreshingOptions ? 'Ищем отдельные ссылки серий. Плеер уже можно запускать.' : canUseVoiceSelector ? 'Озвучку можно выбрать здесь, серии переключаются внутри Kodik-плеера.' : 'Серии переключаются внутри Kodik-плеера.'}
       </div>}
 
       {optionWarning ? <div className="native-kodik-warning">{optionWarning}</div> : null}
