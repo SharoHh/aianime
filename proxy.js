@@ -162,6 +162,7 @@ function cleanupOldBuckets(){
 function rateLimitConfig(pathname){
   if(pathname.startsWith('/api/ai')) return { name:'ai', limit:30, windowMs:60_000 }
   if(pathname.startsWith('/api/player')) return { name:'player', limit:80, windowMs:60_000 }
+  if(pathname.startsWith('/api/comments')) return { name:'comments', limit:35, windowMs:60_000 }
   if(pathname.startsWith('/api/presence')) return { name:'presence', limit:120, windowMs:60_000 }
   if(pathname.startsWith('/api/poster') || pathname.startsWith('/api/image')) return { name:'image', limit:180, windowMs:60_000 }
   if(pathname.startsWith('/api/moderate-image')) return { name:'moderate-image', limit:20, windowMs:60_000 }

@@ -301,3 +301,20 @@ comment on column public.anime_schedule.schedule_uid is 'Stable unique key for w
 comment on column public.anime_schedule.catalog_matched is 'True when the schedule item is linked to an existing AIanime catalog title. Public UI hides false rows.';
 comment on column public.anime_schedule.anime_status is 'Catalog status at sync time. Public schedule is intended for ongoing titles.';
 
+
+-- AIanime comments: public comments with admin moderation.
+create table if not exists public.anime_comments (
+  id bigserial primary key,
+  anime_slug text not null,
+  user_id uuid,
+  user_name text,
+  text text not null,
+  status text not null default 'published',
+  likes integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists anime_comments_slug_created_idx on public.anime_comments (anime_slug, created_at desc);
+create index if not exists anime_comments_status_created_idx on public.anime_comments (status, created_at desc);
+create index if not exists anime_comments_user_idx on public.anime_comments (user_id);
