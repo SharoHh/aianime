@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/animeRepository'
+import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
@@ -30,6 +31,66 @@ export async function generateMetadata({ params }){
   }
 }
 
+
+
+async function fetchJsonSoft(url, options = {}){
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+  const timer = setTimeout(() => {
+    try{ controller?.abort() }catch{}
+  }, Number(options.timeout || 2200))
+  try{
+    const res = await fetch(url, {
+      cache:'force-cache',
+      next:{ revalidate:Number(options.revalidate || 21600) },
+      headers: options.headers || {},
+      signal: controller?.signal
+    })
+    if(!res.ok) return null
+    return await res.json()
+  }catch{
+    return null
+  }finally{
+    clearTimeout(timer)
+  }
+}
+
+async function getSiteRatingStats(slug){
+  if(!hasSupabase() || !slug) return { value:null, count:0 }
+  try{
+    const res = await supabaseRequest(`user_ratings?select=rating&anime_slug=eq.${encodeURIComponent(slug)}&limit=1000`, { method:'GET', timeout:2200 })
+    if(!res.ok) return { value:null, count:0 }
+    const rows = await res.json()
+    if(!Array.isArray(rows) || !rows.length) return { value:null, count:0 }
+    const values = rows.map(row => Number(row.rating)).filter(value => Number.isFinite(value) && value > 0)
+    if(!values.length) return { value:null, count:0 }
+    const average = values.reduce((sum, value) => sum + value, 0) / values.length
+    return { value:average, count:values.length }
+  }catch{
+    return { value:null, count:0 }
+  }
+}
+
+async function getExternalRatings(item){
+  const malId = Number(item?.malId || item?.shikimoriId || 0)
+  const shikiId = Number(item?.shikimoriId || item?.malId || 0)
+  const [malData, shikiData, site] = await Promise.all([
+    malId > 0 ? fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2200, revalidate:21600 }) : null,
+    shikiId > 0 ? fetchJsonSoft(`https://shikimori.one/api/animes/${shikiId}`, { timeout:2200, revalidate:21600, headers:{ 'User-Agent':'AIanime/1.0 (+https://aianime.ru)' } }) : null,
+    getSiteRatingStats(item?.slug)
+  ])
+  const malScore = Number(malData?.data?.score)
+  const shikiScore = Number(shikiData?.score || shikiData?.rating)
+  return {
+    site,
+    mal: Number.isFinite(malScore) && malScore > 0 ? malScore : null,
+    shiki: Number.isFinite(shikiScore) && shikiScore > 0 ? shikiScore : null
+  }
+}
+
+function ratingLabel(value){
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? number.toFixed(1) : '—'
+}
 
 function numericRating(value){
   const number = Number(value)
@@ -86,6 +147,7 @@ export default async function AnimePage({ params, searchParams }){
   const currentEpisodeNumber = Number(currentEpisode?.episodeNumber || selectedEpisodeNumber || 1)
   const nextEpisode = episodes.find(e => Number(e.episodeNumber) > currentEpisodeNumber) || episodes[0]
   const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
+  const externalRatings = await getExternalRatings(item)
 
   const info = visibleInfoRows([
     ['Статус', statusLabel(item.status)],
@@ -128,10 +190,10 @@ export default async function AnimePage({ params, searchParams }){
         </div>
 
         <div className="compact-rating-row" aria-label="Рейтинги и быстрые ссылки">
-          <div className="main-rate" title="Средняя оценка тайтла"><b>{numericRating(item.score || item.rating)}</b><span>рейтинг</span></div>
-          <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki {numericRating(item.score || item.rating)}</a>
+          <div className="main-rate site-rate" title={externalRatings.site.count ? `Средняя оценка пользователей AIanime: ${externalRatings.site.count}` : 'Оценок пользователей AIanime пока нет'}><b>{ratingLabel(externalRatings.site.value)}</b><span>{externalRatings.site.count ? `${externalRatings.site.count} оценок` : 'рейтинг'}</span></div>
+          <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki {ratingLabel(externalRatings.shiki)}</a>
           <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI {aiMatchPercent(item)}</Link>
-          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL {numericRating(item.score || item.rating)}</a>
+          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL {ratingLabel(externalRatings.mal || item.score || item.rating)}</a>
         </div>
 
         <div className="compact-info-list">
