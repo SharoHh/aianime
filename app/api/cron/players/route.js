@@ -144,7 +144,7 @@ export async function GET(req){
           malId:item.malId || null,
           year:item.year,
           episodes:item.episodes || item.episodesList?.length || 1
-        }, { limit:40, withEpisodes:true, withEpisodesData:false, minScore:22, maxEpisodes:800 })
+        }, { limit:40, withEpisodes:true, withEpisodesData:true, minScore:22, maxEpisodes:800 })
         if(detailedRows.length){
           rows.push(...detailedRows)
           continue
