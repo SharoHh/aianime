@@ -70,21 +70,52 @@ async function getSiteRatingStats(slug){
   }
 }
 
-async function getExternalRatings(item){
+function externalQuery(item){
+  return String(item?.englishTitle || item?.originalTitle || item?.title || item?.slug || 'anime').trim()
+}
+
+function scoreNumber(value){
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? number : null
+}
+
+async function fetchMalRating(item){
   const malId = Number(item?.malId || item?.shikimoriId || 0)
-  const shikiId = Number(item?.shikimoriId || item?.malId || 0)
-  const [malData, shikiData, site] = await Promise.all([
-    malId > 0 ? fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2200, revalidate:21600 }) : null,
-    shikiId > 0 ? fetchJsonSoft(`https://shikimori.one/api/animes/${shikiId}`, { timeout:2200, revalidate:21600, headers:{ 'User-Agent':'AIanime/1.0 (+https://aianime.ru)' } }) : null,
+  if(Number.isFinite(malId) && malId > 0){
+    const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2500, revalidate:21600 })
+    const score = scoreNumber(data?.data?.score)
+    if(score) return score
+  }
+
+  const query = encodeURIComponent(externalQuery(item))
+  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime?q=${query}&limit=1`, { timeout:2500, revalidate:21600 })
+  return scoreNumber(data?.data?.[0]?.score)
+}
+
+async function fetchShikiRating(item){
+  // В текущей базе shikimori_id часто используется как legacy MAL id.
+  // Поэтому Shikimori не берём по этому id, а ищем тайтл на стороне Shikimori.
+  const query = encodeURIComponent(externalQuery(item))
+  const rows = await fetchJsonSoft(`https://shikimori.one/api/animes?search=${query}&limit=5`, {
+    timeout:2500,
+    revalidate:21600,
+    headers:{ 'User-Agent':'AIanime/1.0 (+https://aianime.ru)' }
+  })
+  if(!Array.isArray(rows) || !rows.length) return null
+
+  const malId = Number(item?.malId || item?.shikimoriId || 0)
+  const byMal = rows.find(row => Number(row?.mal_id) === malId || Number(row?.id) === Number(item?.shikimoriId || 0))
+  const picked = byMal || rows[0]
+  return scoreNumber(picked?.score)
+}
+
+async function getExternalRatings(item){
+  const [mal, shiki, site] = await Promise.all([
+    fetchMalRating(item),
+    fetchShikiRating(item),
     getSiteRatingStats(item?.slug)
   ])
-  const malScore = Number(malData?.data?.score)
-  const shikiScore = Number(shikiData?.score || shikiData?.rating)
-  return {
-    site,
-    mal: Number.isFinite(malScore) && malScore > 0 ? malScore : null,
-    shiki: Number.isFinite(shikiScore) && shikiScore > 0 ? shikiScore : null
-  }
+  return { site, mal, shiki }
 }
 
 function ratingLabel(value){
@@ -116,6 +147,32 @@ function externalSearchUrl(source, item){
   return null
 }
 
+
+function episodeVoiceLabel(value){
+  const voice = String(value || '').trim()
+  if(!voice || voice.toLowerCase() === 'default') return 'Kodik'
+  return voice
+}
+
+function buildEpisodeOptions(episodes = []){
+  const byNumber = new Map()
+  for(const episode of episodes || []){
+    const number = Math.max(1, Number(episode?.episodeNumber || 0) || 1)
+    const current = byNumber.get(number)
+    const candidate = { ...episode, episodeNumber:number, voice:episodeVoiceLabel(episode?.voice) }
+    if(!current){
+      byNumber.set(number, candidate)
+      continue
+    }
+
+    const candidateScore = (candidate.embedUrl ? 10 : 0) + (String(candidate.voice || '').toLowerCase() !== 'kodik' ? 2 : 0) + (candidate.status === 'published' ? 1 : 0)
+    const currentScore = (current.embedUrl ? 10 : 0) + (String(current.voice || '').toLowerCase() !== 'kodik' ? 2 : 0) + (current.status === 'published' ? 1 : 0)
+    if(candidateScore > currentScore) byNumber.set(number, candidate)
+  }
+
+  return Array.from(byNumber.values()).sort((a,b) => Number(a.episodeNumber) - Number(b.episodeNumber))
+}
+
 function statusLabel(status){
   if(status === 'ongoing') return 'Выходит'
   if(status === 'anons') return 'Анонс'
@@ -142,10 +199,12 @@ export default async function AnimePage({ params, searchParams }){
     getAnimeList({limit:220}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
   ])
+  const episodeOptions = buildEpisodeOptions(episodes)
   const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
-  const currentEpisode = episodes.find(e => Number(e.episodeNumber) === selectedEpisodeNumber) || episodes[0]
+  const currentEpisode = episodeOptions.find(e => Number(e.episodeNumber) === selectedEpisodeNumber) || episodeOptions[0] || episodes[0]
   const currentEpisodeNumber = Number(currentEpisode?.episodeNumber || selectedEpisodeNumber || 1)
-  const nextEpisode = episodes.find(e => Number(e.episodeNumber) > currentEpisodeNumber) || episodes[0]
+  const nextEpisode = episodeOptions.find(e => Number(e.episodeNumber) > currentEpisodeNumber) || null
+  const titleEpisodeHref = (number) => `/anime/${encodeURIComponent(item.slug)}?episode=${Math.max(1, Number(number) || 1)}#player`
   const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
   const externalRatings = await getExternalRatings(item)
 
@@ -190,10 +249,10 @@ export default async function AnimePage({ params, searchParams }){
         </div>
 
         <div className="compact-rating-row" aria-label="Рейтинги и быстрые ссылки">
-          <div className="main-rate site-rate" title={externalRatings.site.count ? `Средняя оценка пользователей AIanime: ${externalRatings.site.count}` : 'Оценок пользователей AIanime пока нет'}><b>{ratingLabel(externalRatings.site.value)}</b><span>{externalRatings.site.count ? `${externalRatings.site.count} оценок` : 'рейтинг'}</span></div>
+          <div className="main-rate site-rate" title={externalRatings.site.count ? `Средняя оценка пользователей AIanime: ${externalRatings.site.count}` : 'Оценок пользователей AIanime пока нет'}><b>{ratingLabel(externalRatings.site.value)}</b><span>{externalRatings.site.count ? `${externalRatings.site.count} оценок` : 'наш рейтинг'}</span></div>
           <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki {ratingLabel(externalRatings.shiki)}</a>
           <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI {aiMatchPercent(item)}</Link>
-          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL {ratingLabel(externalRatings.mal || item.score || item.rating)}</a>
+          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL {ratingLabel(externalRatings.mal)}</a>
         </div>
 
         <div className="compact-info-list">
@@ -210,7 +269,7 @@ export default async function AnimePage({ params, searchParams }){
         <p className="compact-description">{description}</p>
 
         <div className="compact-actions">
-          <Link className="compact-watch" href={`?episode=${currentEpisodeNumber}#player`}>▶ Смотреть</Link>
+          <Link className="compact-watch" href={titleEpisodeHref(currentEpisodeNumber)}>▶ Смотреть</Link>
           <Link className="compact-ai" href={`/ai?similar=${item.slug}`}>✦ Похожие через AI</Link>
           <TitleActions item={item}/>
         </div>
@@ -242,13 +301,35 @@ export default async function AnimePage({ params, searchParams }){
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }} episode={currentEpisodeNumber}/>
     </section>
 
-    <section className="compact-episodes" id="episodes">
-      <div className="compact-section-head"><h2>Серии</h2><a href="#player">К плееру ↑</a></div>
-      <div>
-        {episodes.slice(0,32).map((e,index)=>{
-          const number = Number(e.episodeNumber || index + 1)
+    <section className="compact-episodes episode-picker-clean" id="episodes">
+      <div className="compact-section-head episode-picker-head">
+        <div>
+          <h2>Серии</h2>
+          <p>{episodeOptions.length ? `${episodeOptions.length} серий · сейчас ${currentEpisodeNumber}` : 'Список серий обновляется'}</p>
+        </div>
+        <a href="#player">К плееру ↑</a>
+      </div>
+
+      {episodeOptions.length ? <div className="episode-picker-toolbar">
+        <span>Выбрана серия <b>{currentEpisodeNumber}</b></span>
+        {nextEpisode ? <Link href={titleEpisodeHref(nextEpisode.episodeNumber)}>Следующая серия →</Link> : <span>Последняя серия</span>}
+      </div> : null}
+
+      <div className="episode-picker-grid" aria-label="Выбор серии">
+        {episodeOptions.slice(0,64).map((e)=>{
+          const number = Number(e.episodeNumber || 1)
           const active = number === currentEpisodeNumber
-          return <Link className={active ? 'active' : ''} href={`?episode=${number}#player`} key={`${e.episodeNumber}-${e.voice || 'default'}`}><span>Серия {number}</span>{active?<em>сейчас</em>:<em>{e.voice || 'Kodik'}</em>}</Link>
+          const voiceLabel = episodeVoiceLabel(e.voice || item.translationTitle)
+          return <Link
+            className={active ? 'active' : ''}
+            href={titleEpisodeHref(number)}
+            key={`episode-${number}`}
+            prefetch={false}
+            aria-current={active ? 'true' : undefined}
+          >
+            <span>{number}</span>
+            <em>{active ? 'сейчас' : voiceLabel}</em>
+          </Link>
         })}
       </div>
     </section>

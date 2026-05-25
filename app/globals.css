@@ -14508,3 +14508,233 @@ a.rate-chip.is-link:focus-visible{
 .continue-empty-card b{font-size:18px;color:#211942;letter-spacing:-.03em}
 .continue-empty-card span{font-size:13px;color:rgba(33,25,66,.58);font-weight:700;max-width:520px}
 .continue-empty-card a{width:max-content;margin-top:6px;padding:10px 16px;border-radius:16px;background:linear-gradient(135deg,#8b5cf6,#ec5cc6);color:white;font-weight:850;text-decoration:none;box-shadow:0 14px 34px rgba(139,92,246,.22)}
+
+
+/* AIanime v38 — clean Kodik iframe and honest rating chips */
+.compact-player-kodik.is-clean{
+  overflow:hidden !important;
+  background:#111 !important;
+}
+.compact-player-kodik.is-clean .kodik-player-iframe{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  border:0 !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  z-index:3 !important;
+  display:block !important;
+}
+.compact-player-kodik.is-clean .player-ui-overlay,
+.compact-player-kodik.is-clean .player-ui-top,
+.compact-player-kodik.is-clean .player-ui-bottom,
+.compact-player-kodik.is-clean .kodik-player-meta,
+.compact-player-kodik.is-clean .kodik-player-rescue,
+.compact-player-kodik.is-clean .kodik-iframe-skeleton{
+  display:none !important;
+}
+.compact-player-kodik.is-clean.iframe-loading .kodik-player-iframe,
+.compact-player-kodik.is-clean.iframe-ready .kodik-player-iframe,
+.compact-player-kodik.is-clean.iframe-slow .kodik-player-iframe{
+  opacity:1 !important;
+  pointer-events:auto !important;
+}
+.compact-rating-row .main-rate.site-rate span{
+  white-space:nowrap;
+}
+.compact-rating-row .rate-chip{
+  cursor:pointer;
+}
+
+
+/* AIanime v39 — remove every custom overlay/control from Kodik player */
+.compact-player-kodik .kodik-player-rescue,
+.compact-player-kodik .kodik-player-meta,
+.compact-player-kodik .player-ui-overlay,
+.compact-player-kodik .player-ui-top,
+.compact-player-kodik .player-ui-bottom,
+.compact-player-kodik .kodik-iframe-skeleton,
+.compact-player-kodik .kodik-open-link,
+.compact-player-kodik [class*="rescue"],
+.compact-player-kodik [class*="reload"],
+.compact-player-kodik [class*="open"]{
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+.compact-player-kodik.is-ready,
+.compact-player-kodik.is-clean{
+  overflow:hidden !important;
+  background:#111 !important;
+}
+.compact-player-kodik .kodik-player-iframe{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  border:0 !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  z-index:10 !important;
+  display:block !important;
+}
+.kodik-player-simple-fallback button{
+  display:none !important;
+}
+
+/* AIanime v40 — compact working episode picker */
+.compact-episodes.episode-picker-clean{
+  padding:20px;
+}
+.episode-picker-head{
+  align-items:flex-start;
+  gap:14px;
+}
+.episode-picker-head>div{
+  min-width:0;
+}
+.episode-picker-head p{
+  margin:4px 0 0;
+  color:#8b849c;
+  font-size:13px;
+  line-height:1.35;
+  font-weight:760;
+}
+.episode-picker-toolbar{
+  margin:12px 0 14px;
+  min-height:42px;
+  padding:7px 8px 7px 14px;
+  border:1px solid #ebe3f8;
+  border-radius:18px;
+  background:linear-gradient(135deg,#fbf9ff,#fff);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  box-shadow:0 12px 32px rgba(45,34,86,.045);
+}
+.episode-picker-toolbar span{
+  color:#7e758f;
+  font-size:13px;
+  font-weight:820;
+}
+.episode-picker-toolbar b{
+  color:#231c3d;
+  font-weight:950;
+}
+.episode-picker-toolbar a{
+  flex:0 0 auto;
+  min-height:32px;
+  padding:8px 12px;
+  border-radius:14px;
+  background:#8d55ee;
+  color:#fff !important;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:900;
+  box-shadow:0 12px 26px rgba(141,85,238,.18);
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid,
+.compact-episodes.episode-picker-clean>div.episode-picker-grid:last-child{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(74px,1fr));
+  gap:8px;
+  max-height:178px;
+  overflow:auto;
+  padding:2px 4px 2px 0;
+  overscroll-behavior:contain;
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid::-webkit-scrollbar{
+  width:8px;
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid::-webkit-scrollbar-thumb{
+  border-radius:999px;
+  background:#ded3ef;
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid a,
+.compact-episodes.episode-picker-clean>div.episode-picker-grid:last-child a{
+  position:relative;
+  min-width:0;
+  height:44px;
+  padding:7px 8px;
+  border-radius:15px;
+  background:#f8f5ff;
+  border:1px solid #e8e1f4;
+  color:#322a4f;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  text-decoration:none;
+  box-shadow:none;
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid a span{
+  font-size:15px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:-.02em;
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid a em{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-style:normal;
+  color:#9b93ab;
+  font-size:9px;
+  line-height:1;
+  font-weight:880;
+  text-transform:uppercase;
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid a:hover{
+  transform:translateY(-1px);
+  background:#fff;
+  border-color:#d8c8fb;
+  box-shadow:0 10px 22px rgba(79,61,127,.08);
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid a.active{
+  background:linear-gradient(135deg,#8d55ee,#ec6dbc);
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 14px 26px rgba(141,85,238,.22);
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid a.active::after{
+  content:"";
+  position:absolute;
+  right:8px;
+  top:8px;
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  background:#fff;
+  opacity:.9;
+}
+.compact-episodes.episode-picker-clean .episode-picker-grid a.active em{
+  color:rgba(255,255,255,.78);
+}
+@media(max-width:640px){
+  .compact-episodes.episode-picker-clean{
+    padding:14px;
+  }
+  .episode-picker-toolbar{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .episode-picker-toolbar a{
+    width:100%;
+    text-align:center;
+  }
+  .compact-episodes.episode-picker-clean .episode-picker-grid,
+  .compact-episodes.episode-picker-clean>div.episode-picker-grid:last-child{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    max-height:210px;
+  }
+}
+@media(max-width:380px){
+  .compact-episodes.episode-picker-clean .episode-picker-grid,
+  .compact-episodes.episode-picker-clean>div.episode-picker-grid:last-child{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
