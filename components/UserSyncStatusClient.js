@@ -28,9 +28,9 @@ export default function UserSyncStatusClient(){
 
   if(state === 'syncing' && status?.updatedAt){
     const startedAt = new Date(status.updatedAt).getTime()
-    if(Number.isFinite(startedAt) && Date.now() - startedAt > 12000){
+    if(Number.isFinite(startedAt) && Date.now() - startedAt > 4500){
       state = 'idle'
-      message = 'Данные аккаунта загрузятся в фоне. Можно пользоваться сайтом.'
+      message = 'Данные аккаунта обновляются в фоне. Можно пользоваться сайтом.'
     }
   }
 

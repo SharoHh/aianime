@@ -61,11 +61,11 @@ export default function AccountSyncClient(){
           return
         }
 
-        setUserSyncStatus({ state:'syncing', message:'Загружаем данные аккаунта' })
+        setUserSyncStatus({ state:'idle', message:'Данные аккаунта обновляются в фоне. Можно пользоваться сайтом.' })
 
         const result = await withTimeout(
           Promise.all([
-            restoreCloudAnimeData(),
+            restoreCloudAnimeData({ silent:true }),
             restoreProfileFromCloud(user, supabase).catch(() => null)
           ]),
           3500,
@@ -77,7 +77,7 @@ export default function AccountSyncClient(){
         localStorage.setItem(lastRunKey, String(Date.now()))
 
         if(result?.timedOut){
-          setUserSyncStatus({ state:'idle', message:'Данные аккаунта загрузятся в фоне. Сайт уже готов к работе.' })
+          setUserSyncStatus({ state:'idle', message:'Supabase отвечает долго. Данные обновятся в фоне.' })
           return
         }
 
