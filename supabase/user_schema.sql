@@ -24,6 +24,8 @@ create table if not exists public.user_history (
   banner text,
   episode integer default 1,
   progress numeric default 0,
+  voice text,
+  provider text,
   watched_at timestamptz default now(),
   updated_at timestamptz default now(),
   created_at timestamptz default now(),
@@ -62,6 +64,8 @@ alter table if exists public.user_history add column if not exists poster text;
 alter table if exists public.user_history add column if not exists banner text;
 alter table if exists public.user_history add column if not exists episode integer default 1;
 alter table if exists public.user_history add column if not exists progress numeric default 0;
+alter table if exists public.user_history add column if not exists voice text;
+alter table if exists public.user_history add column if not exists provider text;
 alter table if exists public.user_history add column if not exists watched_at timestamptz default now();
 alter table if exists public.user_history add column if not exists updated_at timestamptz default now();
 alter table if exists public.user_history add column if not exists created_at timestamptz default now();
