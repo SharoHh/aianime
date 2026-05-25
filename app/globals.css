@@ -13893,3 +13893,195 @@ body{
   opacity:1;
   pointer-events:auto;
 }
+
+/* AIanime v20 — Kodik iframe rescue layer */
+.kodik-player-meta button,
+.kodik-player-rescue button,
+.kodik-player-rescue a{
+  min-height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  padding:0 11px;
+  background:rgba(255,255,255,.9);
+  border:1px solid rgba(255,255,255,.58);
+  color:#3a2852;
+  font-size:11.5px;
+  line-height:1;
+  font-weight:800;
+  text-decoration:none;
+  box-shadow:0 10px 24px rgba(20,12,38,.14);
+  position:relative;
+  pointer-events:auto;
+  font-family:inherit;
+  cursor:pointer;
+}
+.kodik-player-rescue{
+  position:absolute;
+  z-index:5;
+  left:16px;
+  right:16px;
+  top:16px;
+  max-width:520px;
+  border-radius:22px;
+  padding:14px;
+  background:rgba(20,16,34,.82);
+  border:1px solid rgba(255,255,255,.18);
+  color:#fff;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
+  backdrop-filter:blur(14px);
+  display:grid;
+  gap:8px;
+}
+.kodik-player-rescue strong{
+  font-size:14px;
+  line-height:1.1;
+  font-weight:820;
+  letter-spacing:-.02em;
+}
+.kodik-player-rescue span{
+  max-width:440px;
+  color:rgba(255,255,255,.74);
+  font-size:12px;
+  line-height:1.35;
+  font-weight:650;
+}
+.kodik-player-rescue div{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.kodik-player-rescue button,
+.kodik-player-rescue a{
+  min-height:34px;
+  padding:0 14px;
+  background:#fff;
+  color:#261b42;
+}
+.compact-player-kodik.iframe-slow .kodik-player-iframe{
+  opacity:1;
+  pointer-events:auto;
+}
+@media(max-width:620px){
+  .kodik-player-rescue{
+    left:10px;
+    right:10px;
+    top:10px;
+    padding:12px;
+    border-radius:18px;
+  }
+  .kodik-player-meta{
+    left:10px;
+    right:10px;
+    bottom:10px;
+  }
+}
+
+
+/* AIanime production cleanup v21-from-v20: safer public data rendering */
+.schedule-page .schedule-day-list{
+  max-height:520px;
+  overflow-y:auto;
+  padding-right:4px;
+  scrollbar-width:thin;
+}
+.schedule-page .schedule-day-list::-webkit-scrollbar{width:6px}
+.schedule-page .schedule-day-list::-webkit-scrollbar-thumb{background:#dfd2f7;border-radius:999px}
+.schedule-page .schedule-day-list::-webkit-scrollbar-track{background:transparent}
+@media(max-width:720px){
+  .schedule-page .schedule-day-list{max-height:430px}
+}
+
+/* Admin data tools v22 */
+.admin-mini-stats-six{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.admin-bulk-tools{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  margin:0 0 13px;
+  padding:12px;
+  border-radius:18px;
+  background:#fbfaff;
+  border:1px solid #eee6fb;
+}
+.admin-bulk-tools button{
+  height:36px;
+  border:0;
+  border-radius:13px;
+  background:#252144;
+  color:#fff;
+  font-size:12px;
+  font-weight:850;
+  cursor:pointer;
+}
+.admin-bulk-tools button:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+}
+.admin-bulk-tools label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#746d84;
+  font-size:12px;
+  font-weight:750;
+}
+.admin-bulk-tools input{
+  accent-color:#8d55ee;
+}
+.admin-editor-helper{
+  margin:0 0 16px;
+  padding:14px 16px;
+  border-radius:18px;
+  background:#fbf8ff;
+  border:1px solid #eee6fb;
+}
+.admin-editor-helper b{
+  display:block;
+  color:#252144;
+  font-size:14px;
+  font-weight:850;
+}
+.admin-editor-helper p{
+  margin:5px 0 0;
+  color:#746d84;
+  font-size:13px;
+  line-height:1.45;
+  font-weight:650;
+}
+.admin-actions-row .primary.soft{
+  background:#f0e3ff;
+  color:#7b45df;
+  box-shadow:none;
+}
+.admin-actions-row button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+.admin-cron-wide-tools{
+  align-items:flex-start;
+}
+.admin-cron-wide-buttons{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.admin-cron-wide-buttons button{
+  margin-top:0;
+  min-width:150px;
+}
+@media(max-width:1180px){
+  .admin-mini-stats-six{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .admin-cron-wide-buttons{
+    width:100%;
+  }
+  .admin-cron-wide-buttons button{
+    flex:1 1 180px;
+  }
+}

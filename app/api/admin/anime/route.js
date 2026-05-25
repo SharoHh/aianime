@@ -7,6 +7,22 @@ function cleanString(value){
   return text || null
 }
 
+
+function cleanUrl(value){
+  const text = cleanString(value)
+  if(!text) return null
+  if(text.startsWith('/api/image?')){
+    try{
+      const parsed = new URL(text, 'https://aianime.local')
+      const raw = parsed.searchParams.get('url')
+      return raw || text
+    }catch{
+      return text
+    }
+  }
+  return text
+}
+
 function cleanNumber(value){
   if(value === null || value === undefined || value === '') return null
   const n = Number(value)
@@ -24,8 +40,8 @@ function normalizePayload(body){
     original_title: cleanString(body.originalTitle || body.original_title),
     description: cleanString(body.description),
     description_ru: cleanString(body.descriptionRu || body.description_ru),
-    poster_url: cleanString(body.posterUrl || body.poster_url),
-    banner_url: cleanString(body.bannerUrl || body.banner_url),
+    poster_url: cleanUrl(body.posterUrl || body.poster_url),
+    banner_url: cleanUrl(body.bannerUrl || body.banner_url),
     status: cleanString(body.status),
     kind: cleanString(body.kind),
     year: cleanNumber(body.year),

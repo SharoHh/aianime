@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { pushToast } from '@/components/ToastCenter'
 
 function hasCyrillic(value){
@@ -15,10 +16,22 @@ function hasLatinOnly(value){
 
 function isPlaceholder(value){
   const text = String(value || '').trim().toLowerCase()
-  return !text || text.includes('будет добавлено') || text.includes('описание появится') || text === '—'
+  return !text || text.includes('будет добавлено') || text.includes('описание появится') || text === '—' || text === 'default'
+}
+
+function hasBadSymbols(value){
+  return /[●•]{2,}/.test(String(value || ''))
 }
 
 function cleanTitle(value){
+  return String(value || '')
+    .replace(/[●•]{2,}/g, '')
+    .replace(/\s+([:,.!?])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function cleanDescription(value){
   return String(value || '')
     .replace(/[●•]{2,}/g, '')
     .replace(/\s+([:,.!?])/g, '$1')
@@ -53,51 +66,91 @@ const filterLabels = {
   latinTitle: 'title_ru латиницей',
   missingDescription: 'Без описания',
   badSymbols: 'С мусором',
+  missingPoster: 'Без постера',
   ongoing: 'Онгоинги'
 }
 
+const validFilters = new Set(Object.keys(filterLabels))
+
+function itemHasPoster(item){
+  const poster = String(item?.poster || '').trim()
+  return Boolean(poster && !poster.includes('/posters/magic') && !poster.includes('/posters/placeholder'))
+}
+
+function itemMatchesFilter(item, filter){
+  if(filter === 'missingTitle') return !String(item.titleRu || '').trim()
+  if(filter === 'latinTitle') return hasLatinOnly(item.titleRu)
+  if(filter === 'missingDescription') return isPlaceholder(item.descriptionRu || item.description)
+  if(filter === 'badSymbols') return hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || ''}`)
+  if(filter === 'missingPoster') return !itemHasPoster(item)
+  if(filter === 'ongoing') return item.status === 'ongoing'
+  return true
+}
+
 export default function AdminAnimeClient({ items = [] }){
-  const [query,setQuery] = useState('')
-  const [filter,setFilter] = useState('all')
+  const searchParams = useSearchParams()
+  const initialFilter = searchParams.get('filter')
+  const initialQuery = searchParams.get('q') || ''
+
+  const [query,setQuery] = useState(initialQuery)
+  const [filter,setFilter] = useState(validFilters.has(initialFilter) ? initialFilter : 'all')
   const [selected,setSelected] = useState(items[0] || null)
   const [form,setForm] = useState(toForm(items[0] || null))
   const [saving,setSaving] = useState(false)
+  const [bulkRunning,setBulkRunning] = useState(false)
+  const [autoNext,setAutoNext] = useState(true)
+  const [dirty,setDirty] = useState(false)
 
   const stats = useMemo(()=>{
     const total = items.length
     const missingTitle = items.filter(item => !String(item.titleRu || '').trim()).length
     const latinTitle = items.filter(item => hasLatinOnly(item.titleRu)).length
-    const badSymbols = items.filter(item => /[●•]{2,}/.test(`${item.titleRu || ''} ${item.title || ''}`)).length
+    const badSymbols = items.filter(item => hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || ''}`)).length
     const ongoing = items.filter(item => item.status === 'ongoing').length
     const missingDescription = items.filter(item => isPlaceholder(item.descriptionRu || item.description)).length
-    return { total, missingTitle, latinTitle, badSymbols, ongoing, missingDescription }
+    const missingPoster = items.filter(item => !itemHasPoster(item)).length
+    return { total, missingTitle, latinTitle, badSymbols, ongoing, missingDescription, missingPoster }
   }, [items])
 
-  const filtered = useMemo(()=>{
+  const filteredAll = useMemo(()=>{
     const q = query.trim().toLowerCase()
     return items.filter(item => {
       const hay = `${item.title || ''} ${item.titleRu || ''} ${item.englishTitle || ''} ${item.originalTitle || ''} ${item.slug || ''} ${(item.genres || []).join(' ')}`.toLowerCase()
       if(q && !hay.includes(q)) return false
-      if(filter === 'missingTitle') return !String(item.titleRu || '').trim()
-      if(filter === 'latinTitle') return hasLatinOnly(item.titleRu)
-      if(filter === 'missingDescription') return isPlaceholder(item.descriptionRu || item.description)
-      if(filter === 'badSymbols') return /[●•]{2,}/.test(`${item.titleRu || ''} ${item.title || ''}`)
-      if(filter === 'ongoing') return item.status === 'ongoing'
-      return true
-    }).slice(0,220)
+      return itemMatchesFilter(item, filter)
+    })
   }, [items, query, filter])
 
-  function select(item){
+  const filtered = useMemo(()=>filteredAll.slice(0,260), [filteredAll])
+  const selectedIndex = useMemo(()=>filtered.findIndex(item => item.slug === selected?.slug), [filtered, selected])
+  const nextProblem = filtered[selectedIndex + 1] || filtered[0] || null
+
+  useEffect(()=>{
+    if(!selected || !filtered.some(item => item.slug === selected.slug)){
+      const first = filtered[0] || items[0] || null
+      setSelected(first)
+      setForm(toForm(first))
+      setDirty(false)
+    }
+  }, [filter, query, filtered, items, selected])
+
+  function select(item, options = {}){
+    if(!options.force && dirty && selected?.slug !== item?.slug){
+      const ok = window.confirm('Есть несохранённые изменения. Перейти к другому тайтлу без сохранения?')
+      if(!ok) return
+    }
     setSelected(item)
     setForm(toForm(item))
+    setDirty(false)
   }
 
   function update(key, value){
     setForm(prev => ({ ...prev, [key]: value }))
+    setDirty(true)
   }
 
-  async function save(){
-    if(!form.slug) return
+  async function save(options = {}){
+    if(!form.slug) return false
     setSaving(true)
     try{
       const res = await fetch('/api/admin/anime', {
@@ -108,8 +161,14 @@ export default function AdminAnimeClient({ items = [] }){
       const payload = await res.json()
       if(!payload.ok) throw new Error(payload.error || 'Ошибка сохранения')
       pushToast('Тайтл сохранён в Supabase', 'success')
+      setDirty(false)
+      if(options.next && nextProblem){
+        select(nextProblem, { force:true })
+      }
+      return true
     }catch(error){
       pushToast(error?.message || 'Не удалось сохранить', 'error')
+      return false
     }finally{
       setSaving(false)
     }
@@ -127,32 +186,94 @@ export default function AdminAnimeClient({ items = [] }){
       titleRu: cleanTitle(prev.titleRu),
       title: cleanTitle(prev.title),
       originalTitle: cleanTitle(prev.originalTitle),
+      descriptionRu: cleanDescription(prev.descriptionRu),
+      description: cleanDescription(prev.description),
     }))
-    pushToast('Название очищено в форме', 'success')
+    setDirty(true)
+    pushToast('Название и описание очищены в форме', 'success')
   }
 
   function fillRuFromCurrent(){
     if(!form.titleRu && selected?.title && hasCyrillic(selected.title)){
       update('titleRu', selected.title)
       pushToast('Русское название подставлено', 'success')
+      return
+    }
+    if(hasLatinOnly(form.titleRu) && selected?.title && hasCyrillic(selected.title)){
+      update('titleRu', selected.title)
+      pushToast('Латинский title_ru заменён русским из карточки', 'success')
     }
   }
+
+  async function saveAndNext(){
+    const ok = await save({ next:false })
+    if(ok && autoNext && nextProblem) select(nextProblem, { force:true })
+  }
+
+  function goNext(){
+    if(nextProblem) select(nextProblem, { force:true })
+  }
+
+  async function bulkCleanupVisible(){
+    const targets = filteredAll.filter(item => itemMatchesFilter(item, 'badSymbols')).slice(0,120)
+    if(!targets.length){
+      pushToast('В текущей выборке нет мусорных символов', 'success')
+      return
+    }
+    const ok = window.confirm(`Очистить ●● в ${targets.length} тайтлах текущей выборки? Это сохранит изменения в Supabase.`)
+    if(!ok) return
+
+    setBulkRunning(true)
+    let done = 0
+    let failed = 0
+    try{
+      for(const item of targets){
+        const payload = {
+          slug: item.slug,
+          titleRu: cleanTitle(item.titleRu || item.title),
+          title: cleanTitle(item.englishTitle || item.title),
+          originalTitle: cleanTitle(item.originalTitle),
+          descriptionRu: cleanDescription(item.descriptionRu || item.description),
+          description: cleanDescription(item.description),
+        }
+        const res = await fetch('/api/admin/anime', {
+          method:'PATCH',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        })
+        const data = await res.json().catch(()=>null)
+        if(res.ok && data?.ok) done += 1
+        else failed += 1
+      }
+      pushToast(`Очистка завершена: ${done} сохранено${failed ? `, ошибок: ${failed}` : ''}`, failed ? 'error' : 'success')
+    }catch(error){
+      pushToast(error?.message || 'Ошибка массовой очистки', 'error')
+    }finally{
+      setBulkRunning(false)
+    }
+  }
+
+  const visibleNotice = filteredAll.length > filtered.length
+    ? `Показано ${filtered.length} из ${filteredAll.length}. Уточни поиск, чтобы список был легче.`
+    : `${filtered.length} в текущей выборке`
 
   return <section className="admin-content-layout">
     <aside className="widget admin-panel admin-anime-left">
       <div className="admin-section-title">
         <div>
           <h2>Тайтлы</h2>
-          <p>{filtered.length} из {stats.total}</p>
+          <p>{visibleNotice}</p>
         </div>
         <Link href="/admin/sync">Cron</Link>
       </div>
 
-      <div className="admin-mini-stats">
+      <div className="admin-mini-stats admin-mini-stats-six">
         <button onClick={()=>setFilter('all')} className={filter==='all'?'active':''}><span>Всего</span><b>{stats.total}</b></button>
         <button onClick={()=>setFilter('missingTitle')} className={filter==='missingTitle'?'active':''}><span>Без RU</span><b>{stats.missingTitle}</b></button>
         <button onClick={()=>setFilter('latinTitle')} className={filter==='latinTitle'?'active':''}><span>Латиница</span><b>{stats.latinTitle}</b></button>
         <button onClick={()=>setFilter('badSymbols')} className={filter==='badSymbols'?'active':''}><span>Мусор</span><b>{stats.badSymbols}</b></button>
+        <button onClick={()=>setFilter('missingDescription')} className={filter==='missingDescription'?'active':''}><span>Без опис.</span><b>{stats.missingDescription}</b></button>
+        <button onClick={()=>setFilter('ongoing')} className={filter==='ongoing'?'active':''}><span>Онгоинги</span><b>{stats.ongoing}</b></button>
       </div>
 
       <div className="catalog-search admin-search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Найти тайтл, slug, жанр..."/></div>
@@ -161,12 +282,17 @@ export default function AdminAnimeClient({ items = [] }){
         {Object.entries(filterLabels).map(([id,label])=><button key={id} onClick={()=>setFilter(id)} className={filter===id?'active':''}>{label}</button>)}
       </div>
 
+      <div className="admin-bulk-tools">
+        <button onClick={bulkCleanupVisible} disabled={bulkRunning || !stats.badSymbols}>{bulkRunning ? 'Очищаю…' : 'Очистить ●● в выборке'}</button>
+        <label><input type="checkbox" checked={autoNext} onChange={e=>setAutoNext(e.target.checked)}/> после сохранения — следующий</label>
+      </div>
+
       <div className="admin-list admin-anime-list">
         {filtered.map(item=><button className={selected?.slug===item.slug?'active':''} onClick={()=>select(item)} key={item.slug}>
           <img src={item.poster}/>
           <span>{item.titleRu || item.title}</span>
           <em>{item.year || '—'} · {item.status === 'ongoing' ? 'онгоинг' : item.kind || 'tv'} · ★ {item.rating}</em>
-          {!item.titleRu ? <i>нет RU</i> : hasLatinOnly(item.titleRu) ? <i>латиница</i> : null}
+          {!item.titleRu ? <i>нет RU</i> : hasLatinOnly(item.titleRu) ? <i>латиница</i> : hasBadSymbols(`${item.titleRu} ${item.title}`) ? <i>мусор</i> : null}
         </button>)}
       </div>
     </aside>
@@ -184,9 +310,16 @@ export default function AdminAnimeClient({ items = [] }){
 
         <div className="admin-quality-bar">
           <span className={form.titleRu && hasCyrillic(form.titleRu) ? 'ok' : 'warn'}>{form.titleRu && hasCyrillic(form.titleRu) ? 'RU название есть' : 'Нужно RU название'}</span>
+          <span className={!hasLatinOnly(form.titleRu) ? 'ok' : 'warn'}>{!hasLatinOnly(form.titleRu) ? 'title_ru не латиницей' : 'title_ru латиницей'}</span>
+          <span className={!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'ok' : 'warn'}>{!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'Без мусора' : 'Есть ●●'}</span>
           <span className={!isPlaceholder(form.descriptionRu) ? 'ok' : 'warn'}>{!isPlaceholder(form.descriptionRu) ? 'Описание есть' : 'Нужно описание'}</span>
           <span className={form.posterUrl ? 'ok' : 'warn'}>{form.posterUrl ? 'Постер есть' : 'Нет постера'}</span>
-          <span>{form.status}</span>
+          {dirty ? <span className="warn">Есть несохранённые правки</span> : <span className="ok">Сохранено</span>}
+        </div>
+
+        <div className="admin-editor-helper">
+          <b>Быстрая чистка данных</b>
+          <p>Работай по фильтрам слева: “С мусором”, “Без описания”, “title_ru латиницей”. После сохранения можно автоматически переходить к следующей проблеме.</p>
         </div>
 
         <div className="admin-preview-grid editable-admin-grid admin-anime-form-grid">
@@ -208,9 +341,11 @@ export default function AdminAnimeClient({ items = [] }){
         </div>
 
         <div className="admin-actions-row admin-sticky-actions">
-          <button className="primary" onClick={save} disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить тайтл'}</button>
+          <button className="primary" onClick={()=>save()} disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить тайтл'}</button>
+          <button className="primary soft" onClick={saveAndNext} disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить и дальше'}</button>
           <button className="secondary" onClick={cleanupForm}>Очистить ●●</button>
           <button className="secondary" onClick={fillRuFromCurrent}>Подставить RU</button>
+          <button className="secondary" onClick={goNext} disabled={!nextProblem}>Следующий</button>
           <Link className="secondary" href={`/anime/${selected.slug}`}>Открыть на сайте</Link>
           <button className="secondary" onClick={copySlug}>Копировать slug</button>
         </div>

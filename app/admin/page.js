@@ -19,6 +19,9 @@ export default async function AdminPage(){
     titleRuCount: anime.filter(item => String(item.titleRu || '').trim()).length,
     missingTitleCount: anime.filter(item => !String(item.titleRu || '').trim()).length,
     badTitleCount: anime.filter(item => /[●•]{2,}/.test(`${item.titleRu || ''} ${item.title || ''}`) || hasLatinOnly(item.titleRu)).length,
+    latinTitleCount: anime.filter(item => hasLatinOnly(item.titleRu)).length,
+    badSymbolsCount: anime.filter(item => /[●•]{2,}/.test(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || ''}`)).length,
+    missingDescriptionCount: anime.filter(item => !String(item.descriptionRu || item.description || '').trim() || String(item.descriptionRu || item.description || '').toLowerCase().includes('будет добавлено')).length,
     ongoingCount: anime.filter(item => item.status === 'ongoing').length,
   }
   return <main className="admin-hub-page">

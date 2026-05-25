@@ -9,6 +9,7 @@ import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import { encodeSlug } from '@/lib/routeSlugs'
+import { cleanPublicText, isPlaceholderText } from '@/lib/ruContent'
 
 export async function generateMetadata({ params }){
   const resolvedParams = await params
@@ -19,10 +20,12 @@ export async function generateMetadata({ params }){
       description: 'Этот тайтл удалён или больше не доступен в каталоге Aianime.'
     }
   }
+  const title = cleanPublicText(item.title) || 'Без названия'
+  const description = cleanPublicText(item.description)?.slice(0, 160) || 'Аниме онлайн: описание, серии, комментарии и похожие тайтлы.'
   return {
-    title: `${item.title} смотреть онлайн — Aianime`,
-    description: item.description?.slice(0, 160) || 'Аниме онлайн: описание, серии, комментарии и похожие тайтлы.',
-    openGraph: { title: item.title, description: item.description, images: [item.poster] }
+    title: `${title} смотреть онлайн — Aianime`,
+    description,
+    openGraph: { title, description, images: [item.poster] }
   }
 }
 
@@ -32,21 +35,30 @@ function statusLabel(status){
   return 'Завершён'
 }
 
+function visibleInfoRows(rows){
+  return rows
+    .map(([label, value]) => [label, cleanPublicText(value)])
+    .filter(([, value]) => !isPlaceholderText(value))
+}
+
 
 export default async function AnimePage({ params }){
   const resolvedParams = await params
   if(String(resolvedParams.slug || '').startsWith('catalog-title-')) notFound()
   const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
   if(!item) notFound()
+  const title = cleanPublicText(item.title) || 'Без названия'
+  const originalTitle = cleanPublicText(item.originalTitle || item.englishTitle || item.title)
+  const description = cleanPublicText(item.description) || 'Описание скоро появится.'
   const [allAnime, episodes] = await Promise.all([
     getAnimeList({limit:220}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
   ])
   const currentEpisode = episodes[0]
   const nextEpisode = episodes[1] || episodes[0]
-  const similar = recommendAnime(allAnime, `похожие на ${item.title}`, { baseAnime: item, limit: 6 })
+  const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
 
-  const info = [
+  const info = visibleInfoRows([
     ['Статус', statusLabel(item.status)],
     ['Тип', item.kind === 'movie' ? 'Фильм' : 'Сериал'],
     ['Год выхода', item.year || '—'],
@@ -57,7 +69,7 @@ export default async function AnimePage({ params }){
     ['Количество серий', item.episodes || item.episodesList?.length || episodes.length],
     ['Перевод', item.translationTitle || 'Kodik / будет добавлено'],
     ['Озвучка', item.translationTitle || currentEpisode?.voice || 'default'],
-  ]
+  ])
 
   return <main className="anime-compact-page">
     <nav className="title-top-nav title-top-nav-premium">
@@ -78,10 +90,10 @@ export default async function AnimePage({ params }){
       <div className="anime-compact-left">
         <nav className="compact-breadcrumb"><Link href="/">← На главную</Link><span>/</span><Link href="/catalog">Каталог</Link></nav>
 
-        <h1>{item.title}</h1>
+        <h1>{title}</h1>
 
         <div className="compact-aliases">
-          <span>{item.originalTitle || item.title}</span>
+          <span>{originalTitle || title}</span>
           <span>{item.kind === 'movie' ? 'Фильм' : 'Сериал'}</span>
           <span>{item.year || '—'}</span>
         </div>
@@ -104,7 +116,7 @@ export default async function AnimePage({ params }){
           {item.genres.slice(0,8).map(g=><Link href={`/genre/${encodeSlug(g)}`} key={g}>{g}</Link>)}
         </div>
 
-        <p className="compact-description">{item.description}</p>
+        <p className="compact-description">{description}</p>
 
         <div className="compact-actions">
           <Link className="compact-watch" href="#player">▶ Смотреть</Link>
@@ -114,7 +126,7 @@ export default async function AnimePage({ params }){
       </div>
 
       <aside className="anime-compact-poster">
-        <img loading="eager" decoding="async" src={item.poster} alt={item.title}/>
+        <img loading="eager" decoding="async" src={item.poster} alt={title}/>
         <div className="poster-rank">AI рекомендация</div>
       </aside>
     </section>
@@ -123,7 +135,7 @@ export default async function AnimePage({ params }){
       <div className="compact-section-head"><h2>Плеер</h2><a href="#episodes">Серии ↓</a></div>
       <KodikPlayerClient
         slug={item.slug}
-        title={item.title}
+        title={title}
         banner={item.banner || item.poster}
         episode={1}
         nextEpisode={nextEpisode?.episodeNumber || 2}
@@ -157,7 +169,7 @@ export default async function AnimePage({ params }){
 
     <section className="compact-comments">
       <div className="compact-section-head"><h2>Комментарии</h2><a href="#player">К просмотру ↑</a></div>
-      <CommentsClient slug={item.slug} title={item.title}/>
+      <CommentsClient slug={item.slug} title={title}/>
     </section>
   </main>
 }

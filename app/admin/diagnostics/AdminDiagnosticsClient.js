@@ -84,6 +84,40 @@ export default function AdminDiagnosticsClient(){
     }
   }
 
+
+  async function runTitlesFullAndSchedule(){
+    setRunning('titles-full-schedule')
+    setResult(null)
+    const collected = []
+    try{
+      for(const currentOffset of [0,80,160,240,320,400,480,560,640]){
+        const res = await fetch('/admin/api/cron', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify({ job:'titles', limit:80, offset:currentOffset })
+        })
+        const payload = await res.json()
+        collected.push({ step:'titles', offset:currentOffset, result:payload })
+        if(!payload.ok) throw new Error(payload.error || payload.payload?.error || `Ошибка title_ru на offset ${currentOffset}`)
+      }
+      const scheduleRes = await fetch('/admin/api/cron', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ job:'schedule', limit:25, pages:2 })
+      })
+      const schedulePayload = await scheduleRes.json()
+      collected.push({ step:'schedule', result:schedulePayload })
+      if(!schedulePayload.ok) throw new Error(schedulePayload.error || schedulePayload.payload?.error || 'Ошибка обновления расписания')
+      setResult({ ok:true, job:'titles-full-schedule', payload:{ steps:collected } })
+      pushToast('title_ru и расписание обновлены', 'success')
+    }catch(error){
+      setResult({ ok:false, error:error?.message || 'Ошибка запуска', payload:collected })
+      pushToast(error?.message || 'Ошибка запуска', 'error')
+    }finally{
+      setRunning('')
+    }
+  }
+
   return <main className="admin-page admin-tools-page">
     <section className="admin-episodes">
       <div className="page-head admin-page-head-row">
@@ -107,12 +141,15 @@ export default function AdminDiagnosticsClient(){
         </article>)}
       </div>
 
-      <section className="widget admin-cron-wide">
+      <section className="widget admin-cron-wide admin-cron-wide-tools">
         <div>
           <h2>Быстрая русификация всего каталога</h2>
-          <p>Без force=1: заполняет только пустые title_ru и не затирает ручные правки. После этого запусти “Расписание”, чтобы оно взяло новые названия.</p>
+          <p>Без force=1: заполняет только пустые title_ru и не затирает ручные правки. Можно сразу обновить расписание после прохода.</p>
         </div>
-        <button onClick={runTitlesFull} disabled={Boolean(running)}>{running === 'titles-full' ? 'Идёт проход…' : 'Пройти весь каталог'}</button>
+        <div className="admin-cron-wide-buttons">
+          <button onClick={runTitlesFull} disabled={Boolean(running)}>{running === 'titles-full' ? 'Идёт проход…' : 'Только title_ru'}</button>
+          <button onClick={runTitlesFullAndSchedule} disabled={Boolean(running)}>{running === 'titles-full-schedule' ? 'Идёт проход…' : 'title_ru + расписание'}</button>
+        </div>
       </section>
 
       {result ? <section className="widget admin-result-box">

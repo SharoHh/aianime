@@ -45,12 +45,15 @@ const cards = {
   overview: [
     { title:'Аниме в базе', value:'animeCount', hint:'Загружено из Supabase, не seed fallback', href:'/admin/anime' },
     { title:'Русские названия', value:'titleRuCount', hint:'title_ru уже заполнены', href:'/admin/anime?filter=missingTitle' },
+    { title:'Проблемные данные', value:'badTitleCount', hint:'Мусор/латиница/поля для ручной чистки', href:'/admin/anime?filter=badSymbols' },
     { title:'Расписание', value:'Cron', hint:'Реальные эфиры + автообновление', href:'/admin/sync' },
     { title:'Комментарии', value:'Модерация', hint:'Проверка пользовательских сообщений', href:'/admin/comments' },
   ],
   content: [
     { title:'Тайтлы', value:'Редактировать', hint:'title_ru, описание, жанры, постер, статус', href:'/admin/anime' },
-    { title:'Без RU названия', value:'missingTitleCount', hint:'Что нужно добить вручную', href:'/admin/anime' },
+    { title:'Без RU названия', value:'missingTitleCount', hint:'Что нужно добить вручную', href:'/admin/anime?filter=missingTitle' },
+    { title:'title_ru латиницей', value:'latinTitleCount', hint:'Где нужен ручной русский вариант', href:'/admin/anime?filter=latinTitle' },
+    { title:'Без описания', value:'missingDescriptionCount', hint:'Пустые или заглушечные description_ru', href:'/admin/anime?filter=missingDescription' },
     { title:'Серии', value:'Управлять', hint:'Плееры и episode records', href:'/admin/episodes' },
     { title:'Каталог', value:'Проверить', hint:'Публичный каталог', href:'/catalog' },
   ],
@@ -84,6 +87,9 @@ export default function AdminHubClient({ animeCount = 0, qualityStats = {} }){
     titleRuCount: qualityStats.titleRuCount || 0,
     missingTitleCount: qualityStats.missingTitleCount || 0,
     badTitleCount: qualityStats.badTitleCount || 0,
+    latinTitleCount: qualityStats.latinTitleCount || 0,
+    badSymbolsCount: qualityStats.badSymbolsCount || 0,
+    missingDescriptionCount: qualityStats.missingDescriptionCount || 0,
     ongoingCount: qualityStats.ongoingCount || 0,
   }
 
@@ -128,6 +134,7 @@ export default function AdminHubClient({ animeCount = 0, qualityStats = {} }){
         <div><span>title_ru</span><b>{stats.titleRuCount}</b></div>
         <div><span>Без RU</span><b>{stats.missingTitleCount}</b></div>
         <div><span>Онгоинги</span><b>{stats.ongoingCount}</b></div>
+        <div><span>Проблемы</span><b>{stats.badTitleCount}</b></div>
       </section>
 
       <section className="admin-hub-grid">
