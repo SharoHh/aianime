@@ -146,6 +146,7 @@ export default function KodikPlayerClient({
         <button type="button" onClick={() => { setIframeSlow(false); setIframeReady(false); setIframeKey(key => key + 1); setTimeout(() => setIframeReady(true), 900); setTimeout(() => setIframeSlow(true), 8000) }}>Обновить плеер</button>
         <a href={state.embedUrl} target="_blank" rel="noreferrer">Открыть отдельно</a>
       </div>
+      <PlayerControlsClient slug={slug} episode={episode} nextEpisode={nextEpisode} voice={state.voice || voice} historyItem={historyItem}/>
     </div>
   }
 
