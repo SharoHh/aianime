@@ -130,6 +130,10 @@ export default async function AnimePage({ params }){
         voice={item.translationTitle || currentEpisode?.voice || 'Kodik'}
         translationTitle={item.translationTitle}
         quality={item.quality}
+        initialEmbedUrl={currentEpisode?.embedUrl || item.kodikLink || null}
+        initialVoice={currentEpisode?.voice || item.translationTitle || null}
+        initialQuality={item.quality || null}
+        initialSource={currentEpisode?.embedUrl ? 'anime_episodes' : item.kodikLink ? 'anime.kodik_link' : null}
       />
     </section>
 
