@@ -8,6 +8,7 @@ import TitleActions from '@/components/TitleActions'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
+import WatchTracker from '@/components/WatchTracker'
 import { encodeSlug } from '@/lib/routeSlugs'
 import { cleanPublicText, isPlaceholderText } from '@/lib/ruContent'
 
@@ -29,6 +30,31 @@ export async function generateMetadata({ params }){
   }
 }
 
+
+function numericRating(value){
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? number.toFixed(1) : '—'
+}
+
+function aiMatchPercent(item){
+  const base = Number(item?.score || item?.rating || 0)
+  if(!Number.isFinite(base) || base <= 0) return '—'
+  return `${Math.min(98, Math.max(62, Math.round(base * 10)))}%`
+}
+
+function externalSearchUrl(source, item){
+  const query = encodeURIComponent(item?.originalTitle || item?.englishTitle || item?.title || item?.slug || 'anime')
+  if(source === 'mal'){
+    const malId = Number(item?.malId)
+    if(Number.isFinite(malId) && malId > 0) return `https://myanimelist.net/anime/${malId}`
+    return `https://myanimelist.net/anime.php?q=${query}`
+  }
+  if(source === 'shiki'){
+    return `https://shikimori.one/animes?search=${query}`
+  }
+  return null
+}
+
 function statusLabel(status){
   if(status === 'ongoing') return 'Выходит'
   if(status === 'anons') return 'Анонс'
@@ -42,8 +68,9 @@ function visibleInfoRows(rows){
 }
 
 
-export default async function AnimePage({ params }){
+export default async function AnimePage({ params, searchParams }){
   const resolvedParams = await params
+  const resolvedSearchParams = await searchParams
   if(String(resolvedParams.slug || '').startsWith('catalog-title-')) notFound()
   const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
   if(!item) notFound()
@@ -54,8 +81,10 @@ export default async function AnimePage({ params }){
     getAnimeList({limit:220}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
   ])
-  const currentEpisode = episodes[0]
-  const nextEpisode = episodes[1] || episodes[0]
+  const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
+  const currentEpisode = episodes.find(e => Number(e.episodeNumber) === selectedEpisodeNumber) || episodes[0]
+  const currentEpisodeNumber = Number(currentEpisode?.episodeNumber || selectedEpisodeNumber || 1)
+  const nextEpisode = episodes.find(e => Number(e.episodeNumber) > currentEpisodeNumber) || episodes[0]
   const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
 
   const info = visibleInfoRows([
@@ -98,11 +127,11 @@ export default async function AnimePage({ params }){
           <span>{item.year || '—'}</span>
         </div>
 
-        <div className="compact-rating-row">
-          <div className="main-rate"><b>{item.rating || '—'}</b><span>рейтинг</span></div>
-          <div className="rate-chip shiki">Shiki {item.rating || '—'}</div>
-          <div className="rate-chip ai">AI {Math.min(98, Math.round((Number(item.score || item.rating || 8) || 8) * 10))}%</div>
-          <div className="rate-chip mal">MAL {item.rating || '—'}</div>
+        <div className="compact-rating-row" aria-label="Рейтинги и быстрые ссылки">
+          <div className="main-rate" title="Средняя оценка тайтла"><b>{numericRating(item.score || item.rating)}</b><span>рейтинг</span></div>
+          <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki {numericRating(item.score || item.rating)}</a>
+          <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI {aiMatchPercent(item)}</Link>
+          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL {numericRating(item.score || item.rating)}</a>
         </div>
 
         <div className="compact-info-list">
@@ -119,7 +148,7 @@ export default async function AnimePage({ params }){
         <p className="compact-description">{description}</p>
 
         <div className="compact-actions">
-          <Link className="compact-watch" href="#player">▶ Смотреть</Link>
+          <Link className="compact-watch" href={`?episode=${currentEpisodeNumber}#player`}>▶ Смотреть</Link>
           <Link className="compact-ai" href={`/ai?similar=${item.slug}`}>✦ Похожие через AI</Link>
           <TitleActions item={item}/>
         </div>
@@ -137,8 +166,8 @@ export default async function AnimePage({ params }){
         slug={item.slug}
         title={title}
         banner={item.banner || item.poster}
-        episode={1}
-        nextEpisode={nextEpisode?.episodeNumber || 2}
+        episode={currentEpisodeNumber}
+        nextEpisode={nextEpisode?.episodeNumber || currentEpisodeNumber + 1}
         voice={item.translationTitle || currentEpisode?.voice || 'Kodik'}
         translationTitle={item.translationTitle}
         quality={item.quality}
@@ -146,13 +175,19 @@ export default async function AnimePage({ params }){
         initialVoice={currentEpisode?.voice || item.translationTitle || null}
         initialQuality={item.quality || null}
         initialSource={currentEpisode?.embedUrl ? 'anime_episodes' : item.kodikLink ? 'anime.kodik_link' : null}
+        historyItem={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }}
       />
+      <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }} episode={currentEpisodeNumber}/>
     </section>
 
     <section className="compact-episodes" id="episodes">
       <div className="compact-section-head"><h2>Серии</h2><a href="#player">К плееру ↑</a></div>
       <div>
-        {episodes.slice(0,32).map((e,index)=><a className={index===0?'active':index<3?'watched':''} href="#player" key={`${e.episodeNumber}-${e.voice || 'default'}`}><span>Серия {e.episodeNumber}</span>{index===0?<em>сейчас</em>:index<3?<em>просмотрено</em>:<em>новая</em>}</a>)}
+        {episodes.slice(0,32).map((e,index)=>{
+          const number = Number(e.episodeNumber || index + 1)
+          const active = number === currentEpisodeNumber
+          return <Link className={active ? 'active' : ''} href={`?episode=${number}#player`} key={`${e.episodeNumber}-${e.voice || 'default'}`}><span>Серия {number}</span>{active?<em>сейчас</em>:<em>{e.voice || 'Kodik'}</em>}</Link>
+        })}
       </div>
     </section>
 

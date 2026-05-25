@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { createBrowserSupabase, hasSupabaseBrowser } from '@/lib/supabaseClient'
 import { getUserDisplayName, setImmediateAuthUser, setPendingAuthSession } from '@/components/AuthStateClient'
+import { resetLocalAccountState } from '@/lib/userStorage'
 
 function authErrorMessage(message){
   const text = String(message || '')
@@ -154,9 +155,10 @@ export default function AuthClient(){
   }
 
   async function logout(){
-    if(!supabase) return
-    await supabase.auth.signOut()
     setUser(null)
+    resetLocalAccountState()
+    if(!supabase) return
+    supabase.auth.signOut({ scope:'local' }).catch(() => {})
   }
 
   if(user){

@@ -112,4 +112,4 @@ export default async function Home(){const anime = await getAnimeList({limit:720
     </div>
   </div>
 </section>
-<SectionTitle icon="♨" title="Популярное сейчас"/><div className="poster-row">{anime.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient fallback={anime.slice(0,4)}/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}
+<SectionTitle icon="♨" title="Популярное сейчас"/><div className="poster-row">{anime.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}

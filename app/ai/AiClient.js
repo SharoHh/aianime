@@ -3,36 +3,14 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { readJson, saveAiQuery } from '@/lib/userStorage'
+import { scoreAiItem, explainAiMatch, getCatalogHint } from '@/lib/searchRelevance'
 
 function localScore(item, query){
-  const text = query.trim().toLowerCase()
-  const hay = `${item.title} ${item.originalTitle || ''} ${item.description || ''} ${(item.genres || []).join(' ')}`.toLowerCase()
-  let score = Number(item.score || item.rating || 0) * 8
-  const moodMap = [
-    [['вечер','уют','спокойн','лёгк','легк'], ['Романтика','Повседневность','Комедия','Драма']],
-    [['мрач','темн','тёмн','жестк','жёстк'], ['Психология','Триллер','Драма','Экшен']],
-    [['экшен','драк','сраж','битв'], ['Экшен','Приключения','Сёнен']],
-    [['роман','любов','мил'], ['Романтика','Драма']],
-    [['умн','психолог','детектив'], ['Психология','Триллер','Фантастика']],
-    [['фэнтези','маг','приключ'], ['Фэнтези','Приключения','Сверхъестественное']],
-    [['коротк','быстр','выходн'], []],
-  ]
-
-  for(const token of text.split(/\s+/).filter(Boolean)) if(hay.includes(token)) score += 8
-  for(const [words, genres] of moodMap){
-    if(words.some(w => text.includes(w))){
-      if(!genres.length && Number(item.episodes || 0) <= 13) score += 18
-      if((item.genres || []).some(g => genres.includes(g))) score += 18
-    }
-  }
-  return score
+  return scoreAiItem(item, query)
 }
 
 function localReason(item, query){
-  const genres = (item.genres || []).slice(0, 3).join(', ')
-  const q = query.trim()
-  if(!q) return `Высокий рейтинг, ${genres || 'популярные жанры'} и хороший старт для просмотра.`
-  return `Подходит по запросу: ${q.length > 52 ? q.slice(0, 52) + '…' : q}. ${genres ? `Близкие жанры: ${genres}.` : ''}`
+  return explainAiMatch(item, query)
 }
 
 function normalizeResults(payload, items, submitted){
@@ -47,7 +25,7 @@ function normalizeResults(payload, items, submitted){
     .map(item => ({ ...item, aiScore: localScore(item, submitted), match: Math.min(99, Math.max(55, Math.round(localScore(item, submitted)))) }))
     .sort((a,b) => b.aiScore - a.aiScore)
     .slice(0, 12)
-    .map(item => ({ ...item, reason: localReason(item, submitted) }))
+    .map(item => ({ ...item, reason: localReason(item, submitted), match: Math.min(99, Math.max(55, Math.round(item.aiScore / 3))) }))
 }
 
 export default function AiClient({ items, similarSlug, initialQuery: initialQueryProp }){
@@ -89,22 +67,23 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   }
 
   const results = useMemo(() => normalizeResults(remoteResults, items, submitted), [remoteResults, items, submitted])
-  const examples = ['романтика без кринжа', 'мрачное фэнтези с сильным героем', 'короткое на вечер', 'психологический триллер', 'как Наруто, но взрослее', 'что посмотреть вечером']
+  const examples = ['лёгкое позитивное аниме без тяжёлой драмы', 'романтика без кринжа', 'мрачное фэнтези с сильным героем', 'короткое на вечер', 'психологический триллер', 'как Наруто, но взрослее']
 
   return <>
     <section className="ai-search-panel widget">
       <div className="ai-search-copy">
         <span>AI anime finder</span>
         <h2>Опиши, что хочется посмотреть</h2>
-        <p>Можно писать обычным языком: настроение, любимый тайтл, жанр, темп или то, чего точно не хочется.</p>
+        <p>Можно писать обычным языком: настроение, любимый тайтл, жанр, темп или то, чего точно не хочется. Подбор учитывает тяжесть сюжета, длину, жанры и статус.</p>
       </div>
       <textarea value={query} onChange={e=>setQuery(e.target.value)} placeholder="Например: хочу лёгкое приключение без жестокости"/>
       <div className="ai-actions">
         <button className="primary" onClick={()=>runSearch(query)} disabled={loading}>{loading ? 'Подбираю…' : 'Подобрать ✨'}</button>
-        <button className="secondary" onClick={()=>runSearch('что посмотреть вечером уютное интересное не слишком длинное')}>На вечер</button>
+        <button className="secondary" onClick={()=>runSearch('лёгкое позитивное аниме без тяжёлой драмы')}>Лёгкое</button>
         <button className="secondary" onClick={()=>runSearch('популярное динамичное аниме с экшеном')}>Экшен</button>
       </div>
       <div className="ai-chip-row">{examples.map(x=><button key={x} onClick={()=>runSearch(x)}>{x}</button>)}</div>
+      <p className="ai-search-hint">{getCatalogHint(submitted)}</p>
       {history.length ? <div className="ai-history">
         <p>История запросов</p>
         <div>{history.map(x=><button key={x} onClick={()=>runSearch(x)}>{x}</button>)}</div>
