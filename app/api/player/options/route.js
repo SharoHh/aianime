@@ -122,12 +122,24 @@ function strictEpisodeTolerance(item = {}){
   return 6
 }
 
+function isStrictEpisodeContext(item = {}){
+  const expected = expectedEpisodes(item)
+  const text = titleText(item)
+  return Boolean(expected && (hasSpecialMarker(text) || hasSeasonMarker(text) || expected <= 12))
+}
+
+function groupConfidence(group = []){
+  const reliable = group.some(row => Boolean(row?.reliableId))
+  const maxScore = Math.max(...group.map(row => Number(row?.matchScore || 0)), 0)
+  const onlyFallback = group.every(row => row?.source === 'anime.kodik_link' || row?.source === 'fallback')
+  return { reliable, maxScore, onlyFallback, low:!reliable && maxScore < 160 }
+}
+
 function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
   const expected = expectedEpisodes(item)
   if(!expected) return rows
 
-  const text = titleText(item)
-  const strict = hasSpecialMarker(text) || hasSeasonMarker(text) || expected <= 12
+  const strict = isStrictEpisodeContext(item)
   if(!strict) return rows
 
   const byVoice = new Map()
@@ -143,10 +155,21 @@ function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
     const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
     const declared = Math.max(...group.map(row => Number(row.episodesCount || 0)).filter(Boolean), 0)
     const actual = Math.max(maxEpisode, declared)
+    const confidence = groupConfidence(group)
 
     // Для Season/Part/OVA/коротких тайтлов не допускаем voice-группу длиннее самого тайтла.
     // Так Season 3 Part 2 на 10 серий не получает Season 3 на 25 серий.
     if(actual && actual > expected) continue
+
+    // Не принимаем слабые частичные совпадения соседних сезонов.
+    // Пример: страница Season 3 Part 2 ожидает 10 серий, а Kodik отдаёт Season 4 на 2 серии
+    // с reliable_id=false и низким score. Такая группа не должна появляться рядом с правильным сезоном.
+    if(actual && actual < expected && confidence.low) continue
+
+    // Для строгих страниц не показываем чистый fallback из anime.kodik_link как отдельную группу.
+    // Лучше пусто/меньше озвучек, чем подмешать старый serial-link от соседнего сезона.
+    if(confidence.onlyFallback) continue
+
     allowed.push(...group)
   }
   return allowed
@@ -180,6 +203,13 @@ function filterOptionsForAnime(options, item){
   const hasSerialLinks = valid.some(option => isSerialOption(option))
 
   let rows = valid
+  const strictContext = isStrictEpisodeContext(item)
+
+  // На Season/Part/OVA/Movie-страницах не смешиваем старый anime.kodik_link с настоящими
+  // episode-ссылками Kodik. Старый fallback часто ведёт на соседний сезон франшизы.
+  if(strictContext && rows.some(option => option.source === 'kodik-api-episode')){
+    rows = rows.filter(option => option.source !== 'anime.kodik_link')
+  }
 
   // Если страница — фильм, не показываем найденный Kodik-сериал. Лучше честно показать,
   // что плеера пока нет, чем включить другой тайтл/TV-сезон.
