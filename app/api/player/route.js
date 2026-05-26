@@ -111,8 +111,18 @@ function episodeRowMatchesAnime(row, anime = {}){
 
   if(isLongFranchiseAnime(anime)){
     const reliable = Boolean(raw.reliable_id)
-    // Для длинных франшиз не отдаём прямой плеер без точного reliable id.
-    if(!reliable) return false
+    const score = Number(raw.match_score || raw.kodik_match_score || 0) || 0
+    const episode = Number(row.episode_number || row.episodeNumber || 0) || 0
+    const season = Number(raw.season_number || row.season_number || row.seasonNumber || 0) || 0
+    const exactShortMatch = expected >= 2 && expected <= 64
+      && actual === expected
+      && (!episode || episode <= expected)
+      && score >= 250
+      && (!season || season <= 3)
+
+    // Для длинных франшиз не отдаём прямой плеер без reliable id,
+    // кроме коротких точных релизов внутри франшизы вроде Pokémon 2023 на 11 серий.
+    if(!reliable && !exactShortMatch) return false
     if(expected > 64 && actual && actual < Math.max(8, Math.floor(expected * 0.08))) return false
   }
 

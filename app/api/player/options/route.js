@@ -163,6 +163,27 @@ function isLongFranchiseAnime(item = {}){
   )
 }
 
+function longFranchiseExactShortRowTrusted(row = {}, item = {}){
+  const expected = expectedEpisodes(item)
+  if(!expected || expected < 2 || expected > 64) return false
+
+  const episode = Number(row?.episodeNumber || 0) || 0
+  const declared = Number(row?.episodesCount || 0) || 0
+  const score = Number(row?.matchScore || 0) || 0
+  const season = Number(row?.seasonNumber || 0) || 0
+
+  // Для короткого отдельного релиза внутри длинной франшизы, например Pokémon 2023 на 11 серий,
+  // reliable_id у Kodik может быть false, но группа всё равно правильная, если:
+  // 1) серия не выходит за 1..N,
+  // 2) Kodik declared episodes_count ровно N,
+  // 3) score высокий.
+  if(episode && episode > expected) return false
+  if(declared && declared !== expected) return false
+  if(score < 250) return false
+  if(season && season > 3) return false
+  return true
+}
+
 function longFranchiseRowTrusted(row = {}){
   // Для длинных франшиз типа Pokémon нельзя доверять совпадению по названию.
   // reliableId=false у Kodik означает, что это не точный матч по id, а соседняя арка/сезон может иметь то же имя.
@@ -174,7 +195,7 @@ function longFranchiseRowTrusted(row = {}){
 function filterLongFranchiseUntrustedRows(rows = [], item = {}){
   const list = Array.isArray(rows) ? rows : []
   if(!isLongFranchiseAnime(item)) return list
-  return list.filter(row => longFranchiseRowTrusted(row))
+  return list.filter(row => longFranchiseRowTrusted(row) || longFranchiseExactShortRowTrusted(row, item))
 }
 
 function filterLongFranchiseVoiceGroups(rows = [], item = {}){

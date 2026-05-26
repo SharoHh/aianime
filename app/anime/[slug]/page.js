@@ -288,6 +288,22 @@ function isLongFranchiseAnime(item = {}){
   )
 }
 
+function longFranchiseExactShortRowTrusted(row = {}, item = {}){
+  const expected = expectedEpisodeCount(item)
+  if(!expected || expected < 2 || expected > 64) return false
+
+  const episode = Number(row?.episodeNumber || 0) || 0
+  const declared = Number(row?.episodesCount || row?.raw?.episodes_count || row?.raw?.last_episode || 0) || 0
+  const score = Number(row?.matchScore || row?.raw?.match_score || 0) || 0
+  const season = Number(row?.seasonNumber || row?.raw?.season_number || 0) || 0
+
+  if(episode && episode > expected) return false
+  if(declared && declared !== expected) return false
+  if(score < 250) return false
+  if(season && season > 3) return false
+  return true
+}
+
 function longFranchiseRowTrusted(row = {}){
   if(row?.reliableId === false) return false
   if(row?.raw?.reliable_id === false) return false
@@ -297,7 +313,7 @@ function longFranchiseRowTrusted(row = {}){
 function filterLongFranchiseUntrustedRows(rows = [], item = {}){
   const list = Array.isArray(rows) ? rows : []
   if(!isLongFranchiseAnime(item)) return list
-  return list.filter(row => longFranchiseRowTrusted(row))
+  return list.filter(row => longFranchiseRowTrusted(row) || longFranchiseExactShortRowTrusted(row, item))
 }
 
 function filterLongFranchiseVoiceGroups(rows = [], item = {}){
