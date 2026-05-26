@@ -194,7 +194,8 @@ function hasSpecialTitleMarker(text){
 }
 
 function hasSeasonTitleMarker(text){
-  return /(?:season|сезон|tv|тв)\s*\d|(?:part|часть|cour)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b|\bp\d+\b/.test(String(text || ''))
+  const value = String(text || '')
+  return /(?:season|сезон|tv|тв|сезон|тв)[\s._:-]*\d|(?:part|часть|cour)[\s._:-]*\d|\b\d+(?:st|nd|rd|th)[\s._:-]+season\b|\bs\d+\b|\bp\d+\b|\bthe[\s._:-]*final\b|\bfinal\s*season\b|финал|финальный|заключительный/.test(value)
 }
 
 function strictEpisodeTolerance(item = {}){
@@ -224,6 +225,7 @@ function optionEpisodeMismatch(option = {}, item = {}){
   if(expected <= 6 && actual > expected) return true
   if(specialLike && expected <= 12 && actual > expected) return true
   if(seasonLike && expected >= 7 && expected <= 64 && actual > expected) return true
+  if(expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(item)) return true
   return false
 }
 
@@ -232,7 +234,7 @@ function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
   if(!expected) return rows
 
   const text = titleEpisodeText(item)
-  const strict = hasSpecialTitleMarker(text) || hasSeasonTitleMarker(text) || expected <= 12
+  const strict = hasSpecialTitleMarker(text) || hasSeasonTitleMarker(text) || expected <= 64
   if(!strict) return rows
 
   const byVoice = new Map()
@@ -248,7 +250,7 @@ function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
     const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
     const declared = Math.max(...group.map(row => Number(row.episodesCount || row.raw?.episodes_count || 0)).filter(Boolean), 0)
     const actual = Math.max(maxEpisode, declared)
-    if(actual && actual > expected) continue
+    if(actual && actual > expected + strictEpisodeTolerance(item)) continue
     allowed.push(...group)
   }
   return allowed

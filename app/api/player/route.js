@@ -61,7 +61,8 @@ function playerTitleText(anime = {}){
 }
 
 function hasSeasonMarker(text){
-  return /(?:season|сезон|tv|тв)\s*\d|(?:part|часть|cour)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b|\bp\d+\b/.test(String(text || ''))
+  const value = String(text || '')
+  return /(?:season|сезон|tv|тв|сезон|тв)[\s._:-]*\d|(?:part|часть|cour)[\s._:-]*\d|\b\d+(?:st|nd|rd|th)[\s._:-]+season\b|\bs\d+\b|\bp\d+\b|\bthe[\s._:-]*final\b|\bfinal\s*season\b|финал|финальный|заключительный/.test(value)
 }
 
 function hasSpecialMarker(text){
@@ -95,6 +96,7 @@ function episodeRowMatchesAnime(row, anime = {}){
     if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return false
     if(specialLike && expected <= 12 && actual > expected + 6) return false
     if(seasonLike && expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(anime)) return false
+    if(expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(anime)) return false
     if(expected <= 3 && isSerialPlayerUrl(row.embed_url) && actual >= 8) return false
   }
 

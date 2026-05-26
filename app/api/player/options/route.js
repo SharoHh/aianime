@@ -90,7 +90,10 @@ function titleText(item = {}){
 }
 
 function hasSeasonMarker(text){
-  return /(?:season|сезон|tv|тв)\s*\d|(?:part|часть|cour)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b|\bp\d+\b/.test(String(text || ''))
+  const value = String(text || '')
+  // Важно: названия вроде TV-2, ТВ-2, The Final, [финал] — это отдельные сезоны/части.
+  // Без этого Fruits Basket the Final и похожие релизы могли принимать плеер от предыдущего сезона на 25/26 серий.
+  return /(?:season|сезон|tv|тв|сезон|тв)[\s._:-]*\d|(?:part|часть|cour)[\s._:-]*\d|\b\d+(?:st|nd|rd|th)[\s._:-]+season\b|\bs\d+\b|\bp\d+\b|\bthe[\s._:-]*final\b|\bfinal\s*season\b|финал|финальный|заключительный/.test(value)
 }
 
 function hasSpecialMarker(text){
@@ -110,6 +113,10 @@ function optionEpisodeMismatch(option = {}, item = {}){
   if(expected <= 6 && actual > expected) return true
   if(specialLike && expected <= 12 && actual > expected) return true
   if(seasonLike && expected >= 7 && expected <= 64 && actual > expected) return true
+  // Даже если в названии не распознался маркер сезона, для завершённых/известных тайтлов
+  // нельзя принимать группу плеера, которая сильно длиннее количества серий в нашей базе.
+  // Это ловит случаи вроде Fruits Basket the Final: ожидаем 13, Kodik подмешал сезон на 25/26.
+  if(expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(item)) return true
   if(expected <= 3 && isSerialOption(option) && actual >= 8) return true
 
   return false
@@ -125,7 +132,7 @@ function strictEpisodeTolerance(item = {}){
 function isStrictEpisodeContext(item = {}){
   const expected = expectedEpisodes(item)
   const text = titleText(item)
-  return Boolean(expected && (hasSpecialMarker(text) || hasSeasonMarker(text) || expected <= 12))
+  return Boolean(expected && (hasSpecialMarker(text) || hasSeasonMarker(text) || expected <= 64))
 }
 
 function groupConfidence(group = []){
@@ -175,6 +182,11 @@ function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
     // нормальные сезоны/части, где Kodik даёт reliable_id=true и высокий matchScore, но
     // убирает соседние сезоны/спешлы той же франшизы.
     if(strict && confidence.low) continue
+
+    // Если тайтл в базе имеет известное количество серий, а у voice-группы есть несколько
+    // уверенных полных вариантов, не оставляем длинные группы из соседнего сезона/части.
+    // Для обычных сериалов это безопаснее, чем показывать сезон на 25/26 серий на странице финала на 13.
+    if(expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(item)) continue
 
     // Для строгих страниц не показываем чистый fallback из anime.kodik_link как отдельную группу.
     // Лучше пусто/меньше озвучек, чем подмешать старый serial-link от соседнего сезона.
