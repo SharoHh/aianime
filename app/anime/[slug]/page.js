@@ -170,6 +170,50 @@ function isMoviePlayerUrl(value){
   return /\/(video|movie)\//i.test(String(value || ''))
 }
 
+function titleEpisodeText(item = {}){
+  return normalizeKindText([item?.kind, item?.type, item?.kodikType, item?.slug, item?.title, item?.titleRu, item?.originalTitle, item?.englishTitle, item?.description, item?.descriptionRu].filter(Boolean).join(' '))
+}
+
+function textEpisodeCount(text){
+  const normalized = normalizeKindText(text).replace(/[^a-zа-я0-9]+/gi, ' ').replace(/\s+/g, ' ').trim()
+  const patterns = [
+    /(?:в сезоне указано|указано|сезоне|сезон)\s*(\d{1,3})\s*(?:сер|серии|серий|эп|эпизод)/i,
+    /(\d{1,3})\s*(?:серия|серии|серий|эпизод|эпизода|эпизодов)/i,
+    /(?:ova|она|special|спешл)\s*(\d{1,3})/i,
+  ]
+  for(const pattern of patterns){
+    const match = normalized.match(pattern)
+    const n = Number(match?.[1])
+    if(Number.isFinite(n) && n > 0 && n < 500) return Math.floor(n)
+  }
+  return 0
+}
+
+function hasSpecialTitleMarker(text){
+  return /\bova\b|\bona\b|special|спешл|спец|kuinaki|sentaku|regrets|movie|film|фильм|lost\s+girls|no\s+regrets|выбор\s+без\s+сожалений/.test(String(text || ''))
+}
+
+function expectedEpisodeCount(item = {}){
+  const text = titleEpisodeText(item)
+  const parsed = textEpisodeCount(text)
+  if(parsed && hasSpecialTitleMarker(text)) return parsed
+  const dbCount = Number(item?.episodes || item?.episodesCount || item?.episodesList?.length || 0)
+  if(Number.isFinite(dbCount) && dbCount > 0) return Math.floor(dbCount)
+  return parsed
+}
+
+function optionEpisodeMismatch(option = {}, item = {}){
+  const actual = Number(option?.episodesCount || option?.raw?.episodes_count || option?.raw?.last_episode || 0) || 0
+  const expected = expectedEpisodeCount(item)
+  const text = titleEpisodeText(item)
+  const specialLike = hasSpecialTitleMarker(text) || /ova|ona|special/.test(String(item?.kind || item?.type || '').toLowerCase())
+  if(!expected && specialLike && actual > 6) return true
+  if(!expected || !actual) return false
+  if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return true
+  if(specialLike && expected <= 12 && actual > expected + 6) return true
+  return false
+}
+
 function isSerialPlayerOption(option = {}){
   const type = String(option?.materialType || option?.raw?.material_type || '').toLowerCase()
   return type.includes('serial') || isSerialPlayerUrl(option?.embedUrl)
@@ -218,12 +262,17 @@ function buildNativePlayerOptions(episodes = [], item = {}){
       translationType: episode.translationType || episode.raw?.translation_type || null,
       translationId: episode.translationId || episode.raw?.translation_id || null,
       seasonNumber: episode.seasonNumber || episode.raw?.season_number || null,
+      episodesCount: Number(episode.episodesCount || episode.raw?.episodes_count || episode.raw?.last_episode || 0) || null,
+      materialType: episode.materialType || episode.raw?.material_type || null,
+      raw: episode.raw || null,
       updatedAt: episode.updatedAt || null
     }))
 
+  const guardedRows = rows.filter(row => !optionEpisodeMismatch(row, item))
+
   const scopedRows = isMovieAnime(item)
-    ? rows.filter(row => isMoviePlayerOption(row) && !isSerialPlayerOption(row))
-    : rows
+    ? guardedRows.filter(row => isMoviePlayerOption(row) && !isSerialPlayerOption(row))
+    : guardedRows
 
   if(!scopedRows.length) return []
 
@@ -268,6 +317,9 @@ function visibleInfoRows(rows){
 }
 
 function getDisplayEpisodeCount(item = {}, playerOptions = []){
+  const expected = expectedEpisodeCount(item)
+  if(expected > 0) return expected
+
   const optionNumbers = new Set(
     (playerOptions || [])
       .map(option => Number(option?.episodeNumber || 0))
@@ -279,9 +331,6 @@ function getDisplayEpisodeCount(item = {}, playerOptions = []){
   // строки "озвучка × серия", поэтому 36 озвучек × 28 серий превращались в 1000+.
   // Показываем количество реальных серий, а не количество player rows.
   if(maxOptionEpisode > 1) return maxOptionEpisode
-
-  const dbCount = Number(item?.episodes || 0)
-  if(Number.isFinite(dbCount) && dbCount > 0) return dbCount
 
   if(isMovieAnime(item)) return 1
   return maxOptionEpisode || ''

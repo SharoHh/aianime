@@ -64,13 +64,29 @@ function isMovieOption(option = {}){
   return type === 'anime' || type === 'movie' || /\/(video|movie)\//i.test(url)
 }
 
+function countFromText(text){
+  const normalized = normalizeText(text).replace(/[^a-zа-я0-9]+/gi, ' ').replace(/\s+/g, ' ').trim()
+  const patterns = [
+    /(?:в сезоне указано|указано|сезоне|сезон)\s*(\d{1,3})\s*(?:сер|серии|серий|эп|эпизод)/i,
+    /(\d{1,3})\s*(?:серия|серии|серий|эпизод|эпизода|эпизодов)/i,
+    /(?:ova|она|special|спешл)\s*(\d{1,3})/i,
+  ]
+  for(const pattern of patterns){
+    const match = normalized.match(pattern)
+    const n = Number(match?.[1])
+    if(Number.isFinite(n) && n > 0 && n < 500) return Math.floor(n)
+  }
+  return 0
+}
+
 function expectedEpisodes(item = {}){
   const n = Number(item?.episodes || item?.episodesCount || item?.episodesList?.length || 0)
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+  if(Number.isFinite(n) && n > 0) return Math.floor(n)
+  return countFromText(titleText(item))
 }
 
 function titleText(item = {}){
-  return normalizeText([item?.kind, item?.type, item?.kodikType, item?.slug, item?.title, item?.titleRu, item?.originalTitle, item?.englishTitle].filter(Boolean).join(' '))
+  return normalizeText([item?.kind, item?.type, item?.kodikType, item?.slug, item?.title, item?.titleRu, item?.originalTitle, item?.englishTitle, item?.description, item?.descriptionRu].filter(Boolean).join(' '))
 }
 
 function hasSeasonMarker(text){
@@ -84,11 +100,12 @@ function hasSpecialMarker(text){
 function optionEpisodeMismatch(option = {}, item = {}){
   const expected = expectedEpisodes(item)
   const actual = Number(option?.episodesCount || 0) || 0
-  if(!expected || !actual) return false
-
   const text = titleText(item)
   const specialLike = hasSpecialMarker(text) || /ova|ona|special/.test(String(item?.kind || item?.type || '').toLowerCase())
   const seasonLike = hasSeasonMarker(text)
+
+  if(!expected && specialLike && actual > 6) return true
+  if(!expected || !actual) return false
 
   if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return true
   if(specialLike && expected <= 12 && actual > expected + 6) return true
@@ -216,7 +233,9 @@ export async function GET(req){
       shikimoriId:item.shikimoriId || item.malId || null,
       malId:item.malId || null,
       year:item.year,
-      episodes:item.episodes || item.episodesList?.length || 1
+      episodes:item.episodes || item.episodesList?.length || 1,
+      description:item.description,
+      descriptionRu:item.descriptionRu
     }, { limit, withEpisodes:true, withEpisodesData:true, minScore:22, maxEpisodes:800 })
 
     const saved = await saveRows(rows)

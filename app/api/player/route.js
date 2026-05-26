@@ -35,13 +35,29 @@ function isMoviePlayerUrl(value){
   return /\/(video|movie)\//i.test(String(value || ''))
 }
 
+function countFromText(text){
+  const normalized = normalizeText(text).replace(/[^a-zа-я0-9]+/gi, ' ').replace(/\s+/g, ' ').trim()
+  const patterns = [
+    /(?:в сезоне указано|указано|сезоне|сезон)\s*(\d{1,3})\s*(?:сер|серии|серий|эп|эпизод)/i,
+    /(\d{1,3})\s*(?:серия|серии|серий|эпизод|эпизода|эпизодов)/i,
+    /(?:ova|она|special|спешл)\s*(\d{1,3})/i,
+  ]
+  for(const pattern of patterns){
+    const match = normalized.match(pattern)
+    const n = Number(match?.[1])
+    if(Number.isFinite(n) && n > 0 && n < 500) return Math.floor(n)
+  }
+  return 0
+}
+
 function expectedEpisodes(anime = {}){
   const n = Number(anime?.episodes || anime?.episodes_count || 0)
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+  if(Number.isFinite(n) && n > 0) return Math.floor(n)
+  return countFromText(playerTitleText(anime))
 }
 
 function playerTitleText(anime = {}){
-  return normalizeText([anime?.kind, anime?.kodik_type, anime?.kodikType, anime?.slug, anime?.title, anime?.title_ru, anime?.titleRu, anime?.original_title, anime?.originalTitle].filter(Boolean).join(' '))
+  return normalizeText([anime?.kind, anime?.kodik_type, anime?.kodikType, anime?.slug, anime?.title, anime?.title_ru, anime?.titleRu, anime?.original_title, anime?.originalTitle, anime?.description, anime?.description_ru, anime?.descriptionRu].filter(Boolean).join(' '))
 }
 
 function hasSeasonMarker(text){
@@ -60,6 +76,8 @@ function episodeRowMatchesAnime(row, anime = {}){
   const text = playerTitleText(anime)
   const specialLike = hasSpecialMarker(text) || /ova|ona|special/.test(String(anime?.kind || '').toLowerCase())
   const seasonLike = hasSeasonMarker(text)
+
+  if(!expected && specialLike && actual > 6) return false
 
   if(expected && actual){
     if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return false
@@ -95,7 +113,7 @@ async function readEpisodeFromDb(slug, episode, voice = null){
 async function readAnimeFromDb(slug){
   if(!hasSupabase()) return null
   try{
-    const select = 'slug,title,title_ru,original_title,year,kind,kodik_id,kodik_link,kodik_type,translation_title,translation_type,quality,kodik_raw,episodes'
+    const select = 'slug,title,title_ru,original_title,year,kind,kodik_id,kodik_link,kodik_type,translation_title,translation_type,quality,kodik_raw,episodes,description,description_ru'
     const res = await supabaseRequest(`anime?select=${select}&slug=eq.${encodeURIComponent(slug)}&limit=1`, { method: 'GET', timeout: 9000 })
     if(!res.ok) return null
     const rows = await res.json().catch(() => [])

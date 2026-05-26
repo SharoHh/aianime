@@ -169,7 +169,9 @@ export async function GET(req){
           shikimoriId:item.shikimoriId || item.malId || null,
           malId:item.malId || null,
           year:item.year,
-          episodes:item.episodes || item.episodesList?.length || 1
+          episodes:item.episodes || item.episodesList?.length || 1,
+          description:item.description,
+          descriptionRu:item.descriptionRu
         }, { limit:40, withEpisodes:true, withEpisodesData:true, minScore:22, maxEpisodes:800 })
         if(detailedRows.length){
           rows.push(...detailedRows)
