@@ -35,6 +35,42 @@ function isMoviePlayerUrl(value){
   return /\/(video|movie)\//i.test(String(value || ''))
 }
 
+function expectedEpisodes(anime = {}){
+  const n = Number(anime?.episodes || anime?.episodes_count || 0)
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+}
+
+function playerTitleText(anime = {}){
+  return normalizeText([anime?.kind, anime?.kodik_type, anime?.kodikType, anime?.slug, anime?.title, anime?.title_ru, anime?.titleRu, anime?.original_title, anime?.originalTitle].filter(Boolean).join(' '))
+}
+
+function hasSeasonMarker(text){
+  return /(?:season|сезон|tv|тв)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b/.test(String(text || ''))
+}
+
+function hasSpecialMarker(text){
+  return /\bova\b|\bona\b|special|спешл|спец|kuinaki|sentaku|regrets|movie|film|фильм|lost\s+girls|no\s+regrets|выбор\s+без\s+сожалений/.test(String(text || ''))
+}
+
+function episodeRowMatchesAnime(row, anime = {}){
+  if(!row) return false
+  const raw = row.raw || {}
+  const expected = expectedEpisodes(anime)
+  const actual = Number(raw.episodes_count || raw.last_episode || 0) || 0
+  const text = playerTitleText(anime)
+  const specialLike = hasSpecialMarker(text) || /ova|ona|special/.test(String(anime?.kind || '').toLowerCase())
+  const seasonLike = hasSeasonMarker(text)
+
+  if(expected && actual){
+    if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return false
+    if(specialLike && expected <= 12 && actual > expected + 6) return false
+    if(seasonLike && expected >= 7 && expected <= 26 && actual > expected + Math.max(6, Math.ceil(expected * 0.5))) return false
+    if(expected <= 3 && isSerialPlayerUrl(row.embed_url) && actual >= 8) return false
+  }
+
+  return true
+}
+
 function canUsePlayerUrlForAnime(url, anime = {}){
   const cleanUrl = String(url || '').trim()
   if(!cleanUrl) return false
@@ -107,7 +143,7 @@ export async function GET(req){
   const dbAnime = await readAnimeFromDb(slug)
   const dbEpisode = await readEpisodeFromDb(slug, episode, voice)
   const episodeEmbed = normalizeKodikPlayerUrl(dbEpisode?.embed_url)
-  if(episodeEmbed && canUsePlayerUrlForAnime(episodeEmbed, dbAnime)){
+  if(episodeEmbed && canUsePlayerUrlForAnime(episodeEmbed, dbAnime) && episodeRowMatchesAnime(dbEpisode, dbAnime)){
     return json({
       ok: true,
       provider: dbEpisode.provider || 'kodik',

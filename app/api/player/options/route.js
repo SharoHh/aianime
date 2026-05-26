@@ -64,6 +64,40 @@ function isMovieOption(option = {}){
   return type === 'anime' || type === 'movie' || /\/(video|movie)\//i.test(url)
 }
 
+function expectedEpisodes(item = {}){
+  const n = Number(item?.episodes || item?.episodesCount || item?.episodesList?.length || 0)
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+}
+
+function titleText(item = {}){
+  return normalizeText([item?.kind, item?.type, item?.kodikType, item?.slug, item?.title, item?.titleRu, item?.originalTitle, item?.englishTitle].filter(Boolean).join(' '))
+}
+
+function hasSeasonMarker(text){
+  return /(?:season|сезон|tv|тв)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b/.test(String(text || ''))
+}
+
+function hasSpecialMarker(text){
+  return /\bova\b|\bona\b|special|спешл|спец|kuinaki|sentaku|regrets|movie|film|фильм|lost\s+girls|no\s+regrets|выбор\s+без\s+сожалений/.test(String(text || ''))
+}
+
+function optionEpisodeMismatch(option = {}, item = {}){
+  const expected = expectedEpisodes(item)
+  const actual = Number(option?.episodesCount || 0) || 0
+  if(!expected || !actual) return false
+
+  const text = titleText(item)
+  const specialLike = hasSpecialMarker(text) || /ova|ona|special/.test(String(item?.kind || item?.type || '').toLowerCase())
+  const seasonLike = hasSeasonMarker(text)
+
+  if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return true
+  if(specialLike && expected <= 12 && actual > expected + 6) return true
+  if(seasonLike && expected >= 7 && expected <= 26 && actual > expected + Math.max(6, Math.ceil(expected * 0.5))) return true
+  if(expected <= 3 && isSerialOption(option) && actual >= 8) return true
+
+  return false
+}
+
 function usable(option){
   const url = String(option?.embedUrl || '').trim()
   if(!url) return false
@@ -107,6 +141,9 @@ function filterOptionsForAnime(options, item){
       return false
     })
   }
+
+  // Не отдаём OVA/спешлу/конкретному сезону плееры от базового TV-сериала с другим количеством серий.
+  rows = rows.filter(option => !optionEpisodeMismatch(option, item))
 
   // Старые строки, найденные только по названию с низким score, часто дают мусорные озвучки от похожих тайтлов.
   rows = rows.filter(option => {
