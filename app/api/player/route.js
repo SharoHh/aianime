@@ -110,9 +110,9 @@ function episodeRowMatchesAnime(row, anime = {}){
   }
 
   if(isLongFranchiseAnime(anime)){
-    const reliable = raw.reliable_id !== false
-    const score = Number(raw.match_score || 0)
-    if(!reliable && score < 160) return false
+    const reliable = Boolean(raw.reliable_id)
+    // Для длинных франшиз не отдаём прямой плеер без точного reliable id.
+    if(!reliable) return false
     if(expected > 64 && actual && actual < Math.max(8, Math.floor(expected * 0.08))) return false
   }
 

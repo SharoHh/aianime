@@ -288,9 +288,24 @@ function isLongFranchiseAnime(item = {}){
   )
 }
 
-function filterLongFranchiseVoiceGroups(rows = [], item = {}){
+function longFranchiseRowTrusted(row = {}){
+  if(row?.reliableId === false) return false
+  if(row?.raw?.reliable_id === false) return false
+  return Boolean(row?.reliableId || row?.raw?.reliable_id)
+}
+
+function filterLongFranchiseUntrustedRows(rows = [], item = {}){
   const list = Array.isArray(rows) ? rows : []
-  if(!isLongFranchiseAnime(item) || list.length <= 1) return list
+  if(!isLongFranchiseAnime(item)) return list
+  return list.filter(row => longFranchiseRowTrusted(row))
+}
+
+function filterLongFranchiseVoiceGroups(rows = [], item = {}){
+  const sourceList = Array.isArray(rows) ? rows : []
+  if(!isLongFranchiseAnime(item)) return sourceList
+
+  const list = filterLongFranchiseUntrustedRows(sourceList, item)
+  if(list.length <= 1) return list
 
   const expected = expectedEpisodeCount(item)
   const byVoice = new Map()
@@ -460,7 +475,10 @@ function buildNativePlayerOptions(episodes = [], item = {}){
       updatedAt: episode.updatedAt || null
     }))
 
-  const guardedRows = rows.filter(row => !optionEpisodeMismatch(row, item))
+  const guardedRows = filterLongFranchiseUntrustedRows(
+    rows.filter(row => !optionEpisodeMismatch(row, item)),
+    item
+  )
 
   let scopedRows = isMovieAnime(item)
     ? guardedRows.filter(row => isMoviePlayerOption(row) && !isSerialPlayerOption(row))

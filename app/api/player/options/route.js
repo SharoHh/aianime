@@ -163,9 +163,26 @@ function isLongFranchiseAnime(item = {}){
   )
 }
 
-function filterLongFranchiseVoiceGroups(rows = [], item = {}){
+function longFranchiseRowTrusted(row = {}){
+  // Для длинных франшиз типа Pokémon нельзя доверять совпадению по названию.
+  // reliableId=false у Kodik означает, что это не точный матч по id, а соседняя арка/сезон может иметь то же имя.
+  if(row?.reliableId === false) return false
+  if(row?.raw?.reliable_id === false) return false
+  return Boolean(row?.reliableId || row?.raw?.reliable_id)
+}
+
+function filterLongFranchiseUntrustedRows(rows = [], item = {}){
   const list = Array.isArray(rows) ? rows : []
-  if(!isLongFranchiseAnime(item) || list.length <= 1) return list
+  if(!isLongFranchiseAnime(item)) return list
+  return list.filter(row => longFranchiseRowTrusted(row))
+}
+
+function filterLongFranchiseVoiceGroups(rows = [], item = {}){
+  const sourceList = Array.isArray(rows) ? rows : []
+  if(!isLongFranchiseAnime(item)) return sourceList
+
+  const list = filterLongFranchiseUntrustedRows(sourceList, item)
+  if(list.length <= 1) return list
 
   const expected = expectedEpisodes(item)
   const byVoice = new Map()
@@ -380,6 +397,8 @@ function filterOptionsForAnime(options, item){
   if(strictContext && rows.some(option => option.source === 'kodik-api-episode')){
     rows = rows.filter(option => option.source !== 'anime.kodik_link')
   }
+
+  rows = filterLongFranchiseUntrustedRows(rows, item)
 
   // Если страница — фильм, не показываем найденный Kodik-сериал. Лучше честно показать,
   // что плеера пока нет, чем включить другой тайтл/TV-сезон.
