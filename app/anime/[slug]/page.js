@@ -216,7 +216,7 @@ function expectedEpisodeCount(item = {}){
 
 function clampRowsToExpectedEpisodes(rows = [], item = {}){
   const expected = expectedEpisodeCount(item)
-  if(!expected || expected <= 1 || expected > 64) return rows
+  if(!expected || expected <= 1 || expected > 1200) return rows
   // Kodik часто добавляет бонусную OVA/спешл как 25-ю серию к TV-сезону на 24 серии.
   // Для страницы самого тайтла показываем только официальное количество серий из нашей базы.
   return (Array.isArray(rows) ? rows : []).filter(row => {
@@ -277,6 +277,74 @@ function groupConfidence(group = []){
   const maxScore = Math.max(...group.map(row => Number(row?.raw?.match_score || row?.matchScore || 0)), 0)
   const onlyFallback = group.every(row => row?.source === 'anime.kodik_link' || row?.source === 'fallback')
   return { reliable, maxScore, onlyFallback, low:!reliable && maxScore < 160 }
+}
+
+function isLongFranchiseAnime(item = {}){
+  const expected = expectedEpisodeCount(item)
+  const text = titleEpisodeText(item)
+  return Boolean(
+    expected > 64
+    || /pokemon|покемон|pocket monster|naruto|one piece|bleach|conan|detective conan|dragon ball|yu-gi-oh|yugioh|digimon|precure/.test(text)
+  )
+}
+
+function filterLongFranchiseVoiceGroups(rows = [], item = {}){
+  const list = Array.isArray(rows) ? rows : []
+  if(!isLongFranchiseAnime(item) || list.length <= 1) return list
+
+  const expected = expectedEpisodeCount(item)
+  const byVoice = new Map()
+  for(const row of list){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    if(!byVoice.has(key)) byVoice.set(key, [])
+    byVoice.get(key).push(row)
+  }
+
+  const groups = Array.from(byVoice.values()).map(group => {
+    const episodes = Array.from(new Set(group.map(row => Number(row?.episodeNumber || 0)).filter(Boolean))).sort((a,b) => a-b)
+    const declared = Math.max(...group.map(row => Number(row?.episodesCount || row?.raw?.episodes_count || 0)).filter(Boolean), 0)
+    const maxEpisode = episodes.length ? Math.max(...episodes) : 0
+    const confidence = groupConfidence(group)
+    const hasNativeRows = group.some(row => row?.source === 'kodik-api-episode' || row?.source === 'kodik-api-season-episode')
+    const urls = new Set(group.map(row => String(row?.embedUrl || '').trim()).filter(Boolean))
+    const nativeEpisodeLinks = hasNativeRows && episodes.length > 1 && urls.size > 1
+    const actual = Math.max(maxEpisode, declared)
+    return { group, episodes, count:episodes.length, declared, maxEpisode, actual, confidence, nativeEpisodeLinks }
+  })
+
+  const strongGroups = groups.filter(info =>
+    (info.confidence.reliable || info.confidence.maxScore >= 160)
+    && !info.confidence.onlyFallback
+    && (info.nativeEpisodeLinks || info.count >= 3)
+  )
+
+  const bestCount = Math.max(...strongGroups.map(info => info.count), 0)
+  const bestActual = Math.max(...strongGroups.map(info => info.actual), 0)
+
+  if(bestCount >= 12 || bestActual >= 24){
+    const minCount = expected > 64
+      ? Math.max(6, Math.min(24, Math.floor((bestCount || bestActual || expected) * 0.25)))
+      : Math.max(4, Math.floor(bestCount * 0.5))
+
+    return groups
+      .filter(info => {
+        if(info.confidence.low) return false
+        if(info.confidence.onlyFallback && bestCount >= 12) return false
+        if(info.count && info.count < minCount) return false
+        if(expected > 64 && info.actual && info.actual < Math.max(8, Math.floor(expected * 0.08))) return false
+        return true
+      })
+      .flatMap(info => info.group)
+  }
+
+  const hasReliable = groups.some(info => info.confidence.reliable || info.confidence.maxScore >= 160)
+  if(hasReliable){
+    return groups
+      .filter(info => !info.confidence.low && !info.confidence.onlyFallback)
+      .flatMap(info => info.group)
+  }
+
+  return list
 }
 
 function filterIncompleteAndPlayerOnlyVoiceGroups(rows = [], item = {}){
@@ -400,7 +468,9 @@ function buildNativePlayerOptions(episodes = [], item = {}){
 
   scopedRows = clampRowsToExpectedEpisodes(scopedRows, item)
   scopedRows = filterVoiceGroupsByExpectedCount(scopedRows, item)
+  scopedRows = filterLongFranchiseVoiceGroups(scopedRows, item)
   scopedRows = filterIncompleteAndPlayerOnlyVoiceGroups(scopedRows, item)
+  scopedRows = filterLongFranchiseVoiceGroups(scopedRows, item)
 
   if(!scopedRows.length) return []
 

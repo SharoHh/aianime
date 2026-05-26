@@ -81,6 +81,15 @@ function hasStrongPlayerMarker(anime = {}){
   return hasSpecialMarker(text) || hasSeasonMarker(text)
 }
 
+function isLongFranchiseAnime(anime = {}){
+  const expected = expectedEpisodes(anime)
+  const text = playerTitleText(anime)
+  return Boolean(
+    expected > 64
+    || /pokemon|покемон|pocket monster|naruto|one piece|bleach|conan|detective conan|dragon ball|yu-gi-oh|yugioh|digimon|precure/.test(text)
+  )
+}
+
 function episodeRowMatchesAnime(row, anime = {}){
   if(!row) return false
   const raw = row.raw || {}
@@ -98,6 +107,13 @@ function episodeRowMatchesAnime(row, anime = {}){
     if(seasonLike && expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(anime)) return false
     if(expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(anime)) return false
     if(expected <= 3 && isSerialPlayerUrl(row.embed_url) && actual >= 8) return false
+  }
+
+  if(isLongFranchiseAnime(anime)){
+    const reliable = raw.reliable_id !== false
+    const score = Number(raw.match_score || 0)
+    if(!reliable && score < 160) return false
+    if(expected > 64 && actual && actual < Math.max(8, Math.floor(expected * 0.08))) return false
   }
 
   return true

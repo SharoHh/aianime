@@ -87,7 +87,7 @@ function expectedEpisodes(item = {}){
 
 function clampRowsToExpectedEpisodes(rows = [], item = {}){
   const expected = expectedEpisodes(item)
-  if(!expected || expected <= 1 || expected > 64) return rows
+  if(!expected || expected <= 1 || expected > 1200) return rows
   // Kodik часто добавляет бонусную OVA/спешл как 25-ю серию к TV-сезону на 24 серии.
   // Для страницы самого тайтла показываем только официальное количество серий из нашей базы.
   return (Array.isArray(rows) ? rows : []).filter(row => {
@@ -152,6 +152,77 @@ function groupConfidence(group = []){
   const maxScore = Math.max(...group.map(row => Number(row?.matchScore || 0)), 0)
   const onlyFallback = group.every(row => row?.source === 'anime.kodik_link' || row?.source === 'fallback')
   return { reliable, maxScore, onlyFallback, low:!reliable && maxScore < 160 }
+}
+
+function isLongFranchiseAnime(item = {}){
+  const expected = expectedEpisodes(item)
+  const text = titleText(item)
+  return Boolean(
+    expected > 64
+    || /pokemon|покемон|pocket monster|naruto|one piece|bleach|conan|detective conan|dragon ball|yu-gi-oh|yugioh|digimon|precure/.test(text)
+  )
+}
+
+function filterLongFranchiseVoiceGroups(rows = [], item = {}){
+  const list = Array.isArray(rows) ? rows : []
+  if(!isLongFranchiseAnime(item) || list.length <= 1) return list
+
+  const expected = expectedEpisodes(item)
+  const byVoice = new Map()
+  for(const row of list){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    if(!byVoice.has(key)) byVoice.set(key, [])
+    byVoice.get(key).push(row)
+  }
+
+  const groups = Array.from(byVoice.values()).map(group => {
+    const episodes = Array.from(new Set(group.map(row => Number(row?.episodeNumber || 0)).filter(Boolean))).sort((a,b) => a-b)
+    const declared = Math.max(...group.map(row => Number(row?.episodesCount || 0)).filter(Boolean), 0)
+    const maxEpisode = episodes.length ? Math.max(...episodes) : 0
+    const confidence = groupConfidence(group)
+    const hasNativeRows = group.some(row => row?.source === 'kodik-api-episode' || row?.source === 'kodik-api-season-episode')
+    const urls = new Set(group.map(row => String(row?.embedUrl || '').trim()).filter(Boolean))
+    const nativeEpisodeLinks = hasNativeRows && episodes.length > 1 && urls.size > 1
+    const actual = Math.max(maxEpisode, declared)
+    return { group, episodes, count:episodes.length, declared, maxEpisode, actual, confidence, nativeEpisodeLinks }
+  })
+
+  const strongGroups = groups.filter(info =>
+    (info.confidence.reliable || info.confidence.maxScore >= 160)
+    && !info.confidence.onlyFallback
+    && (info.nativeEpisodeLinks || info.count >= 3)
+  )
+
+  const bestCount = Math.max(...strongGroups.map(info => info.count), 0)
+  const bestActual = Math.max(...strongGroups.map(info => info.actual), 0)
+
+  // Если есть длинные уверенные группы, скрываем короткие/слабые группы от соседних сезонов/арок.
+  if(bestCount >= 12 || bestActual >= 24){
+    const minCount = expected > 64
+      ? Math.max(6, Math.min(24, Math.floor((bestCount || bestActual || expected) * 0.25)))
+      : Math.max(4, Math.floor(bestCount * 0.5))
+
+    return groups
+      .filter(info => {
+        if(info.confidence.low) return false
+        if(info.confidence.onlyFallback && bestCount >= 12) return false
+        if(info.count && info.count < minCount) return false
+        // Если группа заявляет очень короткий season при длинной франшизе — это почти всегда не та арка.
+        if(expected > 64 && info.actual && info.actual < Math.max(8, Math.floor(expected * 0.08))) return false
+        return true
+      })
+      .flatMap(info => info.group)
+  }
+
+  // Если длинной уверенной группы нет, хотя бы убираем слабые совпадения и чистые fallback-группы.
+  const hasReliable = groups.some(info => info.confidence.reliable || info.confidence.maxScore >= 160)
+  if(hasReliable){
+    return groups
+      .filter(info => !info.confidence.low && !info.confidence.onlyFallback)
+      .flatMap(info => info.group)
+  }
+
+  return list
 }
 
 function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
@@ -339,6 +410,7 @@ function filterOptionsForAnime(options, item){
 
   rows = clampRowsToExpectedEpisodes(rows, item)
   rows = filterVoiceGroupsByExpectedCount(rows, item)
+  rows = filterLongFranchiseVoiceGroups(rows, item)
 
   const best = new Map()
   for(const option of rows){
@@ -353,7 +425,7 @@ function filterOptionsForAnime(options, item){
   }
 
   const deduped = Array.from(best.values()).map(({ __score, ...option }) => option)
-  return filterIncompleteAndPlayerOnlyVoiceGroups(deduped, item)
+  return filterLongFranchiseVoiceGroups(filterIncompleteAndPlayerOnlyVoiceGroups(deduped, item), item)
 }
 
 
@@ -420,6 +492,7 @@ function buildOptionsAudit(options = [], item = {}){
     title:item?.titleRu || item?.title || item?.slug || null,
     totalOptions:rows.length,
     nativeEpisodeLinks:hasNativeEpisodeLinks(rows),
+    longFranchise:isLongFranchiseAnime(item),
     voices:voiceRows,
     warnings:voiceRows
       .filter(row => row.overExpected)
