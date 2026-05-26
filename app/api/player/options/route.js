@@ -166,6 +166,16 @@ function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
     // с reliable_id=false и низким score. Такая группа не должна появляться рядом с правильным сезоном.
     if(actual && actual < expected && confidence.low) continue
 
+    // Для OVA/спешлов и коротких отдельных релизов нельзя пропускать слабые группы даже если
+    // количество серий совпало. Иначе к OVA на 2 серии может подмешаться другой спецвыпуск
+    // той же франшизы: тоже 2 серии, но reliable_id=false и matchScore около 30-40.
+    if(expected <= 6 && confidence.low) continue
+
+    // Для строгих страниц в целом оставляем только уверенные совпадения. Это не ломает
+    // нормальные сезоны/части, где Kodik даёт reliable_id=true и высокий matchScore, но
+    // убирает соседние сезоны/спешлы той же франшизы.
+    if(strict && confidence.low) continue
+
     // Для строгих страниц не показываем чистый fallback из anime.kodik_link как отдельную группу.
     // Лучше пусто/меньше озвучек, чем подмешать старый serial-link от соседнего сезона.
     if(confidence.onlyFallback) continue
@@ -272,13 +282,17 @@ function buildOptionsAudit(options = [], item = {}){
         declaredMax:0,
         episodes:[],
         sources:new Set(),
-        materialTypes:new Set()
+        materialTypes:new Set(),
+        reliable:false,
+        maxScore:0
       })
     }
     const bucket = voices.get(voice)
     const episode = Number(option?.episodeNumber || 0)
     const declared = Number(option?.episodesCount || 0)
     bucket.count += 1
+    bucket.reliable = bucket.reliable || Boolean(option?.reliableId)
+    bucket.maxScore = Math.max(bucket.maxScore, Number(option?.matchScore || 0))
     if(episode){
       bucket.min = bucket.min === null ? episode : Math.min(bucket.min, episode)
       bucket.max = bucket.max === null ? episode : Math.max(bucket.max, episode)
@@ -300,6 +314,9 @@ function buildOptionsAudit(options = [], item = {}){
       declaredMax:bucket.declaredMax || null,
       overExpected:Boolean(expected && Math.max(bucket.max || 0, bucket.declaredMax || 0) > expected),
       episodes:uniqueEpisodes.slice(0, 80),
+      reliable:bucket.reliable,
+      maxScore:bucket.maxScore || null,
+      weak:!bucket.reliable && (bucket.maxScore || 0) < 160,
       sources:Array.from(bucket.sources),
       materialTypes:Array.from(bucket.materialTypes)
     }
