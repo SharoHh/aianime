@@ -193,6 +193,17 @@ function hasSpecialTitleMarker(text){
   return /\bova\b|\bona\b|special|спешл|спец|kuinaki|sentaku|regrets|movie|film|фильм|lost\s+girls|no\s+regrets|выбор\s+без\s+сожалений/.test(String(text || ''))
 }
 
+function hasSeasonTitleMarker(text){
+  return /(?:season|сезон|tv|тв)\s*\d|(?:part|часть|cour)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b|\bp\d+\b/.test(String(text || ''))
+}
+
+function strictEpisodeTolerance(item = {}){
+  const text = titleEpisodeText(item)
+  if(hasSpecialTitleMarker(text)) return 1
+  if(hasSeasonTitleMarker(text)) return 1
+  return 6
+}
+
 function expectedEpisodeCount(item = {}){
   const text = titleEpisodeText(item)
   const parsed = textEpisodeCount(text)
@@ -207,11 +218,40 @@ function optionEpisodeMismatch(option = {}, item = {}){
   const expected = expectedEpisodeCount(item)
   const text = titleEpisodeText(item)
   const specialLike = hasSpecialTitleMarker(text) || /ova|ona|special/.test(String(item?.kind || item?.type || '').toLowerCase())
+  const seasonLike = hasSeasonTitleMarker(text)
   if(!expected && specialLike && actual > 6) return true
   if(!expected || !actual) return false
-  if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return true
-  if(specialLike && expected <= 12 && actual > expected + 6) return true
+  if(expected <= 6 && actual > expected) return true
+  if(specialLike && expected <= 12 && actual > expected) return true
+  if(seasonLike && expected >= 7 && expected <= 64 && actual > expected) return true
   return false
+}
+
+function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
+  const expected = expectedEpisodeCount(item)
+  if(!expected) return rows
+
+  const text = titleEpisodeText(item)
+  const strict = hasSpecialTitleMarker(text) || hasSeasonTitleMarker(text) || expected <= 12
+  if(!strict) return rows
+
+  const byVoice = new Map()
+  for(const row of rows){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    if(!byVoice.has(key)) byVoice.set(key, [])
+    byVoice.get(key).push(row)
+  }
+
+  const allowed = []
+  for(const group of byVoice.values()){
+    const episodeNumbers = group.map(row => Number(row.episodeNumber || 0)).filter(Boolean)
+    const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
+    const declared = Math.max(...group.map(row => Number(row.episodesCount || row.raw?.episodes_count || 0)).filter(Boolean), 0)
+    const actual = Math.max(maxEpisode, declared)
+    if(actual && actual > expected) continue
+    allowed.push(...group)
+  }
+  return allowed
 }
 
 function isSerialPlayerOption(option = {}){
@@ -228,6 +268,11 @@ function canUseStoredKodikLink(item = {}){
   const url = String(item?.kodikLink || '').trim()
   if(!url) return false
   if(isMovieAnime(item)) return isMoviePlayerUrl(url) && !isSerialPlayerUrl(url)
+
+  // Для OVA/Season/Part страниц одиночная kodik_link слишком часто ведёт на соседний сезон.
+  // Используем только проверенные anime_episodes после фильтрации.
+  const text = titleEpisodeText(item)
+  if(hasSpecialTitleMarker(text) || hasSeasonTitleMarker(text)) return false
   return true
 }
 
@@ -270,9 +315,11 @@ function buildNativePlayerOptions(episodes = [], item = {}){
 
   const guardedRows = rows.filter(row => !optionEpisodeMismatch(row, item))
 
-  const scopedRows = isMovieAnime(item)
+  let scopedRows = isMovieAnime(item)
     ? guardedRows.filter(row => isMoviePlayerOption(row) && !isSerialPlayerOption(row))
     : guardedRows
+
+  scopedRows = filterVoiceGroupsByExpectedCount(scopedRows, item)
 
   if(!scopedRows.length) return []
 

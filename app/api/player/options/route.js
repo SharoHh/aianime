@@ -90,7 +90,7 @@ function titleText(item = {}){
 }
 
 function hasSeasonMarker(text){
-  return /(?:season|сезон|tv|тв)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b/.test(String(text || ''))
+  return /(?:season|сезон|tv|тв)\s*\d|(?:part|часть|cour)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b|\bp\d+\b/.test(String(text || ''))
 }
 
 function hasSpecialMarker(text){
@@ -107,12 +107,49 @@ function optionEpisodeMismatch(option = {}, item = {}){
   if(!expected && specialLike && actual > 6) return true
   if(!expected || !actual) return false
 
-  if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return true
-  if(specialLike && expected <= 12 && actual > expected + 6) return true
-  if(seasonLike && expected >= 7 && expected <= 26 && actual > expected + Math.max(6, Math.ceil(expected * 0.5))) return true
+  if(expected <= 6 && actual > expected) return true
+  if(specialLike && expected <= 12 && actual > expected) return true
+  if(seasonLike && expected >= 7 && expected <= 64 && actual > expected) return true
   if(expected <= 3 && isSerialOption(option) && actual >= 8) return true
 
   return false
+}
+
+function strictEpisodeTolerance(item = {}){
+  const text = titleText(item)
+  if(hasSpecialMarker(text)) return 1
+  if(hasSeasonMarker(text)) return 1
+  return 6
+}
+
+function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
+  const expected = expectedEpisodes(item)
+  if(!expected) return rows
+
+  const text = titleText(item)
+  const strict = hasSpecialMarker(text) || hasSeasonMarker(text) || expected <= 12
+  if(!strict) return rows
+
+  const byVoice = new Map()
+  for(const row of rows){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    if(!byVoice.has(key)) byVoice.set(key, [])
+    byVoice.get(key).push(row)
+  }
+
+  const allowed = []
+  for(const group of byVoice.values()){
+    const episodeNumbers = group.map(row => Number(row.episodeNumber || 0)).filter(Boolean)
+    const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
+    const declared = Math.max(...group.map(row => Number(row.episodesCount || 0)).filter(Boolean), 0)
+    const actual = Math.max(maxEpisode, declared)
+
+    // Для Season/Part/OVA/коротких тайтлов не допускаем voice-группу длиннее самого тайтла.
+    // Так Season 3 Part 2 на 10 серий не получает Season 3 на 25 серий.
+    if(actual && actual > expected) continue
+    allowed.push(...group)
+  }
+  return allowed
 }
 
 function usable(option){
@@ -171,6 +208,8 @@ function filterOptionsForAnime(options, item){
     return false
   })
 
+  rows = filterVoiceGroupsByExpectedCount(rows, item)
+
   const best = new Map()
   for(const option of rows){
     const key = `${option.provider}:${option.voice}:${option.episodeNumber}`
@@ -207,6 +246,7 @@ export async function GET(req){
   const slug = String(url.searchParams.get('slug') || '').trim()
   const refresh = url.searchParams.get('refresh') === '1'
   const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 40), 5), 80)
+  const debug = url.searchParams.get('debug') === '1'
 
   if(!slug) return json({ ok:false, error:'slug is required' }, 400)
 
@@ -217,11 +257,11 @@ export async function GET(req){
   const existingOptions = filterOptionsForAnime(existingEpisodes.map(rowToOption), item)
 
   if(!refresh && hasNativeEpisodeLinks(existingOptions)){
-    return json({ ok:true, source:'anime_episodes', slug, options:existingOptions, saved:0, refreshed:false })
+    return json({ ok:true, source:'anime_episodes', slug, options:existingOptions, saved:0, refreshed:false, ...(debug ? { audit:buildOptionsAudit(existingOptions, item) } : {}) })
   }
 
   if(!hasKodik()){
-    return json({ ok:true, source:'anime_episodes', slug, options:existingOptions, saved:0, refreshed:false, warning:'KODIK_TOKEN is not configured' })
+    return json({ ok:true, source:'anime_episodes', slug, options:existingOptions, saved:0, refreshed:false, warning:'KODIK_TOKEN is not configured', ...(debug ? { audit:buildOptionsAudit(existingOptions, item) } : {}) })
   }
 
   try{
@@ -248,7 +288,8 @@ export async function GET(req){
       found:rows.length,
       saved:saved.saved || 0,
       save:saved,
-      refreshed:true
+      refreshed:true,
+      ...(debug ? { audit:buildOptionsAudit(nextOptions, item) } : {})
     })
   }catch(error){
     return json({
@@ -258,7 +299,8 @@ export async function GET(req){
       options:existingOptions,
       saved:0,
       refreshed:false,
-      warning:error?.message || String(error)
+      warning:error?.message || String(error),
+      ...(debug ? { audit:buildOptionsAudit(existingOptions, item) } : {})
     })
   }
 }

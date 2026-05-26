@@ -61,11 +61,23 @@ function playerTitleText(anime = {}){
 }
 
 function hasSeasonMarker(text){
-  return /(?:season|сезон|tv|тв)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b/.test(String(text || ''))
+  return /(?:season|сезон|tv|тв)\s*\d|(?:part|часть|cour)\s*\d|\b\d+(?:st|nd|rd|th)\s+season\b|\bs\d+\b|\bp\d+\b/.test(String(text || ''))
 }
 
 function hasSpecialMarker(text){
   return /\bova\b|\bona\b|special|спешл|спец|kuinaki|sentaku|regrets|movie|film|фильм|lost\s+girls|no\s+regrets|выбор\s+без\s+сожалений/.test(String(text || ''))
+}
+
+function strictEpisodeTolerance(anime = {}){
+  const text = playerTitleText(anime)
+  if(hasSpecialMarker(text)) return 1
+  if(hasSeasonMarker(text)) return 1
+  return 6
+}
+
+function hasStrongPlayerMarker(anime = {}){
+  const text = playerTitleText(anime)
+  return hasSpecialMarker(text) || hasSeasonMarker(text)
 }
 
 function episodeRowMatchesAnime(row, anime = {}){
@@ -82,7 +94,7 @@ function episodeRowMatchesAnime(row, anime = {}){
   if(expected && actual){
     if(expected <= 6 && actual > Math.max(expected + 4, expected * 2)) return false
     if(specialLike && expected <= 12 && actual > expected + 6) return false
-    if(seasonLike && expected >= 7 && expected <= 26 && actual > expected + Math.max(6, Math.ceil(expected * 0.5))) return false
+    if(seasonLike && expected >= 7 && expected <= 64 && actual > expected + strictEpisodeTolerance(anime)) return false
     if(expected <= 3 && isSerialPlayerUrl(row.embed_url) && actual >= 8) return false
   }
 
@@ -93,6 +105,7 @@ function canUsePlayerUrlForAnime(url, anime = {}){
   const cleanUrl = String(url || '').trim()
   if(!cleanUrl) return false
   if(isMovieAnime(anime)) return isMoviePlayerUrl(cleanUrl) && !isSerialPlayerUrl(cleanUrl)
+  if(hasStrongPlayerMarker(anime)) return false
   return true
 }
 
