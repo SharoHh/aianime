@@ -225,6 +225,69 @@ function filterOptionsForAnime(options, item){
   return Array.from(best.values()).map(({ __score, ...option }) => option)
 }
 
+
+function buildOptionsAudit(options = [], item = {}){
+  const rows = Array.isArray(options) ? options : []
+  const expected = expectedEpisodes(item)
+  const voices = new Map()
+
+  for(const option of rows){
+    const voice = option?.voice || 'Kodik'
+    if(!voices.has(voice)){
+      voices.set(voice, {
+        voice,
+        count:0,
+        min:null,
+        max:null,
+        declaredMax:0,
+        episodes:[],
+        sources:new Set(),
+        materialTypes:new Set()
+      })
+    }
+    const bucket = voices.get(voice)
+    const episode = Number(option?.episodeNumber || 0)
+    const declared = Number(option?.episodesCount || 0)
+    bucket.count += 1
+    if(episode){
+      bucket.min = bucket.min === null ? episode : Math.min(bucket.min, episode)
+      bucket.max = bucket.max === null ? episode : Math.max(bucket.max, episode)
+      bucket.episodes.push(episode)
+    }
+    if(declared) bucket.declaredMax = Math.max(bucket.declaredMax, declared)
+    if(option?.source) bucket.sources.add(option.source)
+    if(option?.materialType) bucket.materialTypes.add(option.materialType)
+  }
+
+  const voiceRows = Array.from(voices.values()).map(bucket => {
+    const uniqueEpisodes = Array.from(new Set(bucket.episodes)).sort((a,b) => a-b)
+    return {
+      voice:bucket.voice,
+      count:uniqueEpisodes.length,
+      rows:bucket.count,
+      min:bucket.min,
+      max:bucket.max,
+      declaredMax:bucket.declaredMax || null,
+      overExpected:Boolean(expected && Math.max(bucket.max || 0, bucket.declaredMax || 0) > expected),
+      episodes:uniqueEpisodes.slice(0, 80),
+      sources:Array.from(bucket.sources),
+      materialTypes:Array.from(bucket.materialTypes)
+    }
+  }).sort((a,b) => (b.count - a.count) || String(a.voice).localeCompare(String(b.voice)))
+
+  return {
+    expectedEpisodes:expected || null,
+    animeType:item?.type || item?.kind || item?.kodikType || null,
+    title:item?.titleRu || item?.title || item?.slug || null,
+    totalOptions:rows.length,
+    nativeEpisodeLinks:hasNativeEpisodeLinks(rows),
+    voices:voiceRows,
+    warnings:voiceRows
+      .filter(row => row.overExpected)
+      .map(row => `${row.voice}: max ${Math.max(row.max || 0, row.declaredMax || 0)} > expected ${expected}`)
+  }
+}
+
 async function saveRows(rows){
   if(!hasSupabase() || !rows.length) return { ok:false, saved:0, skipped:true }
   const res = await supabaseRequest('anime_episodes?on_conflict=anime_slug,episode_number,provider,voice', {
@@ -241,7 +304,7 @@ async function saveRows(rows){
   return { ok:true, saved:Array.isArray(saved) ? saved.length : rows.length }
 }
 
-export async function GET(req){
+async function handleGET(req){
   const url = new URL(req.url)
   const slug = String(url.searchParams.get('slug') || '').trim()
   const refresh = url.searchParams.get('refresh') === '1'
@@ -302,5 +365,20 @@ export async function GET(req){
       warning:error?.message || String(error),
       ...(debug ? { audit:buildOptionsAudit(existingOptions, item) } : {})
     })
+  }
+}
+
+
+export async function GET(req){
+  try{
+    return await handleGET(req)
+  }catch(error){
+    return json({
+      ok:false,
+      source:'player-options-route',
+      error:'player options route failed',
+      details:error?.message || String(error),
+      stack: process.env.NODE_ENV === 'production' ? undefined : error?.stack
+    }, 500)
   }
 }
