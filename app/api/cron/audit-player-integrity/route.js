@@ -274,7 +274,7 @@ export async function GET(req){
       source:'audit-player-integrity',
       error:'audit route failed',
       details:error?.message || String(error),
-      hint:'Если details про отсутствующую колонку — пришли вывод, быстро уберём поле из select.'
+      hint:'Route вернул JSON вместо пустого 500. Если details про колонку — значит схема Supabase отличается от select.'
     }, 500)
   }
 }
