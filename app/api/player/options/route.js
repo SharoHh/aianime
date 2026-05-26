@@ -85,6 +85,18 @@ function expectedEpisodes(item = {}){
   return countFromText(titleText(item))
 }
 
+function clampRowsToExpectedEpisodes(rows = [], item = {}){
+  const expected = expectedEpisodes(item)
+  if(!expected || expected <= 1 || expected > 64) return rows
+  // Kodik часто добавляет бонусную OVA/спешл как 25-ю серию к TV-сезону на 24 серии.
+  // Для страницы самого тайтла показываем только официальное количество серий из нашей базы.
+  return (Array.isArray(rows) ? rows : []).filter(row => {
+    const episode = Number(row?.episodeNumber || 0)
+    if(!episode) return true
+    return episode <= expected
+  })
+}
+
 function titleText(item = {}){
   return normalizeText([item?.kind, item?.type, item?.kodikType, item?.slug, item?.title, item?.titleRu, item?.originalTitle, item?.englishTitle, item?.description, item?.descriptionRu].filter(Boolean).join(' '))
 }
@@ -145,6 +157,7 @@ function groupConfidence(group = []){
 function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
   const expected = expectedEpisodes(item)
   if(!expected) return rows
+  rows = clampRowsToExpectedEpisodes(rows, item)
 
   const strict = isStrictEpisodeContext(item)
   if(!strict) return rows
@@ -161,7 +174,9 @@ function filterVoiceGroupsByExpectedCount(rows = [], item = {}){
     const episodeNumbers = group.map(row => Number(row.episodeNumber || 0)).filter(Boolean)
     const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
     const declared = Math.max(...group.map(row => Number(row.episodesCount || 0)).filter(Boolean), 0)
-    const actual = Math.max(maxEpisode, declared)
+    // Если есть реальные episode-ссылки, доверяем maxEpisode, а не declared episodes_count.
+    // declared может включать бонусный спецвыпуск 25 к сериалу на 24 серии.
+    const actual = maxEpisode || declared
     const confidence = groupConfidence(group)
 
     // Для Season/Part/OVA/коротких тайтлов не допускаем voice-группу длиннее самого тайтла.
@@ -215,6 +230,68 @@ function hasNativeEpisodeLinks(options){
   return uniqueUrls.size > 1 && uniqueEpisodes.size > 1
 }
 
+
+function filterIncompleteAndPlayerOnlyVoiceGroups(rows = [], item = {}){
+  const list = clampRowsToExpectedEpisodes(Array.isArray(rows) ? rows : [], item)
+  if(list.length <= 1) return list
+
+  const expected = expectedEpisodes(item)
+  const strict = isStrictEpisodeContext(item)
+  const byVoice = new Map()
+
+  for(const row of list){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    if(!byVoice.has(key)) byVoice.set(key, [])
+    byVoice.get(key).push(row)
+  }
+
+  const groups = Array.from(byVoice.values()).map(group => {
+    const episodes = Array.from(new Set(group.map(row => Number(row?.episodeNumber || 0)).filter(Boolean))).sort((a,b) => a-b)
+    const declared = Math.max(...group.map(row => Number(row?.episodesCount || 0)).filter(Boolean), 0)
+    const hasNativeRows = group.some(row => row?.source === 'kodik-api-episode' || row?.source === 'kodik-api-season-episode')
+    const urls = new Set(group.map(row => String(row?.embedUrl || '').trim()).filter(Boolean))
+    const nativeEpisodeLinks = hasNativeRows && episodes.length > 1 && urls.size > 1
+    const completeByExpected = expected > 1
+      && episodes.length === expected
+      && episodes[0] === 1
+      && episodes.includes(expected)
+      && episodes.every((episode, index) => episode === index + 1)
+    const confidence = groupConfidence(group)
+    return { group, episodes, declared, hasNativeRows, nativeEpisodeLinks, completeByExpected, confidence }
+  })
+
+  const hasAnyNativeEpisodeGroup = groups.some(info => info.nativeEpisodeLinks)
+  let keep = groups
+
+  // Если есть настоящие episode-ссылки, не показываем рядом старые "плеер"-группы
+  // с одной serial/video-ссылкой. Они выглядят как озвучки, но серии там внутри iframe
+  // и часто относятся к соседнему релизу.
+  if(hasAnyNativeEpisodeGroup){
+    keep = keep.filter(info => info.nativeEpisodeLinks || info.episodes.length > 1)
+  }
+
+  const completeGroups = keep.filter(info => info.completeByExpected)
+  if(expected > 1 && completeGroups.length){
+    // Когда есть хотя бы одна полная озвучка 1..N, по умолчанию скрываем неполные.
+    // Иначе пользователь видит 2/7/12 серий рядом с нормальными 13/28 и думает, что сайт сломан.
+    keep = completeGroups
+  }else if(!expected && keep.length > 1){
+    // Fallback для тайтлов без количества серий в базе: оставляем группы, близкие к лучшей.
+    const bestCount = Math.max(...keep.map(info => info.episodes.length), 0)
+    if(bestCount >= 4){
+      keep = keep.filter(info => info.episodes.length >= Math.ceil(bestCount * 0.8))
+    }
+  }
+
+  // В строгих контекстах не оставляем слабые группы, если рядом есть уверенные.
+  const hasReliable = keep.some(info => info.confidence.reliable || info.confidence.maxScore >= 160)
+  if(strict && hasReliable){
+    keep = keep.filter(info => info.confidence.reliable || info.confidence.maxScore >= 160)
+  }
+
+  return keep.flatMap(info => info.group)
+}
+
 function filterOptionsForAnime(options, item){
   const valid = (Array.isArray(options) ? options : []).filter(usable)
   if(!valid.length) return []
@@ -260,6 +337,7 @@ function filterOptionsForAnime(options, item){
     return false
   })
 
+  rows = clampRowsToExpectedEpisodes(rows, item)
   rows = filterVoiceGroupsByExpectedCount(rows, item)
 
   const best = new Map()
@@ -274,8 +352,10 @@ function filterOptionsForAnime(options, item){
     if(!current || score >= currentScore) best.set(key, { ...option, __score:score })
   }
 
-  return Array.from(best.values()).map(({ __score, ...option }) => option)
+  const deduped = Array.from(best.values()).map(({ __score, ...option }) => option)
+  return filterIncompleteAndPlayerOnlyVoiceGroups(deduped, item)
 }
+
 
 
 function buildOptionsAudit(options = [], item = {}){
