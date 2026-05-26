@@ -182,7 +182,7 @@ function analyzeRowsForAnime(anime, rows = []){
 }
 
 async function loadAnimePage(limit, offset){
-  const select = 'slug,title,title_ru,original_title,year,episodes,kind,status,description_ru,kodik_id,shikimori_id,mal_id'
+  const select = 'slug,title,title_ru,original_title,year,episodes,kind,status,description_ru,kodik_id,shikimori_id'
   const res = await supabaseRequest(`anime?select=${select}&order=slug.asc&limit=${limit}&offset=${offset}`, { method:'GET', timeout:20000 })
   const body = await readJson(res)
   if(!res.ok) throw new Error(`anime read failed: ${res.status} ${JSON.stringify(body).slice(0, 300)}`)
@@ -206,7 +206,7 @@ async function loadEpisodes(slug){
   return all
 }
 
-export async function GET(req){
+async function handleGET(req){
   const auth = verifyCronAccess(req)
   if(!auth.ok) return cronAuthError(auth)
 
@@ -262,4 +262,19 @@ export async function GET(req){
     errors:errors.slice(0, 20),
     hint:'Запускай offset=0,80,160... пока nextOffset не станет null. Ничего в базе не меняет — только аудит.'
   })
+}
+
+
+export async function GET(req){
+  try{
+    return await handleGET(req)
+  }catch(error){
+    return json({
+      ok:false,
+      source:'audit-player-integrity',
+      error:'audit route failed',
+      details:error?.message || String(error),
+      hint:'Если details про отсутствующую колонку — пришли вывод, быстро уберём поле из select.'
+    }, 500)
+  }
 }
