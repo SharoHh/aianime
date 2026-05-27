@@ -47,6 +47,72 @@ function usable(option){
   return Boolean(option?.embedUrl) && option.status !== 'placeholder' && option.source !== 'fallback'
 }
 
+function addEpisodeParamToUrl(value, episodeNumber){
+  const raw = String(value || '').trim()
+  const episode = Math.max(1, Number(episodeNumber) || 1)
+  if(!raw) return ''
+  try{
+    const url = new URL(raw)
+    url.searchParams.set('episode', String(episode))
+    url.searchParams.set('seria', String(episode))
+    return url.toString()
+  }catch{
+    return raw
+  }
+}
+
+function optionEpisodeLimit(option, expectedEpisodes = 0){
+  const expected = Math.max(0, Number(expectedEpisodes || 0) || 0)
+  const declared = Math.max(0, Number(option?.episodesCount || option?.raw?.episodes_count || 0) || 0)
+  const limit = expected > 1 ? expected : declared
+  if(!Number.isFinite(limit) || limit <= 1) return 1
+  return Math.min(Math.floor(limit), 800)
+}
+
+function makeSyntheticEpisodeOption(option, episodeNumber, expectedEpisodes = 0){
+  const episode = Math.max(1, Number(episodeNumber) || 1)
+  const limit = optionEpisodeLimit(option, expectedEpisodes)
+  if(!option || !option.embedUrl || limit <= 1 || episode > limit) return null
+  return {
+    ...option,
+    id: `${option.id || option.voice || 'kodik'}-episode-${episode}`,
+    episodeNumber: episode,
+    title: `Серия ${episode}`,
+    embedUrl: addEpisodeParamToUrl(option.embedUrl, episode),
+    source: option.source === 'kodik-api-player' ? 'kodik-api-season-episode' : `${option.source || 'kodik'}-episode`,
+    syntheticEpisode: true,
+  }
+}
+
+function expandEpisodeListForVoice(list = [], expectedEpisodes = 0){
+  const rows = Array.isArray(list) ? list.filter(usable) : []
+  if(rows.length !== 1) return rows
+  const base = rows[0]
+  const limit = optionEpisodeLimit(base, expectedEpisodes)
+  if(limit <= 1) return rows
+  return Array.from({ length:limit }, (_, index) => makeSyntheticEpisodeOption(base, index + 1, expectedEpisodes)).filter(Boolean)
+}
+
+function collapseToVoiceRepresentatives(rows = []){
+  const map = new Map()
+  for(const row of rows){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    const current = map.get(key)
+    const score = (Number(row.episodesCount || 0) * 2)
+      + (row.source === 'kodik-api-player' ? 8 : 0)
+      + (row.source === 'kodik-api-season-episode' ? 12 : 0)
+      + (row.source === 'kodik-api-episode' ? 20 : 0)
+      + (row.embedUrl ? 5 : 0)
+    const currentScore = current ? (Number(current.episodesCount || 0) * 2)
+      + (current.source === 'kodik-api-player' ? 8 : 0)
+      + (current.source === 'kodik-api-season-episode' ? 12 : 0)
+      + (current.source === 'kodik-api-episode' ? 20 : 0)
+      + (current.embedUrl ? 5 : 0) : -1
+    if(!current || score >= currentScore) map.set(key, row)
+  }
+  return Array.from(map.values())
+}
+
 function normalizeOptions(options = []){
   const map = new Map()
   for(const raw of options || []){
@@ -63,12 +129,13 @@ function normalizeOptions(options = []){
   const uniqueEpisodes = new Set(rows.map(item => item.episodeNumber))
 
   // Защита от старой базы: если много серий указывают на один и тот же Kodik serial iframe,
-  // это не родной список серий, а старая синтетическая раскладка. Не показываем её.
-  if(rows.length > 1 && uniqueUrls.size === 1 && uniqueEpisodes.size > 1){
-    return [rows[0]]
-  }
+  // это не родной список серий, а старая синтетическая раскладка. Но озвучки терять нельзя:
+  // оставляем по одному базовому плееру на каждую озвучку, а серии строим уже на клиенте.
+  const safeRows = rows.length > 1 && uniqueUrls.size === 1 && uniqueEpisodes.size > 1
+    ? collapseToVoiceRepresentatives(rows)
+    : rows
 
-  return rows.sort((a,b) => {
+  return safeRows.sort((a,b) => {
     const voice = a.voice.localeCompare(b.voice, 'ru')
     if(voice) return voice
     return a.episodeNumber - b.episodeNumber
@@ -92,14 +159,20 @@ function groupByVoice(options){
   })).sort((a,b) => Math.max(b.count, b.declaredCount || 0) - Math.max(a.count, a.declaredCount || 0) || a.voice.localeCompare(b.voice, 'ru'))
 }
 
-function pickInitialOption(options, episode, voice){
+function pickInitialOption(options, episode, voice, expectedEpisodes = 0){
   if(!options.length) return null
   const targetEpisode = Math.max(1, Number(episode || 1) || 1)
   const targetVoice = cleanVoice(voice)
-  return options.find(item => item.voice === targetVoice && item.episodeNumber === targetEpisode)
+  const exact = options.find(item => item.voice === targetVoice && item.episodeNumber === targetEpisode)
     || options.find(item => item.episodeNumber === targetEpisode)
-    || options.find(item => item.voice === targetVoice)
-    || options[0]
+  if(exact) return exact
+
+  const voiceBase = options.find(item => item.voice === targetVoice)
+  const syntheticVoice = makeSyntheticEpisodeOption(voiceBase, targetEpisode, expectedEpisodes)
+  if(syntheticVoice) return syntheticVoice
+
+  const anySynthetic = makeSyntheticEpisodeOption(options[0], targetEpisode, expectedEpisodes)
+  return anySynthetic || voiceBase || options[0]
 }
 
 function normalizePlayerState({ initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality }){
@@ -141,19 +214,21 @@ export default function KodikPlayerClient({
   initialVoice = null,
   initialQuality = null,
   initialSource = null,
+  expectedEpisodes = 0,
   historyItem = null
 }){
   const { user } = useAuthState()
   const [options, setOptions] = useState(() => normalizeOptions(playerOptions))
   const [isRefreshingOptions, setIsRefreshingOptions] = useState(false)
   const [optionWarning, setOptionWarning] = useState('')
-  const [selected, setSelected] = useState(() => pickInitialOption(normalizeOptions(playerOptions), episode, selectedVoice))
+  const [selected, setSelected] = useState(() => pickInitialOption(normalizeOptions(playerOptions), episode, selectedVoice, expectedEpisodes))
   const [state, setState] = useState(() => normalizePlayerState({ initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality }))
 
   const voices = useMemo(() => groupByVoice(options), [options])
   const activeVoice = selected?.voice || cleanVoice(selectedVoice || state.voice || voice)
   const activeGroup = voices.find(item => item.voice === activeVoice) || null
-  const activeEpisodes = activeGroup?.episodes || options.filter(item => item.voice === activeVoice)
+  const rawActiveEpisodes = activeGroup?.episodes || options.filter(item => item.voice === activeVoice)
+  const activeEpisodes = useMemo(() => expandEpisodeListForVoice(rawActiveEpisodes, expectedEpisodes), [rawActiveEpisodes, expectedEpisodes])
   const activeEpisodeNumber = Number(selected?.episodeNumber || episode || 1)
   const currentEmbedUrl = selected?.embedUrl || state.embedUrl || initialEmbedUrl || null
   const currentQuality = selected?.quality || state.quality || quality || null
@@ -164,12 +239,12 @@ export default function KodikPlayerClient({
   useEffect(() => {
     const normalized = normalizeOptions(playerOptions)
     setOptions(normalized)
-    setSelected(pickInitialOption(normalized, episode, selectedVoice))
-  }, [slug, episode, selectedVoice, JSON.stringify(playerOptions)])
+    setSelected(pickInitialOption(normalized, episode, selectedVoice, expectedEpisodes))
+  }, [slug, episode, selectedVoice, expectedEpisodes, JSON.stringify(playerOptions)])
 
   useEffect(() => {
     let cancelled = false
-    const current = pickInitialOption(options, episode, selectedVoice)
+    const current = pickInitialOption(options, episode, selectedVoice, expectedEpisodes)
     if(current){
       setSelected(current)
       setState({ loading:false, ok:true, embedUrl:current.embedUrl, error:null, source:current.source, voice:current.voice, quality:current.quality || quality || null })
@@ -214,12 +289,14 @@ export default function KodikPlayerClient({
       cancelled = true
       try{ controller?.abort() }catch{}
     }
-  }, [slug, episode, selectedVoice, options, initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality])
+  }, [slug, episode, selectedVoice, options, initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality, expectedEpisodes])
 
   useEffect(() => {
     const uniqueUrls = new Set(options.map(item => item.embedUrl).filter(Boolean))
     const uniqueEpisodes = new Set(options.map(item => item.episodeNumber))
-    const shouldRefresh = !options.length || (options.length === 1 && uniqueUrls.size <= 1) || (uniqueUrls.size === 1 && uniqueEpisodes.size <= 1)
+    const hasDeclaredEpisodeCount = options.some(item => Number(item.episodesCount || 0) > 1)
+    const hasDetailedEpisodeLinks = uniqueUrls.size > 1 && uniqueEpisodes.size > 1
+    const shouldRefresh = !options.length || (!hasDetailedEpisodeLinks && (options.length <= 1 || hasDeclaredEpisodeCount || uniqueEpisodes.size <= 1))
     if(!slug || !shouldRefresh) return
 
     let cancelled = false
@@ -233,7 +310,7 @@ export default function KodikPlayerClient({
         const next = normalizeOptions(data?.options || [])
         if(next.length){
           setOptions(next)
-          const picked = pickInitialOption(next, activeEpisodeNumber, activeVoice)
+          const picked = pickInitialOption(next, activeEpisodeNumber, activeVoice, expectedEpisodes)
           if(picked){
             setSelected(picked)
             setState({ loading:false, ok:true, embedUrl:picked.embedUrl, error:null, source:picked.source, voice:picked.voice, quality:picked.quality || quality || null })
@@ -266,18 +343,19 @@ export default function KodikPlayerClient({
 
   const chooseVoice = (voiceName) => {
     const list = voices.find(item => item.voice === voiceName)?.episodes || []
-    const sameEpisode = list.find(item => item.episodeNumber === activeEpisodeNumber)
-    chooseOption(sameEpisode || list[0])
+    const expanded = expandEpisodeListForVoice(list, expectedEpisodes)
+    const sameEpisode = expanded.find(item => item.episodeNumber === activeEpisodeNumber)
+    chooseOption(sameEpisode || expanded[0] || list[0])
   }
 
   const nextEpisode = activeEpisodes.find(item => item.episodeNumber > activeEpisodeNumber) || null
   const activeEpisodeTitle = selected?.title || `Серия ${activeEpisodeNumber}`
-  const activeVoiceCount = activeGroup?.count || uniqueNativeEpisodes.size || activeEpisodes.length || 1
+  const activeVoiceCount = Math.max(activeGroup?.count || 0, activeGroup?.declaredCount || 0, uniqueNativeEpisodes.size || 0, activeEpisodes.length || 0, 1)
   const playerLabel = `Плеер Kodik${activeVoiceCount ? ` (${activeVoiceCount} эп.)` : ''}`
 
-  return <div className="native-kodik-shell native-kodik-v60-6-light" data-aianime-player-ui="v60-6-light-top-controls">
-    <div className="native-kodik-v60-6-controls" id="episodes">
-      <label className="native-kodik-v60-6-select">
+  return <div className="native-kodik-shell native-kodik-v65-light" data-aianime-player-ui="v65-light-top-controls-voices-fixed">
+    <div className="native-kodik-v65-controls" id="episodes">
+      <label className="native-kodik-v65-select">
         <span>Озвучка</span>
         <select
           value={activeVoice || ''}
@@ -291,7 +369,7 @@ export default function KodikPlayerClient({
         </select>
       </label>
 
-      <label className="native-kodik-v60-6-select">
+      <label className="native-kodik-v65-select">
         <span>Плеер</span>
         <select value="kodik" disabled aria-label="Выбор плеера">
           <option value="kodik">{playerLabel}</option>
@@ -299,7 +377,7 @@ export default function KodikPlayerClient({
       </label>
     </div>
 
-    {hasRealEpisodeButtons ? <div className="native-kodik-v60-6-episodes" aria-label="Выбор серии">
+    {hasRealEpisodeButtons ? <div className="native-kodik-v65-episodes" aria-label="Выбор серии">
       {activeEpisodes.map(option => <button
         key={`${option.voice}-${option.episodeNumber}`}
         type="button"
@@ -308,12 +386,12 @@ export default function KodikPlayerClient({
       >
         {option.episodeNumber}
       </button>)}
-    </div> : <div className="native-kodik-v60-6-note">
+    </div> : <div className="native-kodik-v65-note">
       {isRefreshingOptions ? 'Подтягиваем отдельные серии. Плеер уже можно запускать.' : canUseVoiceSelector ? 'Озвучку выбираем сверху, серии переключаются внутри Kodik-плеера.' : 'Серии переключаются внутри Kodik-плеера.'}
     </div>}
 
-    <div className="native-kodik-v60-6-frame-wrap">
-      {state.ok && currentEmbedUrl ? <div className="compact-player compact-player-kodik is-ready is-clean native-kodik-frame native-kodik-v60-6-frame">
+    <div className="native-kodik-v65-frame-wrap">
+      {state.ok && currentEmbedUrl ? <div className="compact-player compact-player-kodik is-ready is-clean native-kodik-frame native-kodik-v65-frame">
         <iframe
           key={`${slug}-${activeVoice}-${activeEpisodeNumber}-${currentEmbedUrl}`}
           className="kodik-player-iframe"
@@ -324,7 +402,7 @@ export default function KodikPlayerClient({
           allowFullScreen
           referrerPolicy="origin-when-cross-origin"
         />
-      </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame native-kodik-v60-6-frame">
+      </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame native-kodik-v65-frame">
         <img src={banner} alt="Аниме"/>
         <div className="compact-player-shade"/>
         <div className="compact-player-center kodik-player-simple-fallback">
@@ -335,7 +413,7 @@ export default function KodikPlayerClient({
       </div>}
     </div>
 
-    <div className="native-kodik-v60-6-bottomline">
+    <div className="native-kodik-v65-bottomline">
       <div>
         <span>Серия {activeEpisodeNumber}</span>
         <b>{activeEpisodeTitle}</b>
@@ -348,6 +426,6 @@ export default function KodikPlayerClient({
       {nextEpisode ? <button type="button" onClick={() => chooseOption(nextEpisode)}>Следующая →</button> : null}
     </div>
 
-    {optionWarning ? <div className="native-kodik-warning native-kodik-v60-6-warning">{optionWarning}</div> : null}
+    {optionWarning ? <div className="native-kodik-warning native-kodik-v65-warning">{optionWarning}</div> : null}
   </div>
 }
