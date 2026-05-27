@@ -272,30 +272,70 @@ export default function KodikPlayerClient({
 
   const nextEpisode = activeEpisodes.find(item => item.episodeNumber > activeEpisodeNumber) || null
 
-  return <div className="native-kodik-shell">
-    <div className="native-kodik-panel" id="episodes">
-      <div className="native-kodik-topline">
+  return <div className="native-kodik-shell native-kodik-cinema-shell">
+    <div className="native-kodik-stage">
+      {state.ok && currentEmbedUrl ? <div className="compact-player compact-player-kodik is-ready is-clean native-kodik-frame">
+        <iframe
+          key={`${slug}-${activeVoice}-${activeEpisodeNumber}-${currentEmbedUrl}`}
+          className="kodik-player-iframe"
+          src={currentEmbedUrl}
+          title={`${title} — серия ${activeEpisodeNumber}`}
+          loading="eager"
+          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          allowFullScreen
+          referrerPolicy="origin-when-cross-origin"
+        />
+      </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame">
+        <img src={banner} alt="Аниме"/>
+        <div className="compact-player-shade"/>
+        <div className="compact-player-center kodik-player-simple-fallback">
+          <h3>{title}</h3>
+          <p>{state.loading ? 'Загружаем плеер…' : 'Плеер временно недоступен'}</p>
+          {!state.loading && state.error ? <small className="kodik-player-error">{state.error}</small> : null}
+        </div>
+      </div>}
+    </div>
+
+    <aside className="native-kodik-panel native-kodik-sidebar" id="episodes">
+      <div className="native-kodik-topline native-kodik-sidebar-head">
         <div>
-          <b>Озвучка и серии</b>
-          <span>{hasRealEpisodeButtons ? `${voices.length} озвучек · ${uniqueNativeEpisodes.size} серий в выбранной` : canUseVoiceSelector ? `${voices.length} озвучек · серии внутри Kodik` : isRefreshingOptions ? 'Подтягиваем список из Kodik…' : 'Kodik'}</span>
+          <span className="native-kodik-overline">Плеер</span>
+          <b>Выбор озвучки</b>
+          <span>{hasRealEpisodeButtons ? `${voices.length} озвучек · ${uniqueNativeEpisodes.size} серий` : canUseVoiceSelector ? `${voices.length} озвучек · серии внутри Kodik` : isRefreshingOptions ? 'Подтягиваем список из Kodik…' : 'Kodik'}</span>
         </div>
         {currentQuality ? <em>{currentQuality}</em> : null}
       </div>
 
-      {voices.length > 1 ? <div className="native-voice-row" aria-label="Выбор озвучки">
+      <div className="native-kodik-now-card">
+        <span>Сейчас смотрим</span>
+        <b>Серия {activeEpisodeNumber}</b>
+        <small>{activeVoice || 'Kodik'}</small>
+      </div>
+
+      {voices.length > 1 ? <div className="native-voice-list" aria-label="Выбор озвучки">
         {voices.map(item => <button
           key={item.voice}
           type="button"
           className={item.voice === activeVoice ? 'active' : ''}
           onClick={() => chooseVoice(item.voice)}
         >
-          <span>{item.voice}</span>
-          <small>{item.count > 1 ? `${item.count} сер.` : item.declaredCount > 1 ? `${item.declaredCount} в плеере` : 'плеер'}</small>
+          <i aria-hidden="true"/>
+          <span>
+            <b>{item.voice}</b>
+            <small>{item.count > 1 ? `${item.count} серий` : item.declaredCount > 1 ? `${item.declaredCount} в плеере` : 'Kodik-плеер'}</small>
+          </span>
+          <em>{item.quality || currentQuality || 'HD'}</em>
         </button>)}
-      </div> : null}
+      </div> : <div className="native-kodik-note">
+        {isRefreshingOptions ? 'Подтягиваем список озвучек. Плеер уже можно запускать.' : 'Для этого тайтла доступен один вариант плеера.'}
+      </div>}
 
-      {hasRealEpisodeButtons ? <>
-        <div className="native-episode-row" aria-label="Выбор серии">
+      {hasRealEpisodeButtons ? <div className="native-episodes-card">
+        <div className="native-mini-label">
+          <span>Серии</span>
+          {nextEpisode ? <button type="button" onClick={() => chooseOption(nextEpisode)}>Следующая →</button> : <em>Последняя</em>}
+        </div>
+        <div className="native-episode-row native-episode-grid-compact" aria-label="Выбор серии">
           {activeEpisodes.map(option => <button
             key={`${option.voice}-${option.episodeNumber}`}
             type="button"
@@ -305,36 +345,11 @@ export default function KodikPlayerClient({
             {option.episodeNumber}
           </button>)}
         </div>
-        <div className="native-player-actions">
-          <span>Серия <b>{activeEpisodeNumber}</b>{activeVoice ? ` · ${activeVoice}` : ''}</span>
-          {nextEpisode ? <button type="button" onClick={() => chooseOption(nextEpisode)}>Следующая →</button> : <span>Последняя серия</span>}
-        </div>
-      </> : <div className="native-kodik-note">
-        {isRefreshingOptions ? 'Ищем отдельные ссылки серий. Плеер уже можно запускать.' : canUseVoiceSelector ? 'Озвучку можно выбрать здесь, серии переключаются внутри Kodik-плеера.' : 'Серии переключаются внутри Kodik-плеера.'}
+      </div> : <div className="native-kodik-note native-kodik-note-soft">
+        {isRefreshingOptions ? 'Ищем отдельные ссылки серий. Плеер уже можно запускать.' : canUseVoiceSelector ? 'Озвучку выбираем здесь, серии переключаются внутри Kodik-плеера.' : 'Серии переключаются внутри Kodik-плеера.'}
       </div>}
 
       {optionWarning ? <div className="native-kodik-warning">{optionWarning}</div> : null}
-    </div>
-
-    {state.ok && currentEmbedUrl ? <div className="compact-player compact-player-kodik is-ready is-clean native-kodik-frame">
-      <iframe
-        key={`${slug}-${activeVoice}-${activeEpisodeNumber}-${currentEmbedUrl}`}
-        className="kodik-player-iframe"
-        src={currentEmbedUrl}
-        title={`${title} — серия ${activeEpisodeNumber}`}
-        loading="eager"
-        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-        allowFullScreen
-        referrerPolicy="origin-when-cross-origin"
-      />
-    </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame">
-      <img src={banner} alt="Аниме"/>
-      <div className="compact-player-shade"/>
-      <div className="compact-player-center kodik-player-simple-fallback">
-        <h3>{title}</h3>
-        <p>{state.loading ? 'Загружаем плеер…' : 'Плеер временно недоступен'}</p>
-        {!state.loading && state.error ? <small className="kodik-player-error">{state.error}</small> : null}
-      </div>
-    </div>}
+    </aside>
   </div>
 }
