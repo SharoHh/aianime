@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createBrowserSupabase, hasSupabaseBrowser } from '@/lib/supabaseClient'
+import { createBrowserSupabase, fetchRuntimeSupabaseConfig, getSupabaseConfig, hasSupabaseBrowser } from '@/lib/supabaseClient'
 import { prepareLocalAccountData, resetLocalAccountState } from '@/lib/userStorage'
 
 export const baseProfileDefaults = {
@@ -333,19 +333,53 @@ export async function restoreProfileFromCloud(user, supabaseInput = null){
 }
 
 export function useAuthState(){
-  const configured = hasSupabaseBrowser()
-  const supabase = useMemo(() => createBrowserSupabase(), [])
+  const [runtimeConfig,setRuntimeConfig] = useState(() => getSupabaseConfig())
+  const configured = hasSupabaseBrowser(runtimeConfig)
+  const supabase = useMemo(() => createBrowserSupabase(runtimeConfig), [runtimeConfig])
+  const [configChecked,setConfigChecked] = useState(() => configured)
   const [state,setState] = useState(() => {
     if(cachedAuthState) return cachedAuthState
     const pendingAuth = readPendingAuthSession()
     const cachedUser = readCachedUser() || pendingAuth?.user || null
-    return cachedUser ? { loading:false, configured, user:cachedUser } : { loading:true, configured, user:null }
+    if(cachedUser) return { loading:false, configured:configured || true, user:cachedUser }
+    return { loading:true, configured, user:null }
   })
 
   useEffect(()=>{
-    const unsubscribe = subscribeAuthState(setState)
-    bootstrapAuth(supabase, configured)
-    return unsubscribe
+    return subscribeAuthState(setState)
+  }, [])
+
+  useEffect(()=>{
+    let alive = true
+
+    if(configured && supabase){
+      setConfigChecked(true)
+      bootstrapAuth(supabase, true)
+      return () => { alive = false }
+    }
+
+    setConfigChecked(false)
+    fetchRuntimeSupabaseConfig({ force:true })
+      .then(config => {
+        if(!alive) return
+        if(config){
+          setRuntimeConfig(config)
+          setConfigChecked(true)
+          return
+        }
+
+        const cachedUser = readCachedUser()
+        setConfigChecked(true)
+        emitAuthState({ loading:false, configured:false, user:cachedUser || null })
+      })
+      .catch(() => {
+        if(!alive) return
+        const cachedUser = readCachedUser()
+        setConfigChecked(true)
+        emitAuthState({ loading:false, configured:false, user:cachedUser || null })
+      })
+
+    return () => { alive = false }
   }, [configured, supabase])
 
   async function signOut(){
@@ -367,5 +401,13 @@ export function useAuthState(){
     }catch{}
   }
 
-  return { ...state, supabase, signOut }
+  const waitingForRuntimeConfig = !configChecked && !configured
+
+  return {
+    ...state,
+    configured:configured || state.configured,
+    loading:waitingForRuntimeConfig ? true : state.loading,
+    supabase,
+    signOut
+  }
 }

@@ -16,7 +16,7 @@ function readStats(){
 }
 
 export default function ProfileAuthGateClient(){
-  const { loading, configured, user, signOut } = useAuthState()
+  const { loading, user, signOut } = useAuthState()
   const [stats,setStats] = useState({ favorites:0, history:0, ratings:0 })
   const [profile,setProfile] = useState(null)
 
@@ -42,15 +42,6 @@ export default function ProfileAuthGateClient(){
       <span>профиль</span>
       <h2>Проверяем вход</h2>
       <p>Секунду, открываем данные аккаунта.</p>
-    </section>
-  }
-
-  if(!configured){
-    return <section className="auth-required-card widget">
-      <span>авторизация</span>
-      <h2>Авторизация не подключена</h2>
-      <p>Профиль скрыт, пока не подключены переменные авторизации на сервере.</p>
-      <Link className="secondary" href="/">На главную</Link>
     </section>
   }
 

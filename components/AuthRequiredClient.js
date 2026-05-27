@@ -9,19 +9,10 @@ function loginHref(){
 }
 
 export default function AuthRequiredClient({ children, title = 'Нужно войти в аккаунт', text = 'Этот раздел доступен только после авторизации.' }){
-  const { loading, configured, user } = useAuthState()
+  const { loading, user } = useAuthState()
 
   if(loading){
     return <section className="profile-clean-card widget profile-loading-card" aria-hidden="true" />
-  }
-
-  if(!configured){
-    return <section className="auth-required-card widget">
-      <span>авторизация</span>
-      <h2>Supabase Auth не включён</h2>
-      <p>Добавь Supabase URL и anon key на сервере. После этого вход и профиль станут доступны.</p>
-      <Link className="secondary" href="/">На главную</Link>
-    </section>
   }
 
   if(!user){
