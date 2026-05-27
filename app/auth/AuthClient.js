@@ -102,7 +102,7 @@ export default function AuthClient(){
     e.preventDefault()
     setMessage('')
     if(!configured || !supabase){
-      setMessage('Supabase не настроен. Добавь NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY и NEXT_PUBLIC_ENABLE_SUPABASE_RUNTIME=1')
+      setMessage('Вход временно недоступен: Supabase Auth не подключён на сервере.')
       return
     }
 
@@ -175,7 +175,7 @@ export default function AuthClient(){
     </section>
   }
 
-  return <section className="auth-card auth-card-premium widget">
+  return <section className="auth-card auth-card-premium widget" data-aianime-auth-ui="v61">
     <div className="auth-profile-preview" aria-hidden="true">
       <img src="/posters/oshi.svg" alt=""/>
       <div>
@@ -197,6 +197,6 @@ export default function AuthClient(){
     </form>
 
     {message ? <div className="auth-message">{message}</div> : null}
-    {!configured ? <div className="auth-warning">Supabase Auth пока не включён в runtime. Проверь env на VPS и перезапусти PM2.</div> : null}
+    {!configured ? <div className="auth-warning">Вход временно недоступен. На сервере не найдены публичные настройки Supabase.</div> : null}
   </section>
 }
