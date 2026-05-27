@@ -19,7 +19,7 @@ export default function AuthRequiredClient({ children, title = 'Нужно во�
     return <section className="auth-required-card widget">
       <span>авторизация</span>
       <h2>Supabase Auth не включён</h2>
-      <p>Добавь публичные переменные Supabase и включи <b>NEXT_PUBLIC_ENABLE_SUPABASE_RUNTIME=1</b>. После этого вход и профиль станут доступны.</p>
+      <p>Добавь Supabase URL и anon key на сервере. После этого вход и профиль станут доступны.</p>
       <Link className="secondary" href="/">На главную</Link>
     </section>
   }
