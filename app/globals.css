@@ -15552,8 +15552,8 @@ a.rate-chip.is-link:focus-visible{
   }
 }
 
-/* AIanime v60-6 — light top-controls player redesign, no duplicate right panel */
-.compact-player-section-v60-6{
+/* AIanime v65 — light player controls: keep voices selectable and restore episode buttons */
+.compact-player-section-v65{
   max-width:1220px !important;
   margin:34px auto !important;
   padding:18px !important;
@@ -15563,17 +15563,17 @@ a.rate-chip.is-link:focus-visible{
   box-shadow:0 22px 70px rgba(60,43,110,.08) !important;
   color:#231d35 !important;
 }
-.compact-player-section-v60-6 .compact-section-head{
+.compact-player-section-v65 .compact-section-head{
   margin-bottom:14px !important;
 }
-.compact-player-section-v60-6 .compact-section-head h2{
+.compact-player-section-v65 .compact-section-head h2{
   color:#211a34 !important;
 }
-.compact-player-section-v60-6 .compact-player-hint{
+.compact-player-section-v65 .compact-player-hint{
   color:#8b5cf6 !important;
   font-weight:900 !important;
 }
-.native-kodik-v60-6-light{
+.native-kodik-v65-light{
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -15581,25 +15581,25 @@ a.rate-chip.is-link:focus-visible{
   background:transparent;
   color:#211a34;
 }
-.native-kodik-v60-6-controls{
+.native-kodik-v65-controls{
   display:grid;
   grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);
   gap:10px;
 }
-.native-kodik-v60-6-select{
+.native-kodik-v65-select{
   display:flex;
   flex-direction:column;
   gap:6px;
   min-width:0;
 }
-.native-kodik-v60-6-select span{
+.native-kodik-v65-select span{
   padding-left:2px;
   font-size:11px;
   line-height:1;
   font-weight:900;
   color:rgba(42,34,64,.62);
 }
-.native-kodik-v60-6-select select{
+.native-kodik-v65-select select{
   width:100%;
   height:44px;
   padding:0 40px 0 14px;
@@ -15614,22 +15614,22 @@ a.rate-chip.is-link:focus-visible{
   box-shadow:0 10px 28px rgba(50,36,88,.055);
   appearance:auto;
 }
-.native-kodik-v60-6-select select:focus{
+.native-kodik-v65-select select:focus{
   border-color:rgba(139,92,246,.55);
   box-shadow:0 0 0 4px rgba(139,92,246,.10), 0 12px 30px rgba(50,36,88,.08);
 }
-.native-kodik-v60-6-select select:disabled{
+.native-kodik-v65-select select:disabled{
   opacity:1;
   cursor:default;
   background:linear-gradient(180deg,#fff,#f8f6ff);
 }
-.native-kodik-v60-6-episodes{
+.native-kodik-v65-episodes{
   display:flex;
   flex-wrap:wrap;
   gap:6px;
   padding:2px 0 0;
 }
-.native-kodik-v60-6-episodes button{
+.native-kodik-v65-episodes button{
   min-width:43px;
   height:38px;
   border:1px solid rgba(125,104,164,.18);
@@ -15643,18 +15643,18 @@ a.rate-chip.is-link:focus-visible{
   box-shadow:0 8px 18px rgba(50,36,88,.045);
   transition:transform .14s ease, border-color .14s ease, background .14s ease, box-shadow .14s ease;
 }
-.native-kodik-v60-6-episodes button:hover{
+.native-kodik-v65-episodes button:hover{
   transform:translateY(-1px);
   border-color:rgba(139,92,246,.42);
   box-shadow:0 12px 26px rgba(139,92,246,.12);
 }
-.native-kodik-v60-6-episodes button.active{
+.native-kodik-v65-episodes button.active{
   border-color:transparent;
   background:linear-gradient(135deg,#8b5cf6 0%,#b45df0 55%,#5eead4 135%);
   color:#fff;
   box-shadow:0 14px 28px rgba(139,92,246,.28);
 }
-.native-kodik-v60-6-frame-wrap{
+.native-kodik-v65-frame-wrap{
   margin-top:4px;
   overflow:hidden;
   border:1px solid rgba(125,104,164,.16);
@@ -15662,7 +15662,7 @@ a.rate-chip.is-link:focus-visible{
   background:#f5f3fb;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.8), 0 18px 45px rgba(37,29,68,.08);
 }
-.native-kodik-v60-6-frame{
+.native-kodik-v65-frame{
   margin:0 !important;
   width:100% !important;
   min-height:520px !important;
@@ -15671,14 +15671,14 @@ a.rate-chip.is-link:focus-visible{
   overflow:hidden !important;
   box-shadow:none !important;
 }
-.native-kodik-v60-6-frame .kodik-player-iframe{
+.native-kodik-v65-frame .kodik-player-iframe{
   width:100% !important;
   height:100% !important;
   min-height:520px !important;
   border:0 !important;
   display:block !important;
 }
-.native-kodik-v60-6-bottomline{
+.native-kodik-v65-bottomline{
   display:flex;
   align-items:center;
   gap:10px;
@@ -15689,18 +15689,18 @@ a.rate-chip.is-link:focus-visible{
   background:rgba(255,255,255,.76);
   box-shadow:0 10px 24px rgba(50,36,88,.045);
 }
-.native-kodik-v60-6-bottomline div{
+.native-kodik-v65-bottomline div{
   min-width:0;
   padding-right:12px;
   border-right:1px solid rgba(125,104,164,.13);
 }
-.native-kodik-v60-6-bottomline span{
+.native-kodik-v65-bottomline span{
   display:block;
   font-size:11px;
   font-weight:900;
   color:rgba(42,34,64,.55);
 }
-.native-kodik-v60-6-bottomline b{
+.native-kodik-v65-bottomline b{
   display:block;
   margin-top:2px;
   max-width:360px;
@@ -15711,7 +15711,7 @@ a.rate-chip.is-link:focus-visible{
   font-weight:900;
   color:#251f39;
 }
-.native-kodik-v60-6-bottomline em{
+.native-kodik-v65-bottomline em{
   margin-left:auto;
   border-radius:999px;
   padding:7px 10px;
@@ -15721,7 +15721,7 @@ a.rate-chip.is-link:focus-visible{
   font-size:11px;
   font-weight:950;
 }
-.native-kodik-v60-6-bottomline button{
+.native-kodik-v65-bottomline button{
   border:1px solid rgba(139,92,246,.22);
   border-radius:999px;
   padding:9px 12px;
@@ -15732,60 +15732,69 @@ a.rate-chip.is-link:focus-visible{
   font-weight:950;
   cursor:pointer;
 }
-.native-kodik-v60-6-note,
-.native-kodik-v60-6-warning{
+.native-kodik-v65-note,
+.native-kodik-v65-warning{
   border-radius:14px;
   padding:10px 12px;
   font-size:12px;
   font-weight:850;
 }
-.native-kodik-v60-6-note{
+.native-kodik-v65-note{
   border:1px solid rgba(139,92,246,.13);
   background:#faf7ff;
   color:rgba(42,34,64,.68);
 }
-.native-kodik-v60-6-warning{
+.native-kodik-v65-warning{
   margin-top:0;
   background:#fff7e8;
   color:#9a6515;
 }
 @media (max-width:860px){
-  .native-kodik-v60-6-frame,
-  .native-kodik-v60-6-frame .kodik-player-iframe{
+  .native-kodik-v65-frame,
+  .native-kodik-v65-frame .kodik-player-iframe{
     min-height:420px !important;
   }
 }
 @media (max-width:680px){
-  .compact-player-section-v60-6{
+  .compact-player-section-v65{
     padding:12px !important;
     border-radius:24px !important;
   }
-  .native-kodik-v60-6-controls{
+  .native-kodik-v65-controls{
     grid-template-columns:1fr;
   }
-  .native-kodik-v60-6-episodes{
+  .native-kodik-v65-episodes{
     gap:5px;
   }
-  .native-kodik-v60-6-episodes button{
+  .native-kodik-v65-episodes button{
     min-width:38px;
     height:36px;
     border-radius:9px;
   }
-  .native-kodik-v60-6-frame,
-  .native-kodik-v60-6-frame .kodik-player-iframe{
+  .native-kodik-v65-frame,
+  .native-kodik-v65-frame .kodik-player-iframe{
     min-height:330px !important;
   }
-  .native-kodik-v60-6-bottomline{
+  .native-kodik-v65-bottomline{
     align-items:flex-start;
     flex-direction:column;
   }
-  .native-kodik-v60-6-bottomline div{
+  .native-kodik-v65-bottomline div{
     width:100%;
     border-right:0;
     border-bottom:1px solid rgba(125,104,164,.12);
     padding:0 0 8px;
   }
-  .native-kodik-v60-6-bottomline em{
+  .native-kodik-v65-bottomline em{
     margin-left:0;
   }
+}
+
+
+/* AIanime v64 — убираем огромный скелетон плеера при переходе на страницу тайтла */
+.skeleton-player-section-v64{
+  display:none !important;
+}
+.skeleton-player-minibar{
+  display:none !important;
 }

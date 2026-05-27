@@ -469,6 +469,26 @@ function hasUsableEpisodeLink(episode){
   return true
 }
 
+function collapsePlayerRowsToVoiceRepresentatives(rows = []){
+  const map = new Map()
+  for(const row of Array.isArray(rows) ? rows : []){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    const current = map.get(key)
+    const score = (Number(row.episodesCount || row.raw?.episodes_count || 0) * 2)
+      + (row.source === 'kodik-api-player' ? 8 : 0)
+      + (row.source === 'kodik-api-season-episode' ? 12 : 0)
+      + (row.source === 'kodik-api-episode' ? 20 : 0)
+      + (row.embedUrl ? 5 : 0)
+    const currentScore = current ? (Number(current.episodesCount || current.raw?.episodes_count || 0) * 2)
+      + (current.source === 'kodik-api-player' ? 8 : 0)
+      + (current.source === 'kodik-api-season-episode' ? 12 : 0)
+      + (current.source === 'kodik-api-episode' ? 20 : 0)
+      + (current.embedUrl ? 5 : 0) : -1
+    if(!current || score >= currentScore) map.set(key, row)
+  }
+  return Array.from(map.values())
+}
+
 function buildNativePlayerOptions(episodes = [], item = {}){
   const rows = (episodes || [])
     .filter(hasUsableEpisodeLink)
@@ -530,7 +550,7 @@ function buildNativePlayerOptions(episodes = [], item = {}){
   const episodeNumbers = new Set(cleaned.map(row => row.episodeNumber))
   const hasDetailedEpisodes = urls.size > 1 && episodeNumbers.size > 1
   if(!hasDetailedEpisodes && cleaned.length > 1){
-    return [cleaned[0]]
+    return collapsePlayerRowsToVoiceRepresentatives(cleaned)
   }
 
   return cleaned
@@ -585,12 +605,16 @@ export default async function AnimePage({ params, searchParams }){
   const playerOptions = buildNativePlayerOptions(episodes, item)
   const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
   const selectedVoice = String(resolvedSearchParams?.voice || '').trim()
-  const currentEpisode = playerOptions.find(e => selectedVoice && e.voice === selectedVoice && Number(e.episodeNumber) === selectedEpisodeNumber)
+  const exactCurrentEpisode = playerOptions.find(e => selectedVoice && e.voice === selectedVoice && Number(e.episodeNumber) === selectedEpisodeNumber)
     || playerOptions.find(e => Number(e.episodeNumber) === selectedEpisodeNumber)
+    || null
+  const currentEpisode = exactCurrentEpisode
+    || playerOptions.find(e => selectedVoice && e.voice === selectedVoice)
     || playerOptions[0]
     || null
   const storedKodikLink = canUseStoredKodikLink(item) ? item.kodikLink : null
-  const currentEpisodeNumber = Number(currentEpisode?.episodeNumber || selectedEpisodeNumber || 1)
+  const currentEpisodeNumber = Number(exactCurrentEpisode?.episodeNumber || selectedEpisodeNumber || currentEpisode?.episodeNumber || 1)
+  const expectedPlayerEpisodes = expectedEpisodeCount(item)
   const titleEpisodeHref = (number, voice = currentEpisode?.voice) => {
     const params = new URLSearchParams()
     params.set('episode', String(Math.max(1, Number(number) || 1)))
@@ -673,7 +697,7 @@ export default async function AnimePage({ params, searchParams }){
       </aside>
     </section>
 
-    <section className="compact-player-section compact-player-section-v60-6" id="player" data-player-layout="light-top-controls-v60-6">
+    <section className="compact-player-section compact-player-section-v65" id="player" data-player-layout="light-top-controls-v65">
       <div className="compact-section-head"><h2>Плеер</h2><span className="compact-player-hint">Озвучка · плеер · серии</span></div>
       <KodikPlayerClient
         slug={item.slug}
@@ -689,6 +713,7 @@ export default async function AnimePage({ params, searchParams }){
         initialVoice={currentEpisode?.voice || item.translationTitle || null}
         initialQuality={currentEpisode?.quality || item.quality || null}
         initialSource={currentEpisode?.embedUrl ? currentEpisode.source || 'anime_episodes' : storedKodikLink ? 'anime.kodik_link' : null}
+        expectedEpisodes={expectedPlayerEpisodes}
         historyItem={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }}
       />
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>

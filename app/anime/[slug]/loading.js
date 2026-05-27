@@ -18,9 +18,11 @@ export default function AnimeLoading(){
       </div>
       <aside className="sk skeleton-big-poster" />
     </section>
-    <section className="compact-player-section skeleton-player-section">
-      <div className="skeleton-title-row"><div className="sk sk-title small"/><div className="sk sk-link"/></div>
-      <div className="sk skeleton-player" />
+    <section className="compact-player-section skeleton-player-section skeleton-player-section-v64" aria-hidden="true">
+      <div className="skeleton-player-minibar">
+        <div className="sk sk-title small"/>
+        <div className="sk sk-link"/>
+      </div>
     </section>
   </main>
 }
