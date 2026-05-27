@@ -48,11 +48,11 @@ export async function POST(req){
       return NextResponse.json({ ok:false, error:'Укажи email и пароль.' }, { status:400 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC_ANON_KEY
 
     if(!supabaseUrl || !anonKey){
-      return NextResponse.json({ ok:false, error:'Supabase Auth не настроен на сервере.' }, { status:500 })
+      return NextResponse.json({ ok:false, error:'Supabase Auth не подключён: на сервере нет Supabase URL или anon key.' }, { status:500 })
     }
 
     const controller = new AbortController()

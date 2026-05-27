@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { createBrowserSupabase, hasSupabaseBrowser } from '@/lib/supabaseClient'
+import { createBrowserSupabase, getBuildSupabaseConfig, hasSupabaseBrowser } from '@/lib/supabaseClient'
 import { getUserDisplayName, setImmediateAuthUser, setPendingAuthSession } from '@/components/AuthStateClient'
 import { resetLocalAccountState } from '@/lib/userStorage'
 
@@ -21,6 +21,20 @@ function getNextUrl(){
   return next.startsWith('/') ? next : '/profile'
 }
 
+async function loadRuntimeSupabaseConfig(){
+  const response = await fetch('/api/auth/public-config', {
+    cache:'no-store',
+    headers:{ accept:'application/json' }
+  })
+  const data = await response.json().catch(() => ({}))
+  if(!response.ok || !data?.ok) return null
+  if(!data.supabaseUrl || !data.supabaseAnonKey) return null
+  return {
+    supabaseUrl:data.supabaseUrl,
+    supabaseAnonKey:data.supabaseAnonKey
+  }
+}
+
 export default function AuthClient(){
   const [mode,setMode] = useState('login')
   const [name,setName] = useState('')
@@ -29,8 +43,32 @@ export default function AuthClient(){
   const [message,setMessage] = useState('')
   const [user,setUser] = useState(null)
   const [loading,setLoading] = useState(false)
-  const configured = hasSupabaseBrowser()
-  const supabase = useMemo(() => createBrowserSupabase(), [])
+  const [runtimeConfig,setRuntimeConfig] = useState(null)
+  const [configChecked,setConfigChecked] = useState(hasSupabaseBrowser(getBuildSupabaseConfig()))
+
+  const configured = hasSupabaseBrowser(runtimeConfig)
+  const supabase = useMemo(() => createBrowserSupabase(runtimeConfig), [runtimeConfig])
+
+  useEffect(()=>{
+    let alive = true
+
+    if(hasSupabaseBrowser(getBuildSupabaseConfig())){
+      setConfigChecked(true)
+      return () => { alive = false }
+    }
+
+    loadRuntimeSupabaseConfig()
+      .then(config => {
+        if(!alive) return
+        if(config) setRuntimeConfig(config)
+        setConfigChecked(true)
+      })
+      .catch(() => {
+        if(alive) setConfigChecked(true)
+      })
+
+    return () => { alive = false }
+  }, [])
 
   useEffect(()=>{
     if(!supabase){
@@ -41,7 +79,7 @@ export default function AuthClient(){
     let alive = true
     supabase.auth.getUser().then(({ data }) => {
       if(alive) setUser(data?.user || null)
-    })
+    }).catch(() => {})
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if(alive) setUser(session?.user || null)
     })
@@ -51,19 +89,17 @@ export default function AuthClient(){
     }
   }, [supabase])
 
-
-  function sleep(ms){
-    return new Promise(resolve => setTimeout(resolve, ms))
+  async function ensureSupabase(){
+    if(supabase) return supabase
+    const config = await loadRuntimeSupabaseConfig().catch(() => null)
+    if(config){
+      setRuntimeConfig(config)
+      return createBrowserSupabase(config)
+    }
+    return null
   }
 
-  async function withSoftTimeout(promise, ms, fallback){
-    return Promise.race([
-      promise,
-      sleep(ms).then(() => fallback)
-    ])
-  }
-
-  async function signInWithServerProxy(cleanEmail){
+  async function signInWithServerProxy(cleanEmail, activeSupabase){
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10000)
     try{
@@ -86,7 +122,7 @@ export default function AuthClient(){
         // Запоминаем сессию сразу, до сетевого setSession. Так /profile не успевает
         // открыться гостевым экраном, если Supabase Auth отвечает медленно.
         setPendingAuthSession(session, nextUser)
-        supabase.auth.setSession({
+        activeSupabase.auth.setSession({
           access_token:session.access_token,
           refresh_token:session.refresh_token
         }).catch(() => {})
@@ -101,13 +137,15 @@ export default function AuthClient(){
   async function submit(e){
     e.preventDefault()
     setMessage('')
-    if(!configured || !supabase){
-      setMessage('Вход временно недоступен: Supabase Auth не подключён на сервере.')
-      return
-    }
-
     setLoading(true)
+
     try{
+      const activeSupabase = await ensureSupabase()
+      if(!activeSupabase){
+        setMessage('Вход временно недоступен: Supabase не подключён на сервере.')
+        return
+      }
+
       const cleanEmail = email.trim()
       const cleanName = name.trim()
       let result
@@ -115,15 +153,15 @@ export default function AuthClient(){
         // Основной вход идёт через серверный same-origin proxy. Для пользователя это
         // обычно быстрее и стабильнее, чем прямой запрос браузера к Supabase Auth.
         try{
-          result = await signInWithServerProxy(cleanEmail)
+          result = await signInWithServerProxy(cleanEmail, activeSupabase)
         }catch(proxyError){
           // Fallback оставляем на случай, если endpoint ещё не задеплоен или Supabase
           // поменял ответ auth/v1/token.
-          result = await supabase.auth.signInWithPassword({ email:cleanEmail, password })
+          result = await activeSupabase.auth.signInWithPassword({ email:cleanEmail, password })
           if(result.error && proxyError?.message) result.error.message = proxyError.message
         }
       }else{
-        result = await supabase.auth.signUp({
+        result = await activeSupabase.auth.signUp({
           email:cleanEmail,
           password,
           options:{ data:{ name:cleanName || cleanEmail.split('@')[0] } }
@@ -175,7 +213,7 @@ export default function AuthClient(){
     </section>
   }
 
-  return <section className="auth-card auth-card-premium widget" data-aianime-auth-ui="v61">
+  return <section className="auth-card auth-card-premium widget" data-aianime-auth-ui="v62">
     <div className="auth-profile-preview" aria-hidden="true">
       <img src="/posters/oshi.svg" alt=""/>
       <div>
@@ -197,6 +235,7 @@ export default function AuthClient(){
     </form>
 
     {message ? <div className="auth-message">{message}</div> : null}
-    {!configured ? <div className="auth-warning">Вход временно недоступен. На сервере не найдены публичные настройки Supabase.</div> : null}
+    {!configured && !configChecked ? <div className="auth-message">Подключаем вход…</div> : null}
+    {!configured && configChecked ? <div className="auth-warning">Вход временно недоступен: Supabase не подключён на сервере.</div> : null}
   </section>
 }
