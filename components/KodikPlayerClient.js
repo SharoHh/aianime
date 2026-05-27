@@ -272,9 +272,9 @@ export default function KodikPlayerClient({
 
   const nextEpisode = activeEpisodes.find(item => item.episodeNumber > activeEpisodeNumber) || null
 
-  return <div className="native-kodik-shell native-kodik-v60-3-cinema" data-aianime-player-ui="v60-3-voice-rail">
-    <div className="native-kodik-v60-3-screen">
-      {state.ok && currentEmbedUrl ? <div className="compact-player compact-player-kodik is-ready is-clean native-kodik-frame native-kodik-v60-3-frame">
+  return <div className="native-kodik-shell native-kodik-v60-5-cinema" data-aianime-player-ui="v60-5-right-voice-dock">
+    <div className="native-kodik-v60-5-screen">
+      {state.ok && currentEmbedUrl ? <div className="compact-player compact-player-kodik is-ready is-clean native-kodik-frame native-kodik-v60-5-frame">
         <iframe
           key={`${slug}-${activeVoice}-${activeEpisodeNumber}-${currentEmbedUrl}`}
           className="kodik-player-iframe"
@@ -285,7 +285,7 @@ export default function KodikPlayerClient({
           allowFullScreen
           referrerPolicy="origin-when-cross-origin"
         />
-      </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame native-kodik-v60-3-frame">
+      </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame native-kodik-v60-5-frame">
         <img src={banner} alt="Аниме"/>
         <div className="compact-player-shade"/>
         <div className="compact-player-center kodik-player-simple-fallback">
@@ -296,13 +296,14 @@ export default function KodikPlayerClient({
       </div>}
     </div>
 
-    <aside className="native-kodik-panel native-kodik-v60-3-rail" id="episodes">
-      <div className="native-kodik-v60-3-tabs" aria-hidden="true">
+    <aside className="native-kodik-panel native-kodik-v60-5-rail" id="episodes">
+      <div className="native-kodik-v60-5-tabs" aria-hidden="true">
         <span className="active">Озвучка</span>
         <span>Серии</span>
+        <strong>AI Dock</strong>
       </div>
 
-      <div className="native-kodik-topline native-kodik-v60-3-head">
+      <div className="native-kodik-topline native-kodik-v60-5-head">
         <div>
           <b>Выбор озвучки</b>
           <span>{hasRealEpisodeButtons ? `${voices.length} озвучек · ${uniqueNativeEpisodes.size} серий` : canUseVoiceSelector ? `${voices.length} озвучек · серии внутри Kodik` : isRefreshingOptions ? 'Подтягиваем список из Kodik…' : 'Kodik'}</span>
@@ -310,13 +311,13 @@ export default function KodikPlayerClient({
         {currentQuality ? <em>{currentQuality}</em> : null}
       </div>
 
-      <div className="native-kodik-v60-3-now">
+      <div className="native-kodik-v60-5-now">
         <span>Сейчас</span>
         <b>{activeVoice || 'Kodik'}</b>
         <small>Серия {activeEpisodeNumber}</small>
       </div>
 
-      {voices.length > 1 ? <div className="native-kodik-v60-3-voices" aria-label="Выбор озвучки">
+      {voices.length > 1 ? <div className="native-kodik-v60-5-voices" aria-label="Выбор озвучки">
         {voices.map(item => <button
           key={item.voice}
           type="button"
@@ -329,16 +330,16 @@ export default function KodikPlayerClient({
           </span>
           <i>{item.quality || currentQuality || 'HD'}</i>
         </button>)}
-      </div> : <div className="native-kodik-note native-kodik-v60-3-note">
+      </div> : <div className="native-kodik-note native-kodik-v60-5-note">
         {isRefreshingOptions ? 'Подтягиваем список озвучек. Плеер уже можно запускать.' : 'Для этого тайтла доступен один вариант плеера.'}
       </div>}
 
-      {hasRealEpisodeButtons ? <div className="native-kodik-v60-3-episodes">
-        <div className="native-kodik-v60-3-label">
+      {hasRealEpisodeButtons ? <div className="native-kodik-v60-5-episodes">
+        <div className="native-kodik-v60-5-label">
           <span>Серии</span>
           {nextEpisode ? <button type="button" onClick={() => chooseOption(nextEpisode)}>Следующая →</button> : <em>Последняя</em>}
         </div>
-        <div className="native-episode-row native-kodik-v60-3-grid" aria-label="Выбор серии">
+        <div className="native-episode-row native-kodik-v60-5-grid" aria-label="Выбор серии">
           {activeEpisodes.map(option => <button
             key={`${option.voice}-${option.episodeNumber}`}
             type="button"
@@ -348,7 +349,7 @@ export default function KodikPlayerClient({
             {option.episodeNumber}
           </button>)}
         </div>
-      </div> : <div className="native-kodik-note native-kodik-v60-3-note">
+      </div> : <div className="native-kodik-note native-kodik-v60-5-note">
         {isRefreshingOptions ? 'Ищем отдельные ссылки серий. Плеер уже можно запускать.' : canUseVoiceSelector ? 'Озвучку выбираем здесь, серии переключаются внутри Kodik-плеера.' : 'Серии переключаются внутри Kodik-плеера.'}
       </div>}
 
