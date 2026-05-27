@@ -21,3 +21,6 @@ CRON_SECRET=YOUR_CRON_SECRET
 
 # Real Jikan/MAL release schedule — every 3 hours
 10 */3 * * * root curl -fsS "$AIANIME_URL/api/cron/schedule?enable=1&limit=25&pages=1&token=$CRON_SECRET" >> /var/log/aianime-cron.log 2>&1
+
+# Safe player integrity audit — manual or low-frequency check
+# 55 3 * * * root curl -fsS "$AIANIME_URL/api/cron/audit-player-integrity?enable=1&limit=10&offset=0&timeout=45000&token=$CRON_SECRET" >> /var/log/aianime-cron.log 2>&1

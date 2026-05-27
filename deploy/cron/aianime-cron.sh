@@ -34,8 +34,11 @@ case "$ACTION" in
   schedule)
     call_api "/api/cron/schedule?enable=1&limit=${JIKAN_SCHEDULE_LIMIT:-25}&pages=${JIKAN_SCHEDULE_PAGES:-1}"
     ;;
+  audit)
+    call_api "/api/cron/audit-player-integrity?enable=1&limit=${PLAYER_AUDIT_LIMIT:-10}&offset=${PLAYER_AUDIT_OFFSET:-0}&timeout=${PLAYER_AUDIT_TIMEOUT:-45000}"
+    ;;
   *)
-    echo "Usage: $0 {sync|kodik|titles|russify|players|schedule}"
+    echo "Usage: $0 {sync|kodik|titles|russify|players|schedule|audit}"
     exit 1
     ;;
 esac
