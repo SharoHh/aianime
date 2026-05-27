@@ -2,6 +2,12 @@ import { verifyCronAccess, cronAuthError } from '@/lib/cronAuth'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+const DEFAULT_LIMIT = 20
+const MAX_LIMIT = 50
+const DEFAULT_TIMEOUT_MS = 25000
+const MAX_TIMEOUT_MS = 60000
 
 function json(payload, status = 200){
   return Response.json(payload, {
@@ -19,6 +25,12 @@ async function readJson(res){
 function number(value){
   const n = Number(value)
   return Number.isFinite(n) ? n : 0
+}
+
+function clamp(value, min, max){
+  const n = number(value)
+  if(!n) return min
+  return Math.min(Math.max(Math.floor(n), min), max)
 }
 
 function normalize(value){
@@ -75,7 +87,19 @@ function isContinuousOneToN(episodes, expected){
   return episodes.every((episode, index) => episode === index + 1)
 }
 
-function analyzeRowsForAnime(anime, rows = []){
+function millisecondsLeft(deadlineMs, reserveMs = 1200){
+  return Math.max(750, deadlineMs - Date.now() - reserveMs)
+}
+
+function deadlineReached(deadlineMs, reserveMs = 1800){
+  return Date.now() >= deadlineMs - reserveMs
+}
+
+function shortError(error){
+  return error?.message || String(error || 'Unknown error')
+}
+
+function analyzeRowsForAnime(anime, rows = [], extra = {}){
   const expected = number(anime.episodes)
   const longFranchise = isLongFranchise(anime)
   const tolerance = strictTolerance(anime)
@@ -159,7 +183,10 @@ function analyzeRowsForAnime(anime, rows = []){
     }
   }
 
-  // Если есть полноценная озвучка, неполные группы — это не критическая ошибка, но их лучше скрывать.
+  if(extra.truncated){
+    metadataIssues.push({ type:'audit-truncated-by-timeout', rowsLoaded:rows.length })
+  }
+
   const severity = metadataIssues.length || voiceReports.some(v => v.issues.some(issue => ['max-episode-over-db','declared-count-over-db','mixed-season-numbers','long-franchise-unreliable-id','year-metadata-mismatch','episode-metadata-mismatch'].includes(issue.type)))
     ? 'critical'
     : voiceReports.length
@@ -181,51 +208,77 @@ function analyzeRowsForAnime(anime, rows = []){
   }
 }
 
-async function loadAnimePage(limit, offset){
+async function loadAnimePage(limit, offset, deadlineMs){
   const select = 'slug,title,title_ru,original_title,year,episodes,kind,status,description_ru,kodik_id,shikimori_id'
-  const res = await supabaseRequest(`anime?select=${select}&order=slug.asc&limit=${limit}&offset=${offset}`, { method:'GET', timeout:20000 })
+  const timeout = Math.min(10000, millisecondsLeft(deadlineMs))
+  const res = await supabaseRequest(`anime?select=${select}&order=slug.asc&limit=${limit}&offset=${offset}`, { method:'GET', timeout })
   const body = await readJson(res)
   if(!res.ok) throw new Error(`anime read failed: ${res.status} ${JSON.stringify(body).slice(0, 300)}`)
   return Array.isArray(body) ? body : []
 }
 
-async function loadEpisodes(slug){
+async function loadEpisodes(slug, deadlineMs){
   const select = 'anime_slug,episode_number,provider,voice,embed_url,source,raw,updated_at'
   const pageSize = 1000
-  const maxRows = 8000
+  const maxRows = 5000
   const all = []
+  let truncated = false
+
   for(let offset = 0; offset < maxRows; offset += pageSize){
+    if(deadlineReached(deadlineMs, 2500)){
+      truncated = true
+      break
+    }
+
     const query = `anime_episodes?select=${select}&anime_slug=eq.${encodeURIComponent(slug)}&order=episode_number.asc&limit=${pageSize}&offset=${offset}`
-    const res = await supabaseRequest(query, { method:'GET', timeout:20000 })
+    const timeout = Math.min(8000, millisecondsLeft(deadlineMs))
+    const res = await supabaseRequest(query, { method:'GET', timeout })
     const body = await readJson(res)
     if(!res.ok) throw new Error(`episodes read failed for ${slug}: ${res.status} ${JSON.stringify(body).slice(0, 300)}`)
     const rows = Array.isArray(body) ? body : []
     all.push(...rows)
     if(rows.length < pageSize) break
   }
-  return all
+
+  return { rows:all, truncated }
 }
 
 async function handleGET(req){
+  const startedAt = Date.now()
   const auth = verifyCronAccess(req)
   if(!auth.ok) return cronAuthError(auth)
 
   const url = req.nextUrl || new URL(req.url)
+  if(url.searchParams.get('ping') === '1'){
+    return json({ ok:true, route:'audit-player-integrity', mode:'ping', auth:auth.mode, hasSupabase:hasSupabase() })
+  }
+
   const enabled = url.searchParams.get('enable') === '1'
-  const limit = Math.min(Math.max(number(url.searchParams.get('limit') || 80), 1), 200)
+  const limit = clamp(url.searchParams.get('limit') || DEFAULT_LIMIT, 1, MAX_LIMIT)
   const offset = Math.max(number(url.searchParams.get('offset') || 0), 0)
   const includeOk = url.searchParams.get('include_ok') === '1'
+  const timeoutMs = clamp(url.searchParams.get('timeout') || DEFAULT_TIMEOUT_MS, 5000, MAX_TIMEOUT_MS)
+  const deadlineMs = startedAt + timeoutMs
 
-  if(!enabled) return json({ ok:false, error:'disabled', hint:'Добавь ?enable=1&token=CRON_SECRET' }, 400)
-  if(!hasSupabase()) return json({ ok:false, error:'supabase is not configured' }, 500)
+  if(!enabled) return json({ ok:false, error:'disabled', hint:'Добавь ?enable=1&token=CRON_SECRET. Для быстрой проверки маршрута можно открыть ?ping=1&token=CRON_SECRET.' }, 400)
+  if(!hasSupabase()) return json({ ok:false, error:'supabase is not configured', hint:'Проверь ENABLE_SUPABASE_RUNTIME=1, NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY.' }, 500)
 
-  const anime = await loadAnimePage(limit, offset)
+  const anime = await loadAnimePage(limit, offset, deadlineMs)
   const reports = []
   const errors = []
+  let stoppedEarly = false
+  let checkedCount = 0
 
   for(const item of anime){
+    if(deadlineReached(deadlineMs, 3000)){
+      stoppedEarly = true
+      errors.push({ type:'audit-timeout-budget', message:'Audit stopped early to return valid JSON before server timeout.' })
+      break
+    }
+
     try{
-      const rows = await loadEpisodes(item.slug)
+      const { rows, truncated } = await loadEpisodes(item.slug, deadlineMs)
+      checkedCount += 1
       if(!rows.length){
         const expected = number(item.episodes)
         if(includeOk || expected){
@@ -234,36 +287,37 @@ async function handleGET(req){
             title:item.title_ru || item.title || item.original_title || item.slug,
             expectedEpisodes:expected || null,
             severity:expected ? 'warning' : 'ok',
-            metadataIssues:[],
+            metadataIssues:truncated ? [{ type:'audit-truncated-by-timeout', rowsLoaded:0 }] : [],
             voices:expected ? [{ voice:'—', count:0, issues:[{ type:'no-player-episodes' }] }] : [],
           }
           if(includeOk || emptyReport.severity !== 'ok') reports.push(emptyReport)
         }
         continue
       }
-      const report = analyzeRowsForAnime(item, rows)
+      const report = analyzeRowsForAnime(item, rows, { truncated })
       if(includeOk || report.severity !== 'ok') reports.push(report)
     }catch(error){
-      errors.push({ slug:item.slug, error:error?.message || String(error) })
+      errors.push({ slug:item.slug, error:shortError(error) })
     }
   }
 
   const critical = reports.filter(report => report.severity === 'critical')
   const warnings = reports.filter(report => report.severity === 'warning')
-
   return json({
     ok:true,
     auth:auth.mode,
-    requested:{ limit, offset, includeOk },
-    checked:anime.length,
-    nextOffset:anime.length === limit ? offset + limit : null,
+    requested:{ limit, offset, includeOk, timeoutMs },
+    checked:checkedCount,
+    loaded:anime.length,
+    stoppedEarly,
+    nextOffset:anime.length === limit && !stoppedEarly ? offset + limit : null,
     issues:{ total:reports.length, critical:critical.length, warnings:warnings.length, errors:errors.length },
     reports:reports.slice(0, 80),
     errors:errors.slice(0, 20),
-    hint:'Запускай offset=0,80,160... пока nextOffset не станет null. Ничего в базе не меняет — только аудит.'
+    elapsedMs:Date.now() - startedAt,
+    hint:'Ничего в базе не меняет — только аудит. Если stoppedEarly=true, повтори с меньшим limit или большим timeout, например limit=10&timeout=45000.'
   })
 }
-
 
 export async function GET(req){
   try{
@@ -273,8 +327,8 @@ export async function GET(req){
       ok:false,
       source:'audit-player-integrity',
       error:'audit route failed',
-      details:error?.message || String(error),
-      hint:'Route вернул JSON вместо пустого 500. Если details про колонку — значит схема Supabase отличается от select.'
+      details:shortError(error),
+      hint:'Route вернул JSON вместо пустого 500. Если details про Supabase/колонку — значит схема БД отличается от select или не выставлены env.'
     }, 500)
   }
 }
