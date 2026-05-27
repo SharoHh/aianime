@@ -9,7 +9,7 @@ function json(payload, status = 200){
     status,
     headers:{
       'Cache-Control':'no-store, max-age=0',
-      'x-aianime-player-options':'enabled'
+      'x-aianime-player-options':'v66-options-voices-episodes-fixed'
     }
   })
 }
@@ -31,9 +31,12 @@ function rowToOption(row){
     translationId: row.translationId || raw?.translation_id || null,
     seasonNumber: row.seasonNumber || raw?.season_number || null,
     episodesCount: Number(raw?.episodes_count || raw?.last_episode || 0) || null,
+    groupedEpisodeCount: Number(row.groupedEpisodeCount || row.grouped_episode_count || 0) || null,
+    episodeNumbers: Array.isArray(row.episodeNumbers) ? row.episodeNumbers.map(Number).filter(Number.isFinite) : [],
     materialType: raw?.material_type || null,
     matchScore: Number(raw?.match_score || 0) || null,
     reliableId: Boolean(raw?.reliable_id),
+    raw,
     updatedAt: row.updatedAt || row.updated_at || null
   }
 }
@@ -401,6 +404,76 @@ function filterIncompleteAndPlayerOnlyVoiceGroups(rows = [], item = {}){
   return keep.flatMap(info => info.group)
 }
 
+function collapseOptionsToVoiceRepresentatives(rows = []){
+  const groups = new Map()
+  for(const row of Array.isArray(rows) ? rows : []){
+    const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
+    if(!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(row)
+  }
+
+  return Array.from(groups.values()).map(group => {
+    const episodeNumbers = Array.from(new Set(group.map(item => Number(item.episodeNumber || 0)).filter(Boolean))).sort((a,b) => a-b)
+    const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
+    const declared = Math.max(...group.map(item => Number(item.episodesCount || item.raw?.episodes_count || item.raw?.last_episode || 0)).filter(Boolean), 0)
+    const best = group.reduce((winner, row) => {
+      const score = (Number(row.episodesCount || row.raw?.episodes_count || row.raw?.last_episode || 0) * 2)
+        + (row.source === 'kodik-api-player' ? 8 : 0)
+        + (row.source === 'kodik-api-season-episode' ? 12 : 0)
+        + (row.source === 'kodik-api-episode' ? 20 : 0)
+        + (row.embedUrl ? 5 : 0)
+        + (isSerialOption(row) ? 4 : 0)
+        + (row.reliableId ? 6 : 0)
+        + (Number(row.matchScore || 0) / 20)
+      const currentScore = winner ? (Number(winner.episodesCount || winner.raw?.episodes_count || winner.raw?.last_episode || 0) * 2)
+        + (winner.source === 'kodik-api-player' ? 8 : 0)
+        + (winner.source === 'kodik-api-season-episode' ? 12 : 0)
+        + (winner.source === 'kodik-api-episode' ? 20 : 0)
+        + (winner.embedUrl ? 5 : 0)
+        + (isSerialOption(winner) ? 4 : 0)
+        + (winner.reliableId ? 6 : 0)
+        + (Number(winner.matchScore || 0) / 20) : -1
+      return !winner || score >= currentScore ? row : winner
+    }, null)
+    return {
+      ...best,
+      episodesCount: Math.max(Number(best?.episodesCount || 0) || 0, declared, maxEpisode, episodeNumbers.length),
+      groupedEpisodeCount: Math.max(maxEpisode, episodeNumbers.length),
+      episodeNumbers,
+      source: best?.source || 'anime_episodes'
+    }
+  })
+}
+
+function relaxedOptionsForUi(options = [], item = {}){
+  const valid = (Array.isArray(options) ? options : [])
+    .filter(usable)
+    .filter(option => !isMovieAnime(item) || (isMovieOption(option) && !isSerialOption(option)))
+  if(!valid.length) return []
+  const expected = expectedEpisodes(item)
+  const clamped = clampRowsToExpectedEpisodes(valid, item)
+  const source = clamped.length ? clamped : valid
+  return collapseOptionsToVoiceRepresentatives(source).sort((a,b) => {
+    const aCount = Number(a.episodesCount || a.groupedEpisodeCount || 0) || 0
+    const bCount = Number(b.episodesCount || b.groupedEpisodeCount || 0) || 0
+    if(bCount !== aCount) return bCount - aCount
+    return String(a.voice || '').localeCompare(String(b.voice || ''), 'ru')
+  }).map(row => ({
+    ...row,
+    episodesCount: Math.max(Number(row.episodesCount || 0) || 0, expected > 1 ? expected : 0),
+    source: row.source || 'anime_episodes'
+  }))
+}
+
+function optionSetStats(rows = []){
+  const list = Array.isArray(rows) ? rows : []
+  return {
+    voices:new Set(list.map(row => row.voice || 'Kodik')).size,
+    maxEpisodes:Math.max(...list.map(row => Number(row.episodesCount || row.groupedEpisodeCount || row.episodeNumber || 0)).filter(Boolean), 0),
+    count:list.length
+  }
+}
+
 function filterOptionsForAnime(options, item){
   const valid = (Array.isArray(options) ? options : []).filter(usable)
   if(!valid.length) return []
@@ -465,7 +538,15 @@ function filterOptionsForAnime(options, item){
   }
 
   const deduped = Array.from(best.values()).map(({ __score, ...option }) => option)
-  return filterLongFranchiseVoiceGroups(filterIncompleteAndPlayerOnlyVoiceGroups(deduped, item), item)
+  const strictResult = filterLongFranchiseVoiceGroups(filterIncompleteAndPlayerOnlyVoiceGroups(deduped, item), item)
+  const relaxed = relaxedOptionsForUi(valid, item)
+  const strictStats = optionSetStats(strictResult)
+  const relaxedStats = optionSetStats(relaxed)
+  if(relaxed.length && (strictStats.voices <= 1 && relaxedStats.voices > strictStats.voices
+    || strictStats.maxEpisodes <= 1 && relaxedStats.maxEpisodes > strictStats.maxEpisodes)){
+    return relaxed
+  }
+  return strictResult
 }
 
 

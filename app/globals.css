@@ -15798,3 +15798,6 @@ a.rate-chip.is-link:focus-visible{
 .skeleton-player-minibar{
   display:none !important;
 }
+
+/* AIanime v66: player options safety marker */
+.native-kodik-v66-options-fixed select:not(:disabled){ cursor: pointer; }

@@ -470,23 +470,70 @@ function hasUsableEpisodeLink(episode){
 }
 
 function collapsePlayerRowsToVoiceRepresentatives(rows = []){
-  const map = new Map()
+  const groups = new Map()
   for(const row of Array.isArray(rows) ? rows : []){
     const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
-    const current = map.get(key)
-    const score = (Number(row.episodesCount || row.raw?.episodes_count || 0) * 2)
-      + (row.source === 'kodik-api-player' ? 8 : 0)
-      + (row.source === 'kodik-api-season-episode' ? 12 : 0)
-      + (row.source === 'kodik-api-episode' ? 20 : 0)
-      + (row.embedUrl ? 5 : 0)
-    const currentScore = current ? (Number(current.episodesCount || current.raw?.episodes_count || 0) * 2)
-      + (current.source === 'kodik-api-player' ? 8 : 0)
-      + (current.source === 'kodik-api-season-episode' ? 12 : 0)
-      + (current.source === 'kodik-api-episode' ? 20 : 0)
-      + (current.embedUrl ? 5 : 0) : -1
-    if(!current || score >= currentScore) map.set(key, row)
+    if(!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(row)
   }
-  return Array.from(map.values())
+
+  return Array.from(groups.values()).map(group => {
+    const episodeNumbers = Array.from(new Set(group.map(item => Number(item.episodeNumber || 0)).filter(Boolean))).sort((a,b) => a-b)
+    const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
+    const declared = Math.max(...group.map(item => Number(item.episodesCount || item.raw?.episodes_count || item.raw?.last_episode || 0)).filter(Boolean), 0)
+    const best = group.reduce((winner, row) => {
+      const score = (Number(row.episodesCount || row.raw?.episodes_count || row.raw?.last_episode || 0) * 2)
+        + (row.source === 'kodik-api-player' ? 8 : 0)
+        + (row.source === 'kodik-api-season-episode' ? 12 : 0)
+        + (row.source === 'kodik-api-episode' ? 20 : 0)
+        + (row.embedUrl ? 5 : 0)
+        + (isSerialPlayerOption(row) ? 4 : 0)
+      const currentScore = winner ? (Number(winner.episodesCount || winner.raw?.episodes_count || winner.raw?.last_episode || 0) * 2)
+        + (winner.source === 'kodik-api-player' ? 8 : 0)
+        + (winner.source === 'kodik-api-season-episode' ? 12 : 0)
+        + (winner.source === 'kodik-api-episode' ? 20 : 0)
+        + (winner.embedUrl ? 5 : 0)
+        + (isSerialPlayerOption(winner) ? 4 : 0) : -1
+      return !winner || score >= currentScore ? row : winner
+    }, null)
+    return {
+      ...best,
+      episodesCount: Math.max(Number(best?.episodesCount || 0) || 0, declared, maxEpisode, episodeNumbers.length),
+      groupedEpisodeCount: Math.max(maxEpisode, episodeNumbers.length),
+      episodeNumbers,
+      source: best?.source || 'anime_episodes'
+    }
+  })
+}
+
+function relaxedPlayerRowsForUi(rows = [], item = {}){
+  const valid = (Array.isArray(rows) ? rows : [])
+    .filter(hasUsableEpisodeLink)
+    .filter(row => !isMovieAnime(item) || (isMoviePlayerOption(row) && !isSerialPlayerOption(row)))
+
+  if(!valid.length) return []
+  const expected = expectedEpisodeCount(item)
+  const clamped = clampRowsToExpectedEpisodes(valid, item)
+  const source = clamped.length ? clamped : valid
+  return collapsePlayerRowsToVoiceRepresentatives(source).sort((a,b) => {
+    const aCount = Number(a.episodesCount || a.groupedEpisodeCount || 0) || 0
+    const bCount = Number(b.episodesCount || b.groupedEpisodeCount || 0) || 0
+    if(bCount !== aCount) return bCount - aCount
+    return String(a.voice || '').localeCompare(String(b.voice || ''), 'ru')
+  }).map(row => ({
+    ...row,
+    episodesCount: Math.max(Number(row.episodesCount || 0) || 0, expected > 1 ? expected : 0),
+    source: row.source || 'anime_episodes'
+  }))
+}
+
+function optionSetStats(rows = []){
+  const list = Array.isArray(rows) ? rows : []
+  return {
+    voices:new Set(list.map(row => row.voice || 'Kodik')).size,
+    maxEpisodes:Math.max(...list.map(row => Number(row.episodesCount || row.groupedEpisodeCount || row.episodeNumber || 0)).filter(Boolean), 0),
+    count:list.length
+  }
 }
 
 function buildNativePlayerOptions(episodes = [], item = {}){
@@ -543,17 +590,25 @@ function buildNativePlayerOptions(episodes = [], item = {}){
     return Number(a.episodeNumber) - Number(b.episodeNumber)
   })
 
-  // Старые строки players-sync могли создать 28 фейковых серий с одной и той же iframe-ссылкой.
-  // Для родного выбора такие строки не используем как список серий: либо ждём детальные episode links,
-  // либо показываем один базовый iframe и клиент сам подтянет /api/player/options?refresh=1.
+  // Старые строки players-sync могли создать много фейковых серий с одной и той же iframe-ссылкой.
+  // Не показываем это как настоящие episode-ссылки, но сохраняем список озвучек и количество серий
+  // в representative-строках, чтобы UI мог построить кнопки серий поверх serial iframe.
   const urls = new Set(cleaned.map(row => row.embedUrl).filter(Boolean))
   const episodeNumbers = new Set(cleaned.map(row => row.episodeNumber))
   const hasDetailedEpisodes = urls.size > 1 && episodeNumbers.size > 1
-  if(!hasDetailedEpisodes && cleaned.length > 1){
-    return collapsePlayerRowsToVoiceRepresentatives(cleaned)
+  const strictResult = !hasDetailedEpisodes && cleaned.length > 1
+    ? collapsePlayerRowsToVoiceRepresentatives(cleaned)
+    : cleaned
+
+  const relaxed = relaxedPlayerRowsForUi(rows, item)
+  const strictStats = optionSetStats(strictResult)
+  const relaxedStats = optionSetStats(relaxed)
+  if(relaxed.length && (strictStats.voices <= 1 && relaxedStats.voices > strictStats.voices
+    || strictStats.maxEpisodes <= 1 && relaxedStats.maxEpisodes > strictStats.maxEpisodes)){
+    return relaxed
   }
 
-  return cleaned
+  return strictResult
 }
 
 function statusLabel(status){
@@ -697,7 +752,7 @@ export default async function AnimePage({ params, searchParams }){
       </aside>
     </section>
 
-    <section className="compact-player-section compact-player-section-v65" id="player" data-player-layout="light-top-controls-v65">
+    <section className="compact-player-section compact-player-section-v65 compact-player-section-v66" id="player" data-player-layout="light-top-controls-v66">
       <div className="compact-section-head"><h2>Плеер</h2><span className="compact-player-hint">Озвучка · плеер · серии</span></div>
       <KodikPlayerClient
         slug={item.slug}
