@@ -37,7 +37,9 @@ function normalizeOption(option){
     translationType: option?.translationType || option?.translation_type || null,
     translationId: option?.translationId || option?.translation_id || null,
     seasonNumber: option?.seasonNumber || option?.season_number || null,
-    episodesCount: Number(option?.episodesCount || option?.episodes_count || option?.raw?.episodes_count || 0) || null,
+    episodesCount: Number(option?.episodesCount || option?.episodes_count || option?.raw?.episodes_count || option?.raw?.last_episode || 0) || null,
+    groupedEpisodeCount: Number(option?.groupedEpisodeCount || option?.grouped_episode_count || option?.syntheticEpisodesCount || 0) || null,
+    episodeNumbers: Array.isArray(option?.episodeNumbers) ? option.episodeNumbers.map(Number).filter(Number.isFinite) : [],
     materialType: option?.materialType || option?.material_type || option?.raw?.material_type || null,
     matchScore: Number(option?.matchScore || option?.match_score || option?.raw?.match_score || 0) || null,
   }
@@ -45,6 +47,12 @@ function normalizeOption(option){
 
 function usable(option){
   return Boolean(option?.embedUrl) && option.status !== 'placeholder' && option.source !== 'fallback'
+}
+
+function isSerialLikeOption(option = {}){
+  const type = String(option?.materialType || option?.raw?.material_type || '').toLowerCase()
+  const url = String(option?.embedUrl || option?.embed_url || '').toLowerCase()
+  return type.includes('serial') || /\/(serial|seria)\//i.test(url)
 }
 
 function addEpisodeParamToUrl(value, episodeNumber){
@@ -63,8 +71,13 @@ function addEpisodeParamToUrl(value, episodeNumber){
 
 function optionEpisodeLimit(option, expectedEpisodes = 0){
   const expected = Math.max(0, Number(expectedEpisodes || 0) || 0)
-  const declared = Math.max(0, Number(option?.episodesCount || option?.raw?.episodes_count || 0) || 0)
-  const limit = expected > 1 ? expected : declared
+  const declared = Math.max(0, Number(option?.episodesCount || option?.raw?.episodes_count || option?.raw?.last_episode || 0) || 0)
+  const grouped = Math.max(0, Number(option?.groupedEpisodeCount || option?.syntheticEpisodesCount || 0) || 0)
+  const numbers = Array.isArray(option?.episodeNumbers) ? option.episodeNumbers.map(Number).filter(Number.isFinite) : []
+  const maxFromNumbers = numbers.length ? Math.max(...numbers) : 0
+  const countFromNumbers = numbers.length ? new Set(numbers).size : 0
+  const inferred = Math.max(grouped, maxFromNumbers, countFromNumbers)
+  const limit = Math.max(expected > 1 ? expected : 0, declared, inferred)
   if(!Number.isFinite(limit) || limit <= 1) return 1
   return Math.min(Math.floor(limit), 800)
 }
@@ -94,23 +107,40 @@ function expandEpisodeListForVoice(list = [], expectedEpisodes = 0){
 }
 
 function collapseToVoiceRepresentatives(rows = []){
-  const map = new Map()
+  const groups = new Map()
   for(const row of rows){
     const key = `${row.provider || 'kodik'}:${row.voice || 'Kodik'}`
-    const current = map.get(key)
-    const score = (Number(row.episodesCount || 0) * 2)
-      + (row.source === 'kodik-api-player' ? 8 : 0)
-      + (row.source === 'kodik-api-season-episode' ? 12 : 0)
-      + (row.source === 'kodik-api-episode' ? 20 : 0)
-      + (row.embedUrl ? 5 : 0)
-    const currentScore = current ? (Number(current.episodesCount || 0) * 2)
-      + (current.source === 'kodik-api-player' ? 8 : 0)
-      + (current.source === 'kodik-api-season-episode' ? 12 : 0)
-      + (current.source === 'kodik-api-episode' ? 20 : 0)
-      + (current.embedUrl ? 5 : 0) : -1
-    if(!current || score >= currentScore) map.set(key, row)
+    if(!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(row)
   }
-  return Array.from(map.values())
+
+  return Array.from(groups.values()).map(group => {
+    const episodeNumbers = Array.from(new Set(group.map(item => Number(item.episodeNumber || 0)).filter(Boolean))).sort((a,b) => a-b)
+    const maxEpisode = episodeNumbers.length ? Math.max(...episodeNumbers) : 0
+    const declared = Math.max(...group.map(item => Number(item.episodesCount || item.raw?.episodes_count || item.raw?.last_episode || 0)).filter(Boolean), 0)
+    const best = group.reduce((winner, row) => {
+      const score = (Number(row.episodesCount || row.raw?.episodes_count || row.raw?.last_episode || 0) * 2)
+        + (row.source === 'kodik-api-player' ? 8 : 0)
+        + (row.source === 'kodik-api-season-episode' ? 12 : 0)
+        + (row.source === 'kodik-api-episode' ? 20 : 0)
+        + (row.embedUrl ? 5 : 0)
+        + (isSerialLikeOption(row) ? 4 : 0)
+      const winnerScore = winner ? (Number(winner.episodesCount || winner.raw?.episodes_count || winner.raw?.last_episode || 0) * 2)
+        + (winner.source === 'kodik-api-player' ? 8 : 0)
+        + (winner.source === 'kodik-api-season-episode' ? 12 : 0)
+        + (winner.source === 'kodik-api-episode' ? 20 : 0)
+        + (winner.embedUrl ? 5 : 0)
+        + (isSerialLikeOption(winner) ? 4 : 0) : -1
+      return !winner || score >= winnerScore ? row : winner
+    }, null)
+    return {
+      ...best,
+      episodesCount: Math.max(Number(best?.episodesCount || 0) || 0, declared, maxEpisode, episodeNumbers.length),
+      groupedEpisodeCount: Math.max(maxEpisode, episodeNumbers.length),
+      episodeNumbers,
+      source: best?.source || 'anime_episodes'
+    }
+  })
 }
 
 function normalizeOptions(options = []){
@@ -353,7 +383,7 @@ export default function KodikPlayerClient({
   const activeVoiceCount = Math.max(activeGroup?.count || 0, activeGroup?.declaredCount || 0, uniqueNativeEpisodes.size || 0, activeEpisodes.length || 0, 1)
   const playerLabel = `Плеер Kodik${activeVoiceCount ? ` (${activeVoiceCount} эп.)` : ''}`
 
-  return <div className="native-kodik-shell native-kodik-v65-light" data-aianime-player-ui="v65-light-top-controls-voices-fixed">
+  return <div className="native-kodik-shell native-kodik-v65-light native-kodik-v66-options-fixed" data-aianime-player-ui="v66-options-voices-episodes-fixed">
     <div className="native-kodik-v65-controls" id="episodes">
       <label className="native-kodik-v65-select">
         <span>Озвучка</span>
