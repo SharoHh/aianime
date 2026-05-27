@@ -14921,294 +14921,311 @@ a.rate-chip.is-link:focus-visible{
   .native-player-actions{ align-items:flex-start; flex-direction:column; }
 }
 
-/* v61: cinema player layout — right-side voice rail */
-.native-kodik-cinema-shell{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(286px,340px);
-  gap:16px;
-  align-items:stretch;
-}
-.native-kodik-stage{
-  min-width:0;
-  position:relative;
-}
-.native-kodik-cinema-shell .native-kodik-frame{
-  height:560px;
-  min-height:420px;
-  border-radius:26px;
-  border:1px solid rgba(255,255,255,.1);
-  box-shadow:0 24px 70px rgba(14,10,24,.18);
-}
-.native-kodik-sidebar{
-  position:relative;
-  overflow:hidden;
-  min-height:560px;
-  padding:16px;
-  border-radius:26px;
-  border:1px solid rgba(141,85,238,.16);
+/* AIanime v60-3 — visible cinema player redesign with right voice rail */
+.compact-player-section{
+  max-width:1220px !important;
+  padding:18px !important;
+  border:1px solid rgba(139,92,246,.18) !important;
   background:
-    radial-gradient(circle at 20% 0%, rgba(236,91,198,.14), transparent 34%),
-    radial-gradient(circle at 100% 12%, rgba(139,92,246,.18), transparent 32%),
-    linear-gradient(180deg, rgba(255,255,255,.94), rgba(248,245,255,.9));
-  box-shadow:0 24px 70px rgba(52,35,92,.11);
+    radial-gradient(circle at 0% 0%, rgba(168,85,247,.18), transparent 34%),
+    radial-gradient(circle at 100% 10%, rgba(236,72,153,.12), transparent 30%),
+    linear-gradient(180deg,#15111f,#0e0d13) !important;
+  box-shadow:0 28px 80px rgba(20,13,33,.22) !important;
 }
-.native-kodik-sidebar::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(90deg, rgba(255,255,255,.62), transparent 34%);
-  opacity:.72;
+.compact-player-section .compact-section-head{
+  margin-bottom:14px !important;
+  padding:0 2px 12px !important;
+  border-bottom:1px solid rgba(255,255,255,.08) !important;
 }
-.native-kodik-sidebar > *{
-  position:relative;
-  z-index:1;
+.compact-player-section .compact-section-head h2{
+  color:#fff !important;
+  letter-spacing:-.04em !important;
 }
-.native-kodik-sidebar-head{
-  margin-bottom:14px;
-  padding-bottom:14px;
-  border-bottom:1px solid rgba(132,94,194,.12);
-}
-.native-kodik-overline{
-  display:block;
-  width:max-content;
-  margin-bottom:6px;
-  padding:5px 9px;
-  border-radius:999px;
-  background:rgba(139,92,246,.1);
-  color:#7c3aed !important;
-  font-size:10px !important;
-  line-height:1 !important;
+.compact-player-section .compact-player-hint{
+  color:#c4a7ff !important;
   font-weight:950 !important;
-  text-transform:uppercase;
-  letter-spacing:.08em;
 }
-.native-kodik-sidebar-head b{
-  font-size:20px;
-  letter-spacing:-.04em;
+.native-kodik-v60-3-cinema{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(294px,352px) !important;
+  gap:16px !important;
+  align-items:stretch !important;
 }
-.native-kodik-now-card{
-  display:grid;
-  gap:4px;
-  margin-bottom:12px;
-  padding:13px 14px;
-  border-radius:20px;
-  border:1px solid rgba(132,94,194,.12);
-  background:rgba(255,255,255,.78);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.8), 0 14px 30px rgba(44,32,78,.055);
+.native-kodik-v60-3-screen{
+  min-width:0 !important;
+  position:relative !important;
 }
-.native-kodik-now-card span{
-  color:rgba(45,37,71,.48);
-  font-size:10px;
-  font-weight:950;
-  text-transform:uppercase;
-  letter-spacing:.08em;
+.native-kodik-v60-3-frame{
+  height:560px !important;
+  min-height:430px !important;
+  margin:0 !important;
+  border-radius:24px !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  background:#050507 !important;
+  box-shadow:0 24px 68px rgba(0,0,0,.38) !important;
 }
-.native-kodik-now-card b{
-  color:#211a3b;
-  font-size:17px;
-  font-weight:950;
-  letter-spacing:-.035em;
+.native-kodik-v60-3-rail{
+  position:relative !important;
+  overflow:hidden !important;
+  min-height:560px !important;
+  border:1px solid rgba(255,255,255,.1) !important;
+  border-radius:24px !important;
+  padding:16px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.035)),
+    radial-gradient(circle at 18% 0%, rgba(168,85,247,.25), transparent 34%),
+    #13111a !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 20px 54px rgba(0,0,0,.28) !important;
+  color:#fff !important;
 }
-.native-kodik-now-card small{
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  color:rgba(45,37,71,.64);
-  font-size:12px;
-  font-weight:780;
+.native-kodik-v60-3-tabs{
+  display:flex !important;
+  gap:18px !important;
+  margin:0 0 14px !important;
+  padding:0 2px 10px !important;
+  border-bottom:1px solid rgba(255,255,255,.08) !important;
 }
-.native-voice-list{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  max-height:306px;
-  overflow:auto;
-  padding:1px 3px 3px 1px;
-  scrollbar-width:thin;
+.native-kodik-v60-3-tabs span{
+  position:relative !important;
+  color:rgba(255,255,255,.48) !important;
+  font-size:14px !important;
+  font-weight:900 !important;
 }
-.native-voice-list button{
-  display:grid;
-  grid-template-columns:12px minmax(0,1fr) auto;
-  align-items:center;
-  gap:10px;
-  width:100%;
-  min-height:54px;
-  border:1px solid rgba(132,94,194,.13);
-  border-radius:18px;
-  background:rgba(255,255,255,.78);
-  color:#2d2547;
-  font-family:inherit;
-  text-align:left;
-  cursor:pointer;
-  padding:10px 10px;
-  box-shadow:0 10px 24px rgba(44,32,78,.04);
-  transition:transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+.native-kodik-v60-3-tabs span.active{
+  color:#fff !important;
 }
-.native-voice-list button i{
-  width:9px;
-  height:9px;
-  border-radius:999px;
-  background:rgba(139,92,246,.28);
-  box-shadow:0 0 0 5px rgba(139,92,246,.07);
+.native-kodik-v60-3-tabs span.active::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:-11px !important;
+  height:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg,#8b5cf6,#ec5cc6) !important;
 }
-.native-voice-list button span{
-  min-width:0;
-  display:block;
+.native-kodik-v60-3-head{
+  margin-bottom:12px !important;
 }
-.native-voice-list button b{
-  display:block;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  color:#251d3f;
-  font-size:13px;
-  font-weight:950;
-  letter-spacing:-.02em;
+.native-kodik-v60-3-head b{
+  color:#fff !important;
+  font-size:20px !important;
+  font-weight:950 !important;
+  letter-spacing:-.045em !important;
 }
-.native-voice-list button small{
-  display:block;
-  margin-top:3px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  color:rgba(45,37,71,.52);
-  font-size:10px;
-  font-weight:850;
+.native-kodik-v60-3-head span{
+  color:rgba(255,255,255,.48) !important;
 }
-.native-voice-list button em{
-  align-self:center;
-  border-radius:999px;
-  padding:5px 7px;
-  background:rgba(139,92,246,.08);
-  color:#7c3aed;
-  font-style:normal;
-  font-size:9px;
-  font-weight:950;
-  text-transform:uppercase;
+.native-kodik-v60-3-head em{
+  background:rgba(139,92,246,.18) !important;
+  color:#d9c7ff !important;
 }
-.native-voice-list button:hover{
-  transform:translateX(-2px);
-  border-color:rgba(148,82,235,.3);
-  box-shadow:0 16px 34px rgba(136,80,220,.1);
+.native-kodik-v60-3-now{
+  display:grid !important;
+  gap:4px !important;
+  margin-bottom:12px !important;
+  padding:13px 14px !important;
+  border-radius:18px !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+  background:rgba(255,255,255,.055) !important;
 }
-.native-voice-list button.active{
-  border-color:transparent;
-  background:linear-gradient(135deg,#2b2146,#8b5cf6 52%,#e65abb);
-  color:#fff;
-  box-shadow:0 18px 42px rgba(139,92,246,.26);
+.native-kodik-v60-3-now span{
+  color:rgba(255,255,255,.42) !important;
+  font-size:10px !important;
+  font-weight:950 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.08em !important;
 }
-.native-voice-list button.active i{
-  background:#fff;
-  box-shadow:0 0 0 5px rgba(255,255,255,.18), 0 0 24px rgba(255,255,255,.48);
+.native-kodik-v60-3-now b{
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  color:#fff !important;
+  font-size:15px !important;
+  font-weight:950 !important;
 }
-.native-voice-list button.active b,
-.native-voice-list button.active small{
-  color:#fff;
+.native-kodik-v60-3-now small{
+  color:#c4a7ff !important;
+  font-size:12px !important;
+  font-weight:850 !important;
 }
-.native-voice-list button.active small{
-  opacity:.74;
+.native-kodik-v60-3-voices{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:8px !important;
+  max-height:318px !important;
+  overflow:auto !important;
+  padding:1px 3px 3px 1px !important;
+  scrollbar-width:thin !important;
 }
-.native-voice-list button.active em{
-  background:rgba(255,255,255,.17);
-  color:#fff;
+.native-kodik-v60-3-voices button{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:12px !important;
+  width:100% !important;
+  min-height:54px !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+  border-radius:14px !important;
+  padding:10px 12px !important;
+  background:rgba(255,255,255,.055) !important;
+  color:#fff !important;
+  font-family:inherit !important;
+  text-align:left !important;
+  cursor:pointer !important;
+  box-shadow:none !important;
+  transition:transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease !important;
 }
-.native-episodes-card{
-  margin-top:12px;
-  padding-top:12px;
-  border-top:1px solid rgba(132,94,194,.12);
+.native-kodik-v60-3-voices button:hover{
+  transform:translateX(2px) !important;
+  border-color:rgba(196,167,255,.34) !important;
+  background:rgba(255,255,255,.085) !important;
 }
-.native-mini-label{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:9px;
+.native-kodik-v60-3-voices button.active{
+  border-color:rgba(236,92,198,.45) !important;
+  background:linear-gradient(135deg, rgba(139,92,246,.95), rgba(236,92,198,.82)) !important;
+  box-shadow:0 16px 40px rgba(139,92,246,.25) !important;
 }
-.native-mini-label span{
-  color:#2a2243;
-  font-size:12px;
-  font-weight:950;
-  letter-spacing:-.02em;
+.native-kodik-v60-3-voices b{
+  display:block !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  color:#fff !important;
+  font-size:13px !important;
+  font-weight:950 !important;
+  letter-spacing:-.02em !important;
 }
-.native-mini-label button,
-.native-mini-label em{
-  border:0;
-  border-radius:999px;
-  background:rgba(139,92,246,.1);
-  color:#7c3aed;
-  padding:7px 9px;
-  font-family:inherit;
-  font-size:10px;
-  font-weight:950;
-  font-style:normal;
-  cursor:pointer;
+.native-kodik-v60-3-voices small{
+  display:block !important;
+  margin-top:3px !important;
+  color:rgba(255,255,255,.48) !important;
+  font-size:10px !important;
+  font-weight:850 !important;
 }
-.native-episode-grid-compact{
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  max-height:152px;
-  gap:7px;
-  padding-right:2px;
+.native-kodik-v60-3-voices button.active small{
+  color:rgba(255,255,255,.76) !important;
 }
-.native-episode-grid-compact button{
-  height:37px;
-  border-radius:13px;
+.native-kodik-v60-3-voices i{
+  border-radius:999px !important;
+  padding:5px 7px !important;
+  background:rgba(255,255,255,.08) !important;
+  color:#d9c7ff !important;
+  font-style:normal !important;
+  font-size:9px !important;
+  font-weight:950 !important;
 }
-.native-kodik-note-soft{
-  margin-top:12px;
-  background:rgba(139,92,246,.08);
+.native-kodik-v60-3-voices button.active i{
+  background:rgba(255,255,255,.18) !important;
+  color:#fff !important;
+}
+.native-kodik-v60-3-episodes{
+  margin-top:13px !important;
+  padding-top:13px !important;
+  border-top:1px solid rgba(255,255,255,.08) !important;
+}
+.native-kodik-v60-3-label{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:10px !important;
+  margin-bottom:9px !important;
+}
+.native-kodik-v60-3-label span{
+  color:#fff !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+}
+.native-kodik-v60-3-label button,
+.native-kodik-v60-3-label em{
+  border:0 !important;
+  border-radius:999px !important;
+  padding:7px 9px !important;
+  background:rgba(139,92,246,.18) !important;
+  color:#d9c7ff !important;
+  font-family:inherit !important;
+  font-size:10px !important;
+  font-weight:950 !important;
+  font-style:normal !important;
+  cursor:pointer !important;
+}
+.native-kodik-v60-3-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  gap:7px !important;
+  max-height:152px !important;
+  overflow:auto !important;
+  padding:1px 2px 4px 1px !important;
+}
+.native-kodik-v60-3-grid button{
+  height:37px !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+  border-radius:12px !important;
+  background:rgba(255,255,255,.06) !important;
+  color:#fff !important;
+  box-shadow:none !important;
+}
+.native-kodik-v60-3-grid button.active{
+  border-color:transparent !important;
+  background:linear-gradient(135deg,#8b5cf6,#ec5cc6) !important;
+  color:#fff !important;
+}
+.native-kodik-v60-3-note{
+  background:rgba(255,255,255,.07) !important;
+  color:rgba(255,255,255,.72) !important;
 }
 @media (max-width:1040px){
-  .native-kodik-cinema-shell{
-    grid-template-columns:1fr;
+  .native-kodik-v60-3-cinema{
+    grid-template-columns:1fr !important;
   }
-  .native-kodik-sidebar{
-    min-height:0;
-    order:-1;
+  .native-kodik-v60-3-rail{
+    min-height:0 !important;
+    order:-1 !important;
   }
-  .native-voice-list{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    max-height:none;
-    overflow:visible;
+  .native-kodik-v60-3-voices{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    max-height:none !important;
+    overflow:visible !important;
   }
-  .native-kodik-cinema-shell .native-kodik-frame{
-    height:500px;
+  .native-kodik-v60-3-frame{
+    height:500px !important;
   }
 }
 @media (max-width:680px){
-  .native-kodik-cinema-shell{
-    gap:12px;
+  .compact-player-section{
+    padding:12px !important;
   }
-  .native-kodik-sidebar{
-    padding:13px;
-    border-radius:22px;
+  .native-kodik-v60-3-cinema{
+    gap:12px !important;
   }
-  .native-voice-list{
-    display:flex;
-    flex-direction:row;
-    overflow-x:auto;
-    max-height:none;
-    padding-bottom:7px;
+  .native-kodik-v60-3-rail{
+    padding:13px !important;
+    border-radius:20px !important;
   }
-  .native-voice-list button{
-    min-width:220px;
+  .native-kodik-v60-3-voices{
+    display:flex !important;
+    flex-direction:row !important;
+    overflow-x:auto !important;
+    max-height:none !important;
   }
-  .native-episode-grid-compact{
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    max-height:132px;
+  .native-kodik-v60-3-voices button{
+    min-width:220px !important;
   }
-  .native-kodik-cinema-shell .native-kodik-frame{
-    height:360px;
-    min-height:300px;
-    border-radius:20px;
+  .native-kodik-v60-3-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    max-height:132px !important;
+  }
+  .native-kodik-v60-3-frame{
+    height:360px !important;
+    min-height:300px !important;
+    border-radius:18px !important;
   }
 }
 @media (max-width:420px){
-  .native-voice-list button{
-    min-width:196px;
+  .native-kodik-v60-3-voices button{
+    min-width:196px !important;
   }
-  .native-episode-grid-compact{
-    grid-template-columns:repeat(3,minmax(0,1fr));
+  .native-kodik-v60-3-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
   }
 }
