@@ -673,8 +673,8 @@ export default async function AnimePage({ params, searchParams }){
       </aside>
     </section>
 
-    <section className="compact-player-section compact-player-section-v60-5" id="player" data-player-layout="right-voice-dock-v60-5">
-      <div className="compact-section-head"><h2>Плеер</h2><span className="compact-player-hint">Озвучки справа · серии ниже</span></div>
+    <section className="compact-player-section compact-player-section-v60-6" id="player" data-player-layout="light-top-controls-v60-6">
+      <div className="compact-section-head"><h2>Плеер</h2><span className="compact-player-hint">Озвучка · плеер · серии</span></div>
       <KodikPlayerClient
         slug={item.slug}
         title={title}
