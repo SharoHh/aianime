@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { createBrowserSupabase, getBuildSupabaseConfig, hasSupabaseBrowser } from '@/lib/supabaseClient'
+import { createBrowserSupabase, fetchRuntimeSupabaseConfig, getBuildSupabaseConfig, hasSupabaseBrowser } from '@/lib/supabaseClient'
 import { getUserDisplayName, setImmediateAuthUser, setPendingAuthSession } from '@/components/AuthStateClient'
 import { resetLocalAccountState } from '@/lib/userStorage'
 
@@ -22,17 +22,7 @@ function getNextUrl(){
 }
 
 async function loadRuntimeSupabaseConfig(){
-  const response = await fetch('/api/auth/public-config', {
-    cache:'no-store',
-    headers:{ accept:'application/json' }
-  })
-  const data = await response.json().catch(() => ({}))
-  if(!response.ok || !data?.ok) return null
-  if(!data.supabaseUrl || !data.supabaseAnonKey) return null
-  return {
-    supabaseUrl:data.supabaseUrl,
-    supabaseAnonKey:data.supabaseAnonKey
-  }
+  return await fetchRuntimeSupabaseConfig({ force:true }).catch(() => null)
 }
 
 export default function AuthClient(){
@@ -213,7 +203,7 @@ export default function AuthClient(){
     </section>
   }
 
-  return <section className="auth-card auth-card-premium widget" data-aianime-auth-ui="v62">
+  return <section className="auth-card auth-card-premium widget" data-aianime-auth-ui="v63">
     <div className="auth-profile-preview" aria-hidden="true">
       <img src="/posters/oshi.svg" alt=""/>
       <div>
