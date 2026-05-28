@@ -23,7 +23,8 @@ function cleanVoice(value){
 
 function normalizeOption(option){
   const episodeNumber = Math.max(1, Number(option?.episodeNumber || option?.episode_number || 1) || 1)
-  const embedUrl = String(option?.embedUrl || option?.embed_url || '').trim()
+  const raw = option?.raw || null
+  const embedUrl = String(option?.embedUrl || option?.embed_url || raw?.episode_link || raw?.season_link || raw?.material_link || '').trim()
   return {
     id: option?.id || `${cleanVoice(option?.voice)}-${episodeNumber}-${embedUrl}`,
     episodeNumber,
@@ -40,8 +41,10 @@ function normalizeOption(option){
     episodesCount: Number(option?.episodesCount || option?.episodes_count || option?.raw?.episodes_count || option?.raw?.last_episode || 0) || null,
     groupedEpisodeCount: Number(option?.groupedEpisodeCount || option?.grouped_episode_count || option?.syntheticEpisodesCount || 0) || null,
     episodeNumbers: Array.isArray(option?.episodeNumbers) ? option.episodeNumbers.map(Number).filter(Number.isFinite) : [],
-    materialType: option?.materialType || option?.material_type || option?.raw?.material_type || null,
-    matchScore: Number(option?.matchScore || option?.match_score || option?.raw?.match_score || 0) || null,
+    materialType: option?.materialType || option?.material_type || raw?.material_type || null,
+    matchScore: Number(option?.matchScore || option?.match_score || raw?.match_score || 0) || null,
+    raw,
+    updatedAt: option?.updatedAt || option?.updated_at || null,
   }
 }
 
@@ -55,7 +58,7 @@ function isSerialLikeOption(option = {}){
   return type.includes('serial') || /\/(serial|seria)\//i.test(url)
 }
 
-function addEpisodeParamToUrl(value, episodeNumber){
+function addEpisodeParamToUrl(value, episodeNumber, option = {}){
   const raw = String(value || '').trim()
   const episode = Math.max(1, Number(episodeNumber) || 1)
   if(!raw) return ''
@@ -63,6 +66,9 @@ function addEpisodeParamToUrl(value, episodeNumber){
     const url = new URL(raw)
     url.searchParams.set('episode', String(episode))
     url.searchParams.set('seria', String(episode))
+    url.searchParams.set('seria_num', String(episode))
+    const translationId = option?.translationId || option?.raw?.translation_id
+    if(translationId) url.searchParams.set('translation_id', String(translationId))
     return url.toString()
   }catch{
     return raw
@@ -82,16 +88,67 @@ function optionEpisodeLimit(option, expectedEpisodes = 0){
   return Math.min(Math.floor(limit), 800)
 }
 
+function explicitEpisodeNumbers(option){
+  const numbers = Array.isArray(option?.episodeNumbers) ? option.episodeNumbers : []
+  return Array.from(new Set(numbers.map(Number).filter(value => Number.isFinite(value) && value > 0)))
+    .sort((a,b) => a - b)
+}
+
+function canSafelyExpandSequentially(option, expectedEpisodes = 0){
+  if(!option?.embedUrl) return false
+  const limit = optionEpisodeLimit(option, expectedEpisodes)
+  if(limit <= 1) return false
+  const materialType = String(option?.materialType || option?.raw?.material_type || '').toLowerCase()
+  const source = String(option?.source || option?.raw?.source || '').toLowerCase()
+  if(materialType === 'anime' || materialType === 'movie' || /\/(video|movie)\//i.test(String(option?.embedUrl || ''))) return false
+  return isSerialLikeOption(option) || source.includes('season') || source.includes('episode')
+}
+
+function episodeNumbersForOption(option, expectedEpisodes = 0){
+  const explicit = explicitEpisodeNumbers(option)
+  if(explicit.length) return explicit
+  if(canSafelyExpandSequentially(option, expectedEpisodes)){
+    const limit = optionEpisodeLimit(option, expectedEpisodes)
+    return Array.from({ length:limit }, (_, index) => index + 1)
+  }
+  const ownEpisode = Math.max(1, Number(option?.episodeNumber || 1) || 1)
+  return ownEpisode ? [ownEpisode] : []
+}
+
+function optionQualityScore(option = {}){
+  return (option.source === 'kodik-api-episode' ? 40 : 0)
+    + (option.source === 'kodik-api-season-episode' ? 28 : 0)
+    + (option.source === 'kodik-api-player' ? 8 : 0)
+    + (isSerialLikeOption(option) ? 8 : 0)
+    + (option.embedUrl ? 4 : 0)
+    + (Number(option.matchScore || option.raw?.match_score || 0) / 1000)
+}
+
+function materializeEpisodeOption(option, episodeNumber, expectedEpisodes = 0){
+  const episode = Math.max(1, Number(episodeNumber) || 1)
+  if(Number(option?.episodeNumber || 0) === episode){
+    return { ...option, episodeNumber:episode, title:option.title || `Серия ${episode}` }
+  }
+  return makeSyntheticEpisodeOption(option, episode, expectedEpisodes)
+}
+
 function makeSyntheticEpisodeOption(option, episodeNumber, expectedEpisodes = 0){
   const episode = Math.max(1, Number(episodeNumber) || 1)
+  if(!option || !option.embedUrl) return null
+
+  const explicit = explicitEpisodeNumbers(option)
+  if(explicit.length && !explicit.includes(episode)) return null
+
   const limit = optionEpisodeLimit(option, expectedEpisodes)
-  if(!option || !option.embedUrl || limit <= 1 || episode > limit) return null
+  const ownEpisode = Math.max(1, Number(option?.episodeNumber || 1) || 1)
+  if(!explicit.length && episode !== ownEpisode && (!canSafelyExpandSequentially(option, expectedEpisodes) || episode > limit)) return null
+
   return {
     ...option,
     id: `${option.id || option.voice || 'kodik'}-episode-${episode}`,
     episodeNumber: episode,
     title: `Серия ${episode}`,
-    embedUrl: addEpisodeParamToUrl(option.embedUrl, episode),
+    embedUrl: addEpisodeParamToUrl(option.embedUrl, episode, option),
     source: option.source === 'kodik-api-player' ? 'kodik-api-season-episode' : `${option.source || 'kodik'}-episode`,
     syntheticEpisode: true,
   }
@@ -99,11 +156,20 @@ function makeSyntheticEpisodeOption(option, episodeNumber, expectedEpisodes = 0)
 
 function expandEpisodeListForVoice(list = [], expectedEpisodes = 0){
   const rows = Array.isArray(list) ? list.filter(usable) : []
-  if(rows.length !== 1) return rows
-  const base = rows[0]
-  const limit = optionEpisodeLimit(base, expectedEpisodes)
-  if(limit <= 1) return rows
-  return Array.from({ length:limit }, (_, index) => makeSyntheticEpisodeOption(base, index + 1, expectedEpisodes)).filter(Boolean)
+  if(!rows.length) return []
+
+  const byEpisode = new Map()
+  for(const row of rows){
+    const numbers = episodeNumbersForOption(row, expectedEpisodes)
+    for(const episodeNumber of numbers){
+      const option = materializeEpisodeOption(row, episodeNumber, expectedEpisodes)
+      if(!option?.embedUrl) continue
+      const current = byEpisode.get(option.episodeNumber)
+      if(!current || optionQualityScore(option) >= optionQualityScore(current)) byEpisode.set(option.episodeNumber, option)
+    }
+  }
+
+  return Array.from(byEpisode.values()).sort((a,b) => Number(a.episodeNumber || 0) - Number(b.episodeNumber || 0))
 }
 
 function collapseToVoiceRepresentatives(rows = []){
@@ -172,29 +238,44 @@ function normalizeOptions(options = []){
   })
 }
 
-function groupByVoice(options){
+function groupByVoice(options, expectedEpisodes = 0){
   const map = new Map()
   for(const option of options){
     const key = option.voice || 'Kodik'
     if(!map.has(key)) map.set(key, [])
     map.get(key).push(option)
   }
-  return Array.from(map.entries()).map(([voice, episodes]) => ({
-    voice,
-    episodes: episodes.sort((a,b) => a.episodeNumber - b.episodeNumber),
-    count: new Set(episodes.map(item => item.episodeNumber)).size,
-    declaredCount: Math.max(...episodes.map(item => Number(item.episodesCount || 0)), 0),
-    type: episodes.find(item => item.translationType)?.translationType || null,
-    quality: episodes.find(item => item.quality)?.quality || null,
-  })).sort((a,b) => Math.max(b.count, b.declaredCount || 0) - Math.max(a.count, a.declaredCount || 0) || a.voice.localeCompare(b.voice, 'ru'))
+  return Array.from(map.entries()).map(([voice, sourceEpisodes]) => {
+    const episodes = expandEpisodeListForVoice(sourceEpisodes, expectedEpisodes)
+    const explicitCount = Math.max(...sourceEpisodes.map(item => explicitEpisodeNumbers(item).length).filter(Boolean), 0)
+    const declaredCount = Math.max(...sourceEpisodes.map(item => {
+      const explicit = explicitEpisodeNumbers(item).length
+      if(explicit > 1) return explicit
+      if(canSafelyExpandSequentially(item, expectedEpisodes)) return Number(item.episodesCount || item.groupedEpisodeCount || 0)
+      return 0
+    }).filter(Boolean), 0)
+    return {
+      voice,
+      episodes,
+      count: new Set(episodes.map(item => item.episodeNumber)).size || explicitCount,
+      declaredCount,
+      type: sourceEpisodes.find(item => item.translationType)?.translationType || null,
+      quality: sourceEpisodes.find(item => item.quality)?.quality || null,
+    }
+  }).sort((a,b) => Math.max(b.count, b.declaredCount || 0) - Math.max(a.count, a.declaredCount || 0) || a.voice.localeCompare(b.voice, 'ru'))
 }
 
 function pickInitialOption(options, episode, voice, expectedEpisodes = 0){
   if(!options.length) return null
   const targetEpisode = Math.max(1, Number(episode || 1) || 1)
   const targetVoice = cleanVoice(voice)
-  const exact = options.find(item => item.voice === targetVoice && item.episodeNumber === targetEpisode)
-    || options.find(item => item.episodeNumber === targetEpisode)
+  const targetVoiceRows = options.filter(item => item.voice === targetVoice)
+  const expandedTargetVoice = expandEpisodeListForVoice(targetVoiceRows, expectedEpisodes)
+  const exactExpanded = expandedTargetVoice.find(item => item.episodeNumber === targetEpisode)
+  if(exactExpanded) return exactExpanded
+
+  const expandedAny = expandEpisodeListForVoice(options, expectedEpisodes)
+  const exact = expandedAny.find(item => item.episodeNumber === targetEpisode)
   if(exact) return exact
 
   const voiceBase = options.find(item => item.voice === targetVoice)
@@ -254,7 +335,7 @@ export default function KodikPlayerClient({
   const [selected, setSelected] = useState(() => pickInitialOption(normalizeOptions(playerOptions), episode, selectedVoice, expectedEpisodes))
   const [state, setState] = useState(() => normalizePlayerState({ initialEmbedUrl, initialVoice, initialQuality, initialSource, translationTitle, voice, quality }))
 
-  const voices = useMemo(() => groupByVoice(options), [options])
+  const voices = useMemo(() => groupByVoice(options, expectedEpisodes), [options, expectedEpisodes])
   const activeVoice = selected?.voice || cleanVoice(selectedVoice || state.voice || voice)
   const activeGroup = voices.find(item => item.voice === activeVoice) || null
   const rawActiveEpisodes = activeGroup?.episodes || options.filter(item => item.voice === activeVoice)
@@ -383,7 +464,7 @@ export default function KodikPlayerClient({
   const activeVoiceCount = Math.max(activeGroup?.count || 0, activeGroup?.declaredCount || 0, uniqueNativeEpisodes.size || 0, activeEpisodes.length || 0, 1)
   const playerLabel = `Плеер Kodik${activeVoiceCount ? ` (${activeVoiceCount} эп.)` : ''}`
 
-  return <div className="native-kodik-shell native-kodik-v65-light native-kodik-v66-options-fixed" data-aianime-player-ui="v66-options-voices-episodes-fixed">
+  return <div className="native-kodik-shell native-kodik-v65-light native-kodik-v66-options-fixed native-kodik-v67-episode-numbers" data-aianime-player-ui="v67-episode-numbers-no-player-voice-glitch">
     <div className="native-kodik-v65-controls" id="episodes">
       <label className="native-kodik-v65-select">
         <span>Озвучка</span>
@@ -417,7 +498,7 @@ export default function KodikPlayerClient({
         {option.episodeNumber}
       </button>)}
     </div> : <div className="native-kodik-v65-note">
-      {isRefreshingOptions ? 'Подтягиваем отдельные серии. Плеер уже можно запускать.' : canUseVoiceSelector ? 'Озвучку выбираем сверху, серии переключаются внутри Kodik-плеера.' : 'Серии переключаются внутри Kodik-плеера.'}
+      {isRefreshingOptions ? 'Подтягиваем отдельные серии. Плеер уже можно запускать.' : canUseVoiceSelector ? 'Серии можно переключать внутри Kodik-плеера.' : 'Серии переключаются внутри Kodik-плеера.'}
     </div>}
 
     <div className="native-kodik-v65-frame-wrap">
