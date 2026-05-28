@@ -21,24 +21,6 @@ function cleanVoice(value){
   return text
 }
 
-function hideKodikInnerSelectors(value){
-  const raw = String(value || '').trim()
-  if(!raw) return ''
-  try{
-    const url = new URL(raw)
-    // Эти параметры не ломают обычный Kodik URL, а если плеер их понимает — убирают
-    // внутренние селекторы/переключатели, чтобы выбор озвучки оставался только в UI сайта.
-    url.searchParams.set('hide_selectors', '1')
-    url.searchParams.set('hide_selector', '1')
-    url.searchParams.set('hide_translation_select', '1')
-    url.searchParams.set('hide_translations', '1')
-    url.searchParams.set('translation_select', '0')
-    return url.toString()
-  }catch{
-    return raw
-  }
-}
-
 function normalizeOption(option){
   const episodeNumber = Math.max(1, Number(option?.episodeNumber || option?.episode_number || 1) || 1)
   const raw = option?.raw || null
@@ -87,7 +69,7 @@ function addEpisodeParamToUrl(value, episodeNumber, option = {}){
     url.searchParams.set('seria_num', String(episode))
     const translationId = option?.translationId || option?.raw?.translation_id
     if(translationId) url.searchParams.set('translation_id', String(translationId))
-    return hideKodikInnerSelectors(url.toString())
+    return url.toString()
   }catch{
     return raw
   }
@@ -359,7 +341,7 @@ export default function KodikPlayerClient({
   const rawActiveEpisodes = activeGroup?.episodes || options.filter(item => item.voice === activeVoice)
   const activeEpisodes = useMemo(() => expandEpisodeListForVoice(rawActiveEpisodes, expectedEpisodes), [rawActiveEpisodes, expectedEpisodes])
   const activeEpisodeNumber = Number(selected?.episodeNumber || episode || 1)
-  const currentEmbedUrl = hideKodikInnerSelectors(selected?.embedUrl || state.embedUrl || initialEmbedUrl || null)
+  const currentEmbedUrl = selected?.embedUrl || state.embedUrl || initialEmbedUrl || null
   const currentQuality = selected?.quality || state.quality || quality || null
   const uniqueNativeEpisodes = new Set(activeEpisodes.map(item => Number(item.episodeNumber || 1)))
   const hasRealEpisodeButtons = activeEpisodes.length > 1 && uniqueNativeEpisodes.size > 1
@@ -482,7 +464,7 @@ export default function KodikPlayerClient({
   const activeVoiceCount = Math.max(activeGroup?.count || 0, activeGroup?.declaredCount || 0, uniqueNativeEpisodes.size || 0, activeEpisodes.length || 0, 1)
   const playerLabel = `Плеер Kodik${activeVoiceCount ? ` (${activeVoiceCount} эп.)` : ''}`
 
-  return <div className="native-kodik-shell native-kodik-v65-light native-kodik-v66-options-fixed native-kodik-v67-episode-numbers native-kodik-v68-hide-inner-selector" data-aianime-player-ui="v68-hide-kodik-inner-voice-selector">
+  return <div className="native-kodik-shell native-kodik-v65-light native-kodik-v66-options-fixed native-kodik-v67-episode-numbers native-kodik-v70-clean-iframe" data-aianime-player-ui="v70-clean-iframe">
     <div className="native-kodik-v65-controls" id="episodes">
       <label className="native-kodik-v65-select">
         <span>Озвучка</span>
