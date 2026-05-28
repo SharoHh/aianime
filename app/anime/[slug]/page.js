@@ -693,17 +693,23 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <nav className="title-top-nav title-top-nav-premium">
-      <Link href="/" className="title-nav-brand"><img src="/aianime-logo.png" alt="Aianime"/><div><b>Aianime</b><span>AI anime platform</span></div></Link>
+    <nav className="title-top-nav title-top-nav-premium" data-aianime-title-nav="v72">
+      <Link href="/" className="title-nav-brand"><img src="/aianime-logo.png" alt="Aianime"/><div><b>Aianime</b><span>онлайн-кинотеатр</span></div></Link>
+      <div className="title-nav-context" aria-label="Навигация по тайтлу">
+        <Link href="/catalog" className="title-nav-back">Каталог</Link>
+        <div className="title-nav-current">
+          <span>Страница тайтла</span>
+          <b>{title}</b>
+        </div>
+      </div>
       <div className="title-nav-links">
-        <Link href="/">Главная</Link>
-        <Link href="/catalog">Каталог</Link>
-        <Link href="/genres">Жанры</Link>
-        <Link href="/top">Топы</Link>
-        <Link href="#player">Плеер</Link>
+        <Link href={titleEpisodeHref(currentEpisodeNumber)}>Смотреть</Link>
+        <Link href="#episodes">Серии</Link>
+        <Link href={`/ai?similar=${item.slug}`}>Похожие</Link>
+        <Link href="#comments">Отзывы</Link>
       </div>
       <div className="title-nav-actions">
-        <Link href="/ai" className="title-nav-ai">AI-подбор</Link>
+        <span className="title-nav-meta">{item.year || '—'} · {getDisplayEpisodeCount(item, playerOptions)}</span>
         <TitleAuthActionClient/>
       </div>
     </nav>
@@ -785,7 +791,7 @@ export default async function AnimePage({ params, searchParams }){
       </div>
     </section>
 
-    <section className="compact-comments">
+    <section className="compact-comments" id="comments">
       <div className="compact-section-head"><h2>Комментарии</h2><a href="#player">К просмотру ↑</a></div>
       <CommentsClient slug={item.slug} title={title}/>
     </section>
