@@ -8518,45 +8518,6 @@ button:disabled{
   transform:scale(1.02);
 }
 
-/* Sticky mini action bar on title pages */
-@media(min-width:981px){
-  .anime-compact-page::after{
-    content:"";
-    position:fixed;
-    left:50%;
-    bottom:18px;
-    transform:translateX(-50%);
-    width:min(560px,calc(100vw - 40px));
-    height:58px;
-    border-radius:999px;
-    background:rgba(255,255,255,.82);
-    border:1px solid rgba(232,225,244,.9);
-    box-shadow:0 18px 46px rgba(79,61,127,.14);
-    backdrop-filter:blur(18px);
-    z-index:70;
-    pointer-events:none;
-  }
-
-  .anime-compact-page::before{
-    content:"Смотреть  ·  Серии  ·  Комментарии";
-    position:fixed;
-    left:50%;
-    bottom:18px;
-    transform:translateX(-50%);
-    width:min(560px,calc(100vw - 40px));
-    height:58px;
-    border-radius:999px;
-    color:#5f5871;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:13px;
-    font-weight:950;
-    z-index:71;
-    pointer-events:none;
-  }
-}
-
 /* Cleaner mobile hierarchy */
 @media(max-width:640px){
   .compact-rating-row{
@@ -15808,29 +15769,139 @@ a.rate-chip.is-link:focus-visible{
 }
 
 
-/* AIanime v68 — скрываем внутренний переключатель озвучек Kodik внутри iframe */
-.native-kodik-v68-hide-inner-selector .native-kodik-v65-frame{
-  position:relative !important;
+/* AIanime v70 — чистый iframe Kodik, сохраняем v67 episodeNumbers */
+.native-kodik-v70-clean-iframe{
+  --aianime-player-version:v70;
 }
-.native-kodik-v68-hide-inner-selector .native-kodik-v65-frame::after{
-  content:"";
-  position:absolute;
-  z-index:4;
-  top:8px;
-  left:8px;
-  width:174px;
-  height:44px;
-  border-radius:9px;
-  pointer-events:none;
-  background:linear-gradient(135deg, rgba(8,8,13,.96), rgba(8,8,13,.84));
-  box-shadow:0 10px 24px rgba(0,0,0,.18);
+
+
+/* AIanime v71 — clean title-page nav, no floating anchor pill */
+.anime-compact-page::before,
+.anime-compact-page::after{
+  content:none !important;
+  display:none !important;
 }
-@media (max-width:680px){
-  .native-kodik-v68-hide-inner-selector .native-kodik-v65-frame::after{
-    top:7px;
-    left:7px;
-    width:156px;
-    height:40px;
-    border-radius:8px;
+
+.title-top-nav-premium{
+  height:58px !important;
+  max-width:1220px !important;
+  margin:0 auto 14px !important;
+  padding:0 12px !important;
+  border-radius:18px !important;
+  background:rgba(255,255,255,.94) !important;
+  border:1px solid rgba(232,225,244,.92) !important;
+  box-shadow:0 14px 36px rgba(79,61,127,.07) !important;
+  backdrop-filter:blur(18px) !important;
+  top:10px !important;
+}
+
+.title-top-nav-premium .title-nav-brand{
+  min-width:auto !important;
+  gap:8px !important;
+}
+
+.title-top-nav-premium .title-nav-brand img{
+  width:38px !important;
+  height:38px !important;
+  filter:drop-shadow(0 9px 18px rgba(236,109,188,.20)) !important;
+}
+
+.title-top-nav-premium .title-nav-brand div{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:0 !important;
+}
+
+.title-top-nav-premium .title-nav-brand b{
+  font-size:16px !important;
+  line-height:1 !important;
+  color:#2b2548 !important;
+}
+
+.title-top-nav-premium .title-nav-brand span{
+  display:none !important;
+}
+
+.title-nav-links{
+  height:40px !important;
+  padding:3px !important;
+  border-radius:14px !important;
+  background:#fbf9ff !important;
+  border:1px solid rgba(232,225,244,.78) !important;
+  box-shadow:none !important;
+}
+
+.title-nav-links a{
+  height:32px !important;
+  border-radius:11px !important;
+  padding:0 11px !important;
+  color:#655d77 !important;
+  font-size:12.5px !important;
+  font-weight:750 !important;
+}
+
+.title-nav-links a:hover{
+  background:#f1e8ff !important;
+  color:#7f4fe2 !important;
+}
+
+.title-nav-actions{
+  gap:6px !important;
+}
+
+.title-nav-ai,
+.title-top-nav-premium .title-nav-profile,
+.title-nav-profile{
+  height:36px !important;
+  border-radius:12px !important;
+  padding:0 12px !important;
+  font-size:12.5px !important;
+  font-weight:800 !important;
+}
+
+.title-nav-ai{
+  box-shadow:0 10px 22px rgba(141,85,238,.16) !important;
+}
+
+.title-top-nav-premium .title-nav-profile,
+.title-nav-profile{
+  background:#fff !important;
+  border:1px solid #e8e1f4 !important;
+  color:#625b76 !important;
+}
+
+@media(max-width:900px){
+  .title-top-nav-premium{
+    height:auto !important;
+    min-height:56px !important;
+    padding:9px !important;
+    margin-bottom:12px !important;
+    position:static !important;
+  }
+
+  .title-nav-links{
+    width:100% !important;
+    height:auto !important;
+    overflow-x:auto !important;
+    justify-content:flex-start !important;
+  }
+
+  .title-nav-links a{
+    flex:0 0 auto !important;
+  }
+}
+
+@media(max-width:640px){
+  .title-top-nav-premium .title-nav-brand img{
+    width:34px !important;
+    height:34px !important;
+  }
+
+  .title-top-nav-premium .title-nav-brand b{
+    font-size:15px !important;
+  }
+
+  .title-nav-links a{
+    padding:0 10px !important;
   }
 }
