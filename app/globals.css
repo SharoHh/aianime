@@ -15801,3 +15801,8 @@ a.rate-chip.is-link:focus-visible{
 
 /* AIanime v66: player options safety marker */
 .native-kodik-v66-options-fixed select:not(:disabled){ cursor: pointer; }
+
+/* AIanime v67: episodeNumbers-safe player controls */
+.native-kodik-v67-episode-numbers{
+  --aianime-player-version:v67;
+}
