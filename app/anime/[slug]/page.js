@@ -693,23 +693,22 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <nav className="title-top-nav title-top-nav-premium" data-aianime-title-nav="v72">
-      <Link href="/" className="title-nav-brand"><img src="/aianime-logo.png" alt="Aianime"/><div><b>Aianime</b><span>онлайн-кинотеатр</span></div></Link>
-      <div className="title-nav-context" aria-label="Навигация по тайтлу">
-        <Link href="/catalog" className="title-nav-back">Каталог</Link>
-        <div className="title-nav-current">
-          <span>Страница тайтла</span>
-          <b>{title}</b>
-        </div>
+    <nav className="title-page-menu-v76" data-aianime-title-nav="v76" aria-label="Навигация AIanime">
+      <Link href="/" className="title-page-menu-v76__brand" aria-label="AIanime — на главную">
+        <img src="/aianime-logo.png" alt=""/>
+        <span>AIanime</span>
+      </Link>
+
+      <div className="title-page-menu-v76__links" aria-label="Разделы сайта">
+        <Link href="/catalog">Каталог</Link>
+        <Link href="/top">Топ</Link>
+        <Link href="/genres">Жанры</Link>
+        <Link href="/collections">Подборки</Link>
+        <Link href="/schedule">Расписание</Link>
       </div>
-      <div className="title-nav-links">
-        <Link href={titleEpisodeHref(currentEpisodeNumber)}>Смотреть</Link>
-        <Link href="#episodes">Серии</Link>
-        <Link href={`/ai?similar=${item.slug}`}>Похожие</Link>
-        <Link href="#comments">Отзывы</Link>
-      </div>
-      <div className="title-nav-actions">
-        <span className="title-nav-meta">{item.year || '—'} · {getDisplayEpisodeCount(item, playerOptions)}</span>
+
+      <div className="title-page-menu-v76__actions">
+        <Link href="/ai" className="title-page-menu-v76__ai">AI подбор</Link>
         <TitleAuthActionClient/>
       </div>
     </nav>
@@ -780,7 +779,7 @@ export default async function AnimePage({ params, searchParams }){
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>
     </section>
 
-    <section className="compact-similar compact-ai-recs">
+    <section className="compact-similar compact-ai-recs" id="similar">
       <div className="compact-section-head"><h2>Похожие тайтлы</h2><Link href={`/ai?similar=${item.slug}`}>Ещё через AI ›</Link></div>
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
