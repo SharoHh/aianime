@@ -15806,3 +15806,31 @@ a.rate-chip.is-link:focus-visible{
 .native-kodik-v67-episode-numbers{
   --aianime-player-version:v67;
 }
+
+
+/* AIanime v68 — скрываем внутренний переключатель озвучек Kodik внутри iframe */
+.native-kodik-v68-hide-inner-selector .native-kodik-v65-frame{
+  position:relative !important;
+}
+.native-kodik-v68-hide-inner-selector .native-kodik-v65-frame::after{
+  content:"";
+  position:absolute;
+  z-index:4;
+  top:8px;
+  left:8px;
+  width:174px;
+  height:44px;
+  border-radius:9px;
+  pointer-events:none;
+  background:linear-gradient(135deg, rgba(8,8,13,.96), rgba(8,8,13,.84));
+  box-shadow:0 10px 24px rgba(0,0,0,.18);
+}
+@media (max-width:680px){
+  .native-kodik-v68-hide-inner-selector .native-kodik-v65-frame::after{
+    top:7px;
+    left:7px;
+    width:156px;
+    height:40px;
+    border-radius:8px;
+  }
+}
