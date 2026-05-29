@@ -17617,3 +17617,66 @@ a.rate-chip.is-link:focus-visible{
 .user-sync-status-idle p{
   overflow-wrap:anywhere;
 }
+
+
+/* AIanime v83: hide stale Supabase history migration warning after SQL repair */
+
+
+/* AIanime v85: title-page search + lighter transitions */
+.title-wide-header-v80[data-aianime-title-nav="v85"] .title-wide-header-v80__actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v85"] .title-wide-header-v80__actions .search-trigger{
+  width:54px!important;
+  min-width:54px!important;
+  height:48px!important;
+  padding:0!important;
+  border-radius:16px!important;
+  justify-content:center!important;
+  background:#fff!important;
+  border:1px solid rgba(136,104,190,.16)!important;
+  box-shadow:0 12px 28px rgba(76,56,124,.07)!important;
+  color:#7d55d8!important;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v85"] .title-wide-header-v80__actions .search-trigger span{
+  display:inline-flex!important;
+  font-size:22px!important;
+  line-height:1!important;
+  margin:0!important;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v85"] .title-wide-header-v80__actions .search-trigger strong,
+.title-wide-header-v80[data-aianime-title-nav="v85"] .title-wide-header-v80__actions .search-trigger kbd{
+  display:none!important;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v85"] .title-wide-header-v80__actions .search-trigger:hover{
+  transform:translateY(-1px);
+  border-color:rgba(196,83,226,.28)!important;
+  box-shadow:0 16px 34px rgba(174,91,230,.13)!important;
+}
+
+@media (max-width: 860px){
+  .title-wide-header-v80[data-aianime-title-nav="v85"] .title-wide-header-v80__actions .search-trigger{
+    width:46px!important;
+    min-width:46px!important;
+    height:44px!important;
+  }
+}
+
+
+/* AIanime v85: lighter route transitions, no aggressive page-wide prefetch loop. */
+.route-progress-bar{
+  transition:opacity .1s ease, transform .72s cubic-bezier(.2,.8,.2,1)!important;
+}
+.route-progress-bar.is-active{
+  transform:scaleX(.62)!important;
+}
+html[data-aianime-nav-speed="v85"] body{
+  background:#fdfcff;
+}

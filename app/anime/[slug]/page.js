@@ -1,4 +1,5 @@
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
+export const dynamicParams = true
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -7,6 +8,7 @@ import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
+import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import WatchTracker from '@/components/WatchTracker'
@@ -57,7 +59,7 @@ async function fetchJsonSoft(url, options = {}){
 async function getSiteRatingStats(slug){
   if(!hasSupabase() || !slug) return { value:null, count:0 }
   try{
-    const res = await supabaseRequest(`user_ratings?select=rating&anime_slug=eq.${encodeURIComponent(slug)}&limit=1000`, { method:'GET', timeout:2200 })
+    const res = await supabaseRequest(`user_ratings?select=rating&anime_slug=eq.${encodeURIComponent(slug)}&limit=1000`, { method:'GET', timeout:650 })
     if(!res.ok) return { value:null, count:0 }
     const rows = await res.json()
     if(!Array.isArray(rows) || !rows.length) return { value:null, count:0 }
@@ -693,7 +695,7 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <header className="title-wide-header-v80" data-aianime-title-nav="v81" aria-label="Меню страницы тайтла">
+    <header className="title-wide-header-v80" data-aianime-title-nav="v85" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
           <span className="title-wide-header-v80__spark">✦</span>
@@ -710,7 +712,7 @@ export default async function AnimePage({ params, searchParams }){
         </nav>
 
         <div className="title-wide-header-v80__actions">
-          <Link href="/catalog" className="title-wide-header-v80__search" aria-label="Поиск по каталогу">⌕</Link>
+          <GlobalSearchOverlay items={allAnime.slice(0,120)}/>
           <TitleAuthActionClient/>
           <Link href="/auth" className="title-wide-header-v80__signup">Регистрация</Link>
         </div>
