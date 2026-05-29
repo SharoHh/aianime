@@ -6,7 +6,6 @@ import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/a
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
-import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import WatchTracker from '@/components/WatchTracker'
@@ -693,23 +692,25 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <nav className="title-page-menu-v76" data-aianime-title-nav="v76" aria-label="Навигация AIanime">
-      <Link href="/" className="title-page-menu-v76__brand" aria-label="AIanime — на главную">
-        <img src="/aianime-logo.png" alt=""/>
-        <span>AIanime</span>
-      </Link>
+    <nav className="title-page-menu-v78" data-aianime-title-nav="v78" aria-label="Меню страницы тайтла">
+      <div className="title-page-menu-v78__surface">
+        <div className="title-page-menu-v78__context" aria-label="Контекст тайтла">
+          <Link href="/catalog" className="title-page-menu-v78__back">← Каталог</Link>
+          <div className="title-page-menu-v78__facts" aria-label="Краткая информация">
+            <span>{item.kind === 'movie' ? 'Фильм' : 'Сериал'}</span>
+            <span>{item.year || 'Год уточняется'}</span>
+            <span>{getDisplayEpisodeCount(item, playerOptions)}</span>
+            <span>{item.ageRating || '16+'}</span>
+          </div>
+        </div>
 
-      <div className="title-page-menu-v76__links" aria-label="Разделы сайта">
-        <Link href="/catalog">Каталог</Link>
-        <Link href="/top">Топ</Link>
-        <Link href="/genres">Жанры</Link>
-        <Link href="/collections">Подборки</Link>
-        <Link href="/schedule">Расписание</Link>
-      </div>
-
-      <div className="title-page-menu-v76__actions">
-        <Link href="/ai" className="title-page-menu-v76__ai">AI подбор</Link>
-        <TitleAuthActionClient/>
+        <div className="title-page-menu-v78__tabs" aria-label="Разделы страницы">
+          <a href="#player" className="is-active"><span>▶</span> Смотреть</a>
+          <a href="#episodes"><span>▦</span> Серии</a>
+          <a href="#title-info"><span>i</span> О тайтле</a>
+          <a href="#similar"><span>✦</span> Похожие</a>
+          <a href="#comments"><span>♡</span> Отзывы</a>
+        </div>
       </div>
     </nav>
     <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" src={item.poster} alt=""/>
@@ -731,7 +732,7 @@ export default async function AnimePage({ params, searchParams }){
           <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL ↗</a>
         </div>
 
-        <div className="compact-info-list">
+        <div className="compact-info-list" id="title-info">
           {info.map(([label,value])=><div key={label}>
             <span>{label}:</span>
             <b>{value}</b>
