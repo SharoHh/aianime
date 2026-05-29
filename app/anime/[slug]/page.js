@@ -6,6 +6,7 @@ import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/a
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
+import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import WatchTracker from '@/components/WatchTracker'
@@ -692,27 +693,52 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <nav className="title-page-menu-v78" data-aianime-title-nav="v78" aria-label="Меню страницы тайтла">
-      <div className="title-page-menu-v78__surface">
-        <div className="title-page-menu-v78__context" aria-label="Контекст тайтла">
-          <Link href="/catalog" className="title-page-menu-v78__back">← Каталог</Link>
-          <div className="title-page-menu-v78__facts" aria-label="Краткая информация">
-            <span>{item.kind === 'movie' ? 'Фильм' : 'Сериал'}</span>
-            <span>{item.year || 'Год уточняется'}</span>
-            <span>{getDisplayEpisodeCount(item, playerOptions)}</span>
-            <span>{item.ageRating || '16+'}</span>
-          </div>
-        </div>
+    <header className="title-wide-header-v80" data-aianime-title-nav="v80" aria-label="Меню страницы тайтла">
+      <div className="title-wide-header-v80__bar">
+        <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
+          <span className="title-wide-header-v80__spark">✦</span>
+          <b>AI<span>anime</span></b>
+        </Link>
 
-        <div className="title-page-menu-v78__tabs" aria-label="Разделы страницы">
-          <a href="#player" className="is-active"><span>▶</span> Смотреть</a>
-          <a href="#episodes"><span>▦</span> Серии</a>
-          <a href="#title-info"><span>i</span> О тайтле</a>
-          <a href="#similar"><span>✦</span> Похожие</a>
-          <a href="#comments"><span>♡</span> Отзывы</a>
+        <nav className="title-wide-header-v80__nav" aria-label="Разделы сайта">
+          <Link href="/catalog"><span>▦</span>Каталог</Link>
+          <Link href="/season"><span>▷</span>Онгоинги</Link>
+          <Link href="/schedule"><span>◷</span>Расписание</Link>
+          <Link href="/collections"><span>☆</span>Подборки</Link>
+          <Link href="/ai"><span>?</span>Что посмотреть?</Link>
+          <Link href="/recommend"><span>↝</span>Случайное</Link>
+        </nav>
+
+        <div className="title-wide-header-v80__actions">
+          <Link href="/catalog" className="title-wide-header-v80__search" aria-label="Поиск по каталогу">⌕</Link>
+          <TitleAuthActionClient/>
+          <Link href="/auth" className="title-wide-header-v80__signup">Регистрация</Link>
         </div>
       </div>
-    </nav>
+
+      <div className="title-wide-header-v80__context">
+        <div className="title-wide-header-v80__crumbs" aria-label="Хлебные крошки">
+          <Link href="/catalog">← Каталог</Link>
+          <span>/</span>
+          <b>{title}</b>
+        </div>
+
+        <div className="title-wide-header-v80__facts" aria-label="Краткая информация о тайтле">
+          <span>{item.kind === 'movie' ? 'Фильм' : 'TV'}</span>
+          <span>{item.year || 'Год уточняется'}</span>
+          <span>{getDisplayEpisodeCount(item, playerOptions) || 'Серии'}</span>
+          <span>{item.ageRating || '16+'}</span>
+        </div>
+
+        <nav className="title-wide-header-v80__tabs" aria-label="Навигация внутри страницы">
+          <a href="#player">Смотреть</a>
+          <a href="#episodes">Серии</a>
+          <a href="#title-info">О тайтле</a>
+          <a href="#similar">Похожие</a>
+          <a href="#comments">Отзывы</a>
+        </nav>
+      </div>
+    </header>
     <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" src={item.poster} alt=""/>
       <div className="anime-compact-left">
         <nav className="compact-breadcrumb"><Link href="/">← На главную</Link><span>/</span><Link href="/catalog">Каталог</Link></nav>
@@ -732,7 +758,7 @@ export default async function AnimePage({ params, searchParams }){
           <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL ↗</a>
         </div>
 
-        <div className="compact-info-list" id="title-info">
+        <div id="title-info" className="compact-info-list">
           {info.map(([label,value])=><div key={label}>
             <span>{label}:</span>
             <b>{value}</b>
