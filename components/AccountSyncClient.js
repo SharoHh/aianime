@@ -84,6 +84,11 @@ export default function AccountSyncClient(){
         setUserSyncStatus({ state:'ok', message:'Данные аккаунта загружены.' })
       }catch(error){
         if(cancelled) return
+        const message = String(error?.message || error?.details || '')
+        if(/schema cache|Could not find|anime_slug|user_history/i.test(message)){
+          setUserSyncStatus({ state:'idle', message:'Профиль работает локально. В Supabase нужно обновить схему истории, чтобы включить облачную синхронизацию.' })
+          return
+        }
         setUserSyncStatus({ state:'error', message:error?.message || 'Не удалось быстро загрузить данные аккаунта.' })
       }
     }
