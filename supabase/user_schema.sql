@@ -50,6 +50,22 @@ create table if not exists public.user_ai_history (
 );
 
 -- Existing-table compatibility. CREATE TABLE IF NOT EXISTS does not add missing columns,
+
+-- v82 compatibility: older tables may exist without anime_slug.
+alter table if exists public.user_favorites add column if not exists anime_slug text;
+alter table if exists public.user_history add column if not exists anime_slug text;
+alter table if exists public.user_ratings add column if not exists anime_slug text;
+
+create unique index if not exists user_favorites_user_anime_slug_uidx
+  on public.user_favorites(user_id, anime_slug)
+  where anime_slug is not null;
+create unique index if not exists user_history_user_anime_slug_uidx
+  on public.user_history(user_id, anime_slug)
+  where anime_slug is not null;
+create unique index if not exists user_ratings_user_anime_slug_uidx
+  on public.user_ratings(user_id, anime_slug)
+  where anime_slug is not null;
+
 -- so every column used by app/indexes is added explicitly.
 alter table if exists public.user_favorites add column if not exists title text;
 alter table if exists public.user_favorites add column if not exists poster text;
