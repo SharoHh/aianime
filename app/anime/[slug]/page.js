@@ -693,7 +693,7 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <header className="title-wide-header-v80" data-aianime-title-nav="v80" aria-label="Меню страницы тайтла">
+    <header className="title-wide-header-v80" data-aianime-title-nav="v81" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
           <span className="title-wide-header-v80__spark">✦</span>
@@ -716,28 +716,8 @@ export default async function AnimePage({ params, searchParams }){
         </div>
       </div>
 
-      <div className="title-wide-header-v80__context">
-        <div className="title-wide-header-v80__crumbs" aria-label="Хлебные крошки">
-          <Link href="/catalog">← Каталог</Link>
-          <span>/</span>
-          <b>{title}</b>
-        </div>
-
-        <div className="title-wide-header-v80__facts" aria-label="Краткая информация о тайтле">
-          <span>{item.kind === 'movie' ? 'Фильм' : 'TV'}</span>
-          <span>{item.year || 'Год уточняется'}</span>
-          <span>{getDisplayEpisodeCount(item, playerOptions) || 'Серии'}</span>
-          <span>{item.ageRating || '16+'}</span>
-        </div>
-
-        <nav className="title-wide-header-v80__tabs" aria-label="Навигация внутри страницы">
-          <a href="#player">Смотреть</a>
-          <a href="#episodes">Серии</a>
-          <a href="#title-info">О тайтле</a>
-          <a href="#similar">Похожие</a>
-          <a href="#comments">Отзывы</a>
-        </nav>
-      </div>
+      {/* AIanime v81: title-specific context removed from the global menu.
+          The title details stay in the main title card below, not inside the header. */}
     </header>
     <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" src={item.poster} alt=""/>
       <div className="anime-compact-left">

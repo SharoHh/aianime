@@ -17546,3 +17546,74 @@ a.rate-chip.is-link:focus-visible{
     font-size:11px;
   }
 }
+
+
+/* AIanime v81 — global title page menu only, no title/meta/tabs inside header */
+.title-wide-header-v80[data-aianime-title-nav="v81"]{
+  margin:-24px 0 26px calc(50% - 50vw);
+  background:rgba(255,255,255,.96);
+  border-bottom:1px solid rgba(225,218,242,.86);
+  box-shadow:0 14px 34px rgba(58,44,93,.05);
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__bar{
+  min-height:76px;
+  width:min(1760px, calc(100% - 64px));
+  gap:24px;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__context{
+  display:none !important;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__brand{
+  min-width:max-content;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__brand b{
+  font-size:23px;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__nav{
+  justify-content:center;
+  gap:8px;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__nav a{
+  min-height:44px;
+  padding:0 16px;
+  border-radius:17px;
+  color:#514765;
+  background:transparent;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__nav a:hover{
+  background:#faf6ff;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__actions{
+  gap:11px;
+}
+
+@media(max-width:1180px){
+  .title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__bar{
+    width:min(100% - 28px, 1180px);
+    gap:12px;
+  }
+}
+
+@media(max-width:760px){
+  .title-wide-header-v80[data-aianime-title-nav="v81"]{
+    margin-top:-24px;
+    position:static;
+  }
+  .title-wide-header-v80[data-aianime-title-nav="v81"] .title-wide-header-v80__bar{
+    min-height:auto;
+    padding:12px 0;
+  }
+}
+
+/* AIanime v82: friendly profile local-sync fallback for old Supabase user_history schemas. */
+.user-sync-status-idle p{
+  overflow-wrap:anywhere;
+}
