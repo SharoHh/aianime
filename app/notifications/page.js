@@ -5,8 +5,9 @@ import { getWeeklySchedule } from '@/lib/scheduleData'
 import NotificationsClient from './NotificationsClient'
 
 export const metadata = {
-  title: 'Уведомления — Aianime',
-  description: 'Список включённых уведомлений о выходе новых серий.'
+  title: 'Уведомления — AIanime',
+  description: 'Личные уведомления о выходе новых серий аниме.',
+  robots: { index:false, follow:false }
 }
 
 export default async function NotificationsPage(){

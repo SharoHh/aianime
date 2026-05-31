@@ -1,27 +1,40 @@
-function siteUrl(){
-  return String(process.env.NEXT_PUBLIC_SITE_URL || 'https://aianime.ru').replace(/\/$/, '')
-}
+import { SITE_URL } from '@/lib/seo'
 
-// AIanime v131: settings route redirects to profile.
+// AIanime v145: SEO robots rules for public indexable pages and private/internal areas.
 export default function robots(){
-  const base = siteUrl()
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: [
-        '/admin',
-        '/admin/',
-        '/api',
-        '/api/',
-        '/auth',
-        '/profile',
-        '/favorites',
-        '/history',
-        '/notifications',
-      ],
-    },
-    sitemap: `${base}/sitemap.xml`,
-    host: base,
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: [
+          '/admin',
+          '/admin/',
+          '/api',
+          '/api/',
+          '/auth',
+          '/profile',
+          '/favorites',
+          '/history',
+          '/notifications',
+          '/settings',
+          '/collection',
+          '/collections-old',
+          '/recommend',
+          '/recommendations',
+          '/podbor',
+          '/podborki',
+          '/ai-podbor',
+          '/ai-podborki',
+          '/*?*token=',
+          '/*?*debug=',
+          '/*?*refresh=',
+          '/*?*admin_secret=',
+          '/*?*enable='
+        ],
+      }
+    ],
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   }
 }

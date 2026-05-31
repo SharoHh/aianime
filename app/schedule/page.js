@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Расписание выхода серий — Aianime',
-  description: 'Реальное расписание выхода новых серий аниме на текущую неделю с обновлением через cron.',
-  openGraph: { title: 'Расписание выхода серий — Aianime', description: 'Новые серии и эфиры текущей недели.' }
+  title: 'Расписание выхода серий аниме — AIanime',
+  description: 'Еженедельное расписание выхода новых серий аниме на русском: онгоинги, даты эфиров, постеры и быстрый переход к просмотру.',
+  alternates: { canonical: '/schedule' },
+  openGraph: { title: 'Расписание выхода серий аниме — AIanime', description: 'Еженедельное расписание выхода новых серий аниме на русском: онгоинги, даты эфиров, постеры и быстрый переход к просмотру.', url: '/schedule', type: 'website' }
 }
 
 import Link from 'next/link'

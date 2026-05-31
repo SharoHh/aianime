@@ -4,8 +4,10 @@ import Link from 'next/link'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 export const metadata = {
-  title:'Топ аниме — Aianime',
-  description:'Топы аниме по рейтингу, популярности, новинкам и количеству серий.'
+  title: 'Топ аниме — лучшие и популярные тайтлы | AIanime',
+  description: 'Топы аниме по рейтингу, популярности, новинкам и количеству серий: быстрый выбор лучших тайтлов в каталоге AIanime.',
+  alternates: { canonical: '/top' },
+  openGraph: { title: 'Топ аниме — лучшие и популярные тайтлы | AIanime', description: 'Топы аниме по рейтингу, популярности, новинкам и количеству серий: быстрый выбор лучших тайтлов в каталоге AIanime.', url: '/top', type: 'website' }
 }
 
 export default function TopPage(){

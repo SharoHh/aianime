@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { collections } from '@/lib/data'
 import AdminCollectionsClient from './AdminCollectionsClient'
 
-export const metadata = { title:'Админка подборок — Aianime' }
+export const metadata = { title:'Админпанель — AIanime', robots:{ index:false, follow:false } }
 
 export default function AdminCollectionsPage(){
   return <main className="admin-page">

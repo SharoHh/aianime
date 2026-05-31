@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 
 export const metadata = {
-  title:'Жанры аниме — Aianime',
-  description:'Все жанры аниме: романтика, экшен, фэнтези, психология и другие подборки.'
+  title: 'Жанры аниме — каталог по жанрам | AIanime',
+  description: 'Все жанры аниме на AIanime: экшен, романтика, фэнтези, драма, комедия, повседневность, психология и другие подборки.',
+  alternates: { canonical: '/genres' },
+  openGraph: { title: 'Жанры аниме — каталог по жанрам | AIanime', description: 'Все жанры аниме на AIanime: экшен, романтика, фэнтези, драма, комедия, повседневность, психология и другие подборки.', url: '/genres', type: 'website' }
 }
 
 import { encodeSlug } from '@/lib/routeSlugs'

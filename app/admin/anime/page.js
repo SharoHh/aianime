@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 import AdminAnimeClient from './AdminAnimeClient'
 
-export const metadata = { title: 'Редактор тайтлов — Aianime admin' }
+export const metadata = { title:'Админпанель — AIanime', robots:{ index:false, follow:false } }
 
 export default async function AdminAnimePage(){
   const anime = await getAnimeList({limit:1000})

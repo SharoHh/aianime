@@ -4,8 +4,9 @@ import { getAnimeList } from '@/lib/animeRepository'
 import AdminHubClient from './AdminHubClient'
 
 export const metadata = {
-  title: 'Админпанель — Aianime',
-  description: 'Единая админпанель управления сайтом.'
+  title: 'Админпанель — AIanime',
+  description: 'Внутренняя админпанель AIanime.',
+  robots: { index:false, follow:false }
 }
 
 function hasLatinOnly(value){

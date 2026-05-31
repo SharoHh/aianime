@@ -1,5 +1,12 @@
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  title:'AI-подбор аниме по настроению — AIanime',
+  description:'AI-подбор аниме на русском: опиши настроение, любимые тайтлы или вайб — AIanime подберёт подходящие варианты из каталога.',
+  alternates:{ canonical:'/ai' },
+  openGraph:{ title:'AI-подбор аниме — AIanime', description:'Персональные рекомендации аниме по настроению и предпочтениям.', url:'/ai', type:'website' }
+}
+
 import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 import AiClient from './AiClient'

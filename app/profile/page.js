@@ -4,8 +4,9 @@ import Link from 'next/link'
 import ProfileAuthGateClient from '@/components/ProfileAuthGateClient'
 
 export const metadata = {
-  title: 'Профиль — Aianime',
-  description: 'Профиль Aianime, аватар, фон и синхронизация аккаунта.'
+  title: 'Профиль — AIanime',
+  description: 'Личный профиль AIanime: избранное, история, оценки и синхронизация аккаунта.',
+  robots: { index:false, follow:false }
 }
 
 export default function ProfilePage(){

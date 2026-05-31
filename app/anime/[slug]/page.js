@@ -1,4 +1,4 @@
-// AIanime v137: title menu decorative icons replaced with clean SVG badges.
+// AIanime v145: title page SEO metadata, canonical and Schema.org improvements.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -41,7 +41,9 @@ export async function generateMetadata({ params }){
   return {
     title: `${title}${year} смотреть онлайн на русском — AIanime`,
     description,
+    keywords: [title, original, 'аниме онлайн', 'смотреть аниме на русском', 'аниме с озвучкой'].filter(Boolean),
     alternates: { canonical: `/anime/${encodeURIComponent(item.slug).replace(/%2F/g, '/')}` },
+    robots: { index:true, follow:true, googleBot:{ index:true, follow:true, 'max-image-preview':'large', 'max-snippet':-1, 'max-video-preview':-1 } },
     openGraph: {
       title: `${title} — смотреть онлайн`,
       description,
@@ -97,6 +99,19 @@ function buildAnimeJsonLd(item, title, description, siteRating){
   }
 
   return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined && value !== null && value !== ''))
+}
+
+function buildTitleBreadcrumbJsonLd(item, title){
+  const base = String(process.env.NEXT_PUBLIC_SITE_URL || 'https://aianime.ru').replace(/\/$/, '')
+  return {
+    '@context':'https://schema.org',
+    '@type':'BreadcrumbList',
+    itemListElement:[
+      { '@type':'ListItem', position:1, name:'Главная', item:`${base}/` },
+      { '@type':'ListItem', position:2, name:'Каталог', item:`${base}/catalog` },
+      { '@type':'ListItem', position:3, name:title, item:`${base}/anime/${encodeURIComponent(item.slug).replace(/%2F/g, '/')}` }
+    ]
+  }
 }
 
 
@@ -781,7 +796,7 @@ export default async function AnimePage({ params, searchParams }){
     ['Озвучка', currentEpisode?.voice || item.translationTitle || 'Kodik'],
   ])
 
-  const animeJsonLd = buildAnimeJsonLd(item, title, description, siteRating)
+  const animeJsonLd = [buildAnimeJsonLd(item, title, description, siteRating), buildTitleBreadcrumbJsonLd(item, title)]
 
   return <main className="anime-compact-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(animeJsonLd)}} />

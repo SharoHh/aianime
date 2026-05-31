@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 
 export const metadata = {
-  title:'Студии аниме — Aianime',
-  description:'Список аниме-студий и тайтлы каждой студии.'
+  title: 'Студии аниме — тайтлы по студиям | AIanime',
+  description: 'Каталог аниме по студиям: список студий, количество тайтлов и страницы просмотра на AIanime.',
+  alternates: { canonical: '/studios' },
+  openGraph: { title: 'Студии аниме — тайтлы по студиям | AIanime', description: 'Каталог аниме по студиям: список студий, количество тайтлов и страницы просмотра на AIanime.', url: '/studios', type: 'website' }
 }
 
 function slugify(text){

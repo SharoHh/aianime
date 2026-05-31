@@ -5,8 +5,10 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 
 export const metadata = {
-  title:'Длинные аниме — Aianime',
-  description:'Тайтлы с большим количеством серий.'
+  title: 'Длинные аниме и тайтлы с большим числом серий — AIanime',
+  description: 'Аниме с большим количеством серий: длинные сериалы, популярные франшизы и тайтлы для долгого просмотра.',
+  alternates: { canonical: '/top/episodes' },
+  openGraph: { title: 'Длинные аниме и тайтлы с большим числом серий — AIanime', description: 'Аниме с большим количеством серий: длинные сериалы, популярные франшизы и тайтлы для долгого просмотра.', url: '/top/episodes', type: 'website' }
 }
 
 export default async function TopListPage(){

@@ -5,8 +5,10 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 
 export const metadata = {
-  title:'Топ по рейтингу — Aianime',
-  description:'Самые высоко оценённые аниме.'
+  title: 'Топ аниме по рейтингу — AIanime',
+  description: 'Самые высоко оценённые аниме в каталоге AIanime: рейтинги, постеры, жанры, год выхода и страницы просмотра.',
+  alternates: { canonical: '/top/rating' },
+  openGraph: { title: 'Топ аниме по рейтингу — AIanime', description: 'Самые высоко оценённые аниме в каталоге AIanime: рейтинги, постеры, жанры, год выхода и страницы просмотра.', url: '/top/rating', type: 'website' }
 }
 
 export default async function TopListPage(){

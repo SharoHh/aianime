@@ -10,8 +10,10 @@ function Poster({item}){
 }
 
 export const metadata = {
-  title: 'Сезонное аниме — Aianime',
-  description: 'Онгоинги, новинки сезона и популярные тайтлы.'
+  title: 'Сезонное аниме и онгоинги — AIanime',
+  description: 'Сезонное аниме, онгоинги, свежие релизы и популярные тайтлы текущего сезона на AIanime.',
+  alternates: { canonical: '/season' },
+  openGraph: { title: 'Сезонное аниме и онгоинги — AIanime', description: 'Сезонное аниме, онгоинги, свежие релизы и популярные тайтлы текущего сезона на AIanime.', url: '/season', type: 'website' }
 }
 
 export default async function SeasonPage(){

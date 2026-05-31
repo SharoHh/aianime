@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import AdminCommentsClient from './AdminCommentsClient'
 
-export const metadata = { title:'Модерация комментариев — Aianime' }
+export const metadata = { title:'Админпанель — AIanime', robots:{ index:false, follow:false } }
 
 export default function AdminCommentsPage(){
   return <main className="admin-page">

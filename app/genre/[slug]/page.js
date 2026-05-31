@@ -4,6 +4,7 @@ import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 import { decodeRouteSlug, slugifyRu, titleFromSlug } from '@/lib/routeSlugs'
+import { buildPageMetadata, collectionPageJsonLd, jsonLd } from '@/lib/seo'
 
 function uniqueGenres(items){
   const map = new Map()
@@ -32,11 +33,13 @@ function getGenreMatch(items, rawSlug){
 export async function generateMetadata({ params }){
   const resolvedParams = await params
   const anime = await getAnimeList({limit:1000})
-  const { title } = getGenreMatch(anime, resolvedParams.slug)
-  return {
-    title: `${title} аниме — Aianime`,
-    description: `Подборка аниме в жанре ${title}: рейтинг, описания, постеры и похожие тайтлы.`
-  }
+  const { title, filtered } = getGenreMatch(anime, resolvedParams.slug)
+  const path = `/genre/${encodeURIComponent(resolvedParams.slug).replace(/%2F/g, '/')}`
+  return buildPageMetadata({
+    title:`${title} аниме смотреть онлайн — AIanime`,
+    description:`${filtered.length ? `${filtered.length} тайтлов` : 'Подборка'} в жанре ${title}: аниме онлайн на русском, постеры, рейтинги, описания и похожие тайтлы.`,
+    path
+  })
 }
 
 export default async function GenrePage({ params }){
@@ -44,7 +47,7 @@ export default async function GenrePage({ params }){
   const anime = await getAnimeList({limit:1000})
   const { title, filtered } = getGenreMatch(anime, resolvedParams.slug)
 
-  return <main className="page seo-page">
+  return <main className="page seo-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:`${title} аниме`, description:`Подборка аниме в жанре ${title} на AIanime.`, path:`/genre/${encodeURIComponent(resolvedParams.slug).replace(/%2F/g, '/')}`, items:filtered.slice(0, 24).map(item => ({ title:item.title, slug:item.slug })) }))}} />
     <div className="page-head seo-head">
       <Link href="/genres">← Все жанры</Link>
       <h1>{title}</h1>

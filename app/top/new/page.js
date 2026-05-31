@@ -5,8 +5,10 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 
 export const metadata = {
-  title:'Новые аниме — Aianime',
-  description:'Свежие тайтлы и новые релизы.'
+  title: 'Новые аниме — свежие тайтлы на сайте | AIanime',
+  description: 'Новые и недавно добавленные аниме на AIanime: свежие тайтлы, сезоны, онгоинги и страницы просмотра.',
+  alternates: { canonical: '/top/new' },
+  openGraph: { title: 'Новые аниме — свежие тайтлы на сайте | AIanime', description: 'Новые и недавно добавленные аниме на AIanime: свежие тайтлы, сезоны, онгоинги и страницы просмотра.', url: '/top/new', type: 'website' }
 }
 
 export default async function TopListPage(){

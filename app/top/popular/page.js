@@ -5,8 +5,10 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 
 export const metadata = {
-  title:'Популярные аниме — Aianime',
-  description:'Самые популярные тайтлы каталога.'
+  title: 'Популярные аниме сейчас — AIanime',
+  description: 'Популярные аниме из каталога AIanime: тайтлы, которые чаще открывают и смотрят пользователи.',
+  alternates: { canonical: '/top/popular' },
+  openGraph: { title: 'Популярные аниме сейчас — AIanime', description: 'Популярные аниме из каталога AIanime: тайтлы, которые чаще открывают и смотрят пользователи.', url: '/top/popular', type: 'website' }
 }
 
 export default async function TopListPage(){

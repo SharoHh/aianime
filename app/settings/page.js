@@ -4,8 +4,9 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Профиль — Aianime',
-  description: 'Профиль, избранное, история и персональные данные аккаунта.'
+  title: 'Профиль — AIanime',
+  description: 'Профиль, избранное, история и персональные данные аккаунта.',
+  robots: { index:false, follow:false }
 }
 
 export default function SettingsPage(){

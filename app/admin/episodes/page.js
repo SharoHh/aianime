@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import EpisodesAdminClient from './EpisodesAdminClient'
 
-export const metadata = { title: 'Админка серий' }
+export const metadata = { title:'Админпанель — AIanime', robots:{ index:false, follow:false } }
 
 export default function AdminEpisodesPage(){
   return <main className="page admin-page">

@@ -4,8 +4,9 @@ import Link from 'next/link'
 import AuthClient from './AuthClient'
 
 export const metadata = {
-  title: 'Вход — Aianime',
-  description: 'Вход и регистрация в профиле Aianime.'
+  title: 'Вход и регистрация — AIanime',
+  description: 'Вход и регистрация в профиле AIanime.',
+  robots: { index:false, follow:false }
 }
 
 export default function AuthPage(){

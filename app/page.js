@@ -1,4 +1,4 @@
-// AIanime v137: decorative unicode icons replaced with clean SVG badges.
+// AIanime v145: SEO metadata and Schema.org improvements without design changes.
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const metadata = {
@@ -32,6 +32,7 @@ import HomePopularNowClient from '@/components/HomePopularNowClient'
 import HomeNewOnSiteClient from '@/components/HomeNewOnSiteClient'
 import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
+import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
 
 const icons = ['home','catalog','schedule','collections','ai','favorites','profile','settings']
 const nav = ['Главная','Каталог','Расписание','Подборки','AI-подбор','Избранное','Профиль','Настройки']
@@ -116,7 +117,7 @@ function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
   <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,9).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
   <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
-export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const popularAnime = rankPopularAnime(anime, 24); const newestAnime = rankNewAnime(anime, 12); return <main className="shell"><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
+export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const popularAnime = rankPopularAnime(anime, 24); const newestAnime = rankNewAnime(anime, 12); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
 <header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
   <picture className="hero-lcp-picture" aria-hidden="true">
     <source media="(max-width: 760px)" srcSet="/images/ai-hero-768.webp" />

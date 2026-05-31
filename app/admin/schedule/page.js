@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getWeeklySchedule } from '@/lib/scheduleData'
 import AdminScheduleClient from './AdminScheduleClient'
 
-export const metadata = { title:'Расписание — Aianime admin' }
+export const metadata = { title:'Админпанель — AIanime', robots:{ index:false, follow:false } }
 
 export default async function AdminSchedulePage(){
   const weekly = await getWeeklySchedule()

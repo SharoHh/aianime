@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Подборки аниме — Aianime',
-  description: 'Готовые подборки аниме по настроению, жанрам, рейтингу, новинкам и AI-рекомендациям.',
-  openGraph: { title: 'Подборки аниме — Aianime', description: 'Живые подборки аниме из каталога AIanime.' }
+  title: 'Подборки аниме по настроению и жанрам — AIanime',
+  description: 'Готовые подборки аниме: романтика, приключения, уютные тайтлы, новинки, шедевры и AI-рекомендации под настроение.',
+  alternates: { canonical: '/collections' },
+  openGraph: { title: 'Подборки аниме по настроению и жанрам — AIanime', description: 'Готовые подборки аниме: романтика, приключения, уютные тайтлы, новинки, шедевры и AI-рекомендации под настроение.', url: '/collections', type: 'website' }
 }
 
 import Link from 'next/link'
