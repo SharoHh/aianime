@@ -1,4 +1,4 @@
-// AIanime v112: similar cards show only real AIanime community rating badges.
+// AIanime v113: fix title page crash after v112 rating badge change.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -128,6 +128,19 @@ async function getExternalRatings(item){
     malHref:malId ? `https://myanimelist.net/anime/${malId}` : null,
     shikiHref:shikiData.shikiId ? `https://shikimori.one/animes/${shikiData.shikiId}` : null
   }
+}
+
+
+function hasGlobalRating(item){
+  return Number(item?.siteRatingCount || 0) > 0 && String(item?.rating || '') !== '—'
+}
+
+function ratingToneClass(item){
+  const value = Number(item?.rating || 0)
+  if(!Number.isFinite(value) || value <= 0) return 'rating-tone-low'
+  if(value >= 8.5) return 'rating-tone-gold'
+  if(value >= 6.5) return 'rating-tone-orange'
+  return 'rating-tone-red'
 }
 
 function ratingLabel(value){
@@ -807,7 +820,7 @@ export default async function AnimePage({ params, searchParams }){
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
           <img loading="lazy" decoding="async" src={a.poster} alt={a.title}/>
-          {hasGlobalRating(a) ? <em className="compact-similar-rating rating-gold">★ {a.rating}</em> : null}
+          {hasGlobalRating(a) ? <em className={`compact-similar-rating rating-gold ${ratingToneClass(a)}`}><span aria-hidden="true">★</span><b>{a.rating}</b></em> : null}
           <b>{a.title}</b>
           <span>{a.meta}</span>
         </Link>)}
