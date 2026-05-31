@@ -7,7 +7,7 @@ export async function POST(request){
     const historySlugs = new Set((body.history || []).map(x => x.slug))
     const favoriteSlugs = new Set((body.favorites || []).map(x => x.slug))
     const ratings = body.ratings || {}
-    const anime = await getAnimeList({ limit: 1000 })
+    const anime = await getAnimeList({ limit: 720 })
 
     const watched = anime.filter(item => historySlugs.has(item.slug) || favoriteSlugs.has(item.slug))
     const genreScore = new Map()

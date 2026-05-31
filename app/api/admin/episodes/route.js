@@ -1,4 +1,4 @@
-import { getAnimeList, getEpisodesBySlug, normalizeEpisodeForDb } from '@/lib/animeRepository'
+import { getAnimeBySlugFromRepo, getAnimeList, getEpisodesBySlug, normalizeEpisodeForDb } from '@/lib/animeRepository'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 
 function json(data, status = 200){
@@ -7,14 +7,14 @@ function json(data, status = 200){
 
 export async function GET(req){
   const slug = req.nextUrl.searchParams.get('slug')
-  const anime = await getAnimeList({ limit: 1200 })
 
   if(slug){
-    const item = anime.find(a => a.slug === slug)
+    const item = await getAnimeBySlugFromRepo(slug)
     const episodes = await getEpisodesBySlug(slug, item?.episodes || item?.episodesList?.length || 12)
     return json({ ok: true, mode: hasSupabase() ? 'supabase' : 'fallback', slug, item, episodes })
   }
 
+  const anime = await getAnimeList({ limit: 720 })
   return json({
     ok: true,
     mode: hasSupabase() ? 'supabase' : 'fallback',

@@ -6,7 +6,7 @@ export async function POST(req){
   const query = String(body.query || '')
   const baseSlug = body.baseSlug ? String(body.baseSlug) : null
   const limit = Math.min(Math.max(Number(body.limit || 10), 1), 24)
-  const list = await getAnimeList({ limit: 1200 })
+  const list = await getAnimeList({ limit: 720 })
   const results = recommendAnime(list, query, { baseSlug, limit })
 
   return Response.json({
