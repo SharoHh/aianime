@@ -18212,3 +18212,253 @@ html body .how-modal-steps span{
   .site-footer.site-footer-clean .site-footer-links a{font-size:11.5px !important;padding:0 8px !important;}
   .site-footer.site-footer-clean .site-footer-note{white-space:normal !important;line-height:1.25 !important;padding:8px 12px !important;}
 }
+
+/* AIanime v100: modal really outside hero + lighter footer */
+html body .content > .how-modal{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:2147483000 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:18px !important;
+  pointer-events:none !important;
+  opacity:0 !important;
+  transform:none !important;
+  background:transparent !important;
+  overflow:hidden !important;
+  transition:opacity .14s ease !important;
+}
+html body .content > .how-modal-toggle:checked ~ .how-modal,
+html body .how-modal-toggle:checked ~ .how-modal{
+  opacity:1 !important;
+  pointer-events:auto !important;
+}
+html:has(.how-modal-toggle:checked) body{
+  overflow:hidden !important;
+}
+html body .content > .how-modal .how-modal-backdrop{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  background:rgba(255,255,255,.42) !important;
+  backdrop-filter:blur(4px) saturate(1.04) !important;
+  cursor:pointer !important;
+}
+html body .content > .how-modal .how-modal-card{
+  position:relative !important;
+  z-index:2 !important;
+  width:min(430px,calc(100vw - 34px)) !important;
+  max-width:min(430px,calc(100vw - 34px)) !important;
+  max-height:calc(100dvh - 42px) !important;
+  overflow:auto !important;
+  overscroll-behavior:contain !important;
+  padding:20px 20px 18px !important;
+  border-radius:24px !important;
+  background:rgba(255,255,255,.985) !important;
+  border:1px solid rgba(231,220,246,.98) !important;
+  box-shadow:0 32px 90px rgba(55,42,86,.20), inset 0 1px 0 #fff !important;
+  backdrop-filter:blur(18px) !important;
+}
+html body .content > .how-modal .how-modal-card::before{
+  display:none !important;
+  content:none !important;
+}
+html body .content > .how-modal .how-modal-close{
+  position:absolute !important;
+  top:14px !important;
+  right:14px !important;
+  width:30px !important;
+  height:30px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:50% !important;
+  background:#f5effb !important;
+  color:#5f566e !important;
+  font-size:20px !important;
+  font-weight:950 !important;
+  text-decoration:none !important;
+  cursor:pointer !important;
+}
+html body .content > .how-modal .how-modal-card h2{
+  margin:0 42px 14px 0 !important;
+  font-size:24px !important;
+  line-height:1.08 !important;
+  letter-spacing:-.055em !important;
+  color:#27223e !important;
+}
+html body .content > .how-modal .how-modal-steps{
+  display:grid !important;
+  gap:9px !important;
+  margin:0 !important;
+}
+html body .content > .how-modal .how-modal-steps article{
+  display:grid !important;
+  grid-template-columns:40px minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:12px !important;
+  min-height:0 !important;
+  padding:12px !important;
+  border-radius:18px !important;
+  background:linear-gradient(135deg,rgba(255,247,252,.96),rgba(250,246,255,.94)) !important;
+  border:1px solid rgba(239,226,247,.92) !important;
+  box-shadow:none !important;
+}
+html body .content > .how-modal .how-modal-steps b{
+  width:40px !important;
+  height:40px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:14px !important;
+  background:linear-gradient(135deg,#ffe8f7,#f1e6ff) !important;
+  color:#e7409e !important;
+  font-size:18px !important;
+  line-height:1 !important;
+}
+html body .content > .how-modal .how-modal-steps strong{
+  display:block !important;
+  margin:0 0 3px !important;
+  font-size:14px !important;
+  line-height:1.16 !important;
+  color:#29243f !important;
+  letter-spacing:-.02em !important;
+}
+html body .content > .how-modal .how-modal-steps span{
+  display:block !important;
+  max-width:100% !important;
+  font-size:12.2px !important;
+  line-height:1.33 !important;
+  color:#635d72 !important;
+  font-weight:760 !important;
+}
+@media(max-width:560px){
+  html body .content > .how-modal{padding:12px !important;place-items:center !important;}
+  html body .content > .how-modal .how-modal-card{width:calc(100vw - 24px) !important;max-width:calc(100vw - 24px) !important;padding:18px 16px 16px !important;border-radius:22px !important;}
+  html body .content > .how-modal .how-modal-card h2{font-size:22px !important;}
+  html body .content > .how-modal .how-modal-steps article{grid-template-columns:38px minmax(0,1fr) !important;padding:11px !important;gap:10px !important;}
+  html body .content > .how-modal .how-modal-steps b{width:38px !important;height:38px !important;font-size:17px !important;}
+  html body .content > .how-modal .how-modal-steps span{font-size:11.8px !important;}
+}
+
+.site-footer.site-footer-minimal{
+  margin:26px auto 0 !important;
+  padding:0 24px 22px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,0),rgba(250,247,255,.32)) !important;
+  color:#403959 !important;
+}
+.site-footer.site-footer-minimal::before{
+  display:none !important;
+  content:none !important;
+}
+.site-footer.site-footer-minimal .site-footer-inner{
+  width:min(1180px,100%) !important;
+  max-width:1180px !important;
+  min-height:52px !important;
+  margin:0 auto !important;
+  padding:14px 0 0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:16px !important;
+  border-top:1px solid rgba(224,214,242,.86) !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
+.site-footer.site-footer-minimal .site-footer-logo{
+  min-width:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:9px !important;
+  color:#2d2646 !important;
+  text-decoration:none !important;
+}
+.site-footer.site-footer-minimal .site-footer-logo-mark{
+  width:30px !important;
+  height:30px !important;
+  border-radius:11px !important;
+  background:#fff !important;
+  border:1px solid rgba(234,224,248,.96) !important;
+  box-shadow:0 10px 22px rgba(116,78,160,.08) !important;
+}
+.site-footer.site-footer-minimal .site-footer-logo-mark img{
+  width:22px !important;
+  height:22px !important;
+}
+.site-footer.site-footer-minimal .site-footer-logo strong{
+  font-size:17px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  letter-spacing:-.055em !important;
+}
+.site-footer.site-footer-minimal .site-footer-logo em{
+  display:block !important;
+  margin-top:2px !important;
+  color:#9b91aa !important;
+  font-size:10px !important;
+  line-height:1 !important;
+  font-weight:750 !important;
+}
+.site-footer.site-footer-minimal .site-footer-links{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:2px !important;
+  flex-wrap:wrap !important;
+}
+.site-footer.site-footer-minimal .site-footer-links a{
+  min-height:28px !important;
+  padding:0 9px !important;
+  border-radius:999px !important;
+  background:transparent !important;
+  border:0 !important;
+  color:#746c86 !important;
+  font-size:11.5px !important;
+  font-weight:850 !important;
+  box-shadow:none !important;
+  text-decoration:none !important;
+}
+.site-footer.site-footer-minimal .site-footer-links a:hover{
+  color:#8d55ee !important;
+  background:#f8f1ff !important;
+  transform:none !important;
+}
+.site-footer.site-footer-minimal .site-footer-note{
+  max-width:none !important;
+  margin:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#9a91aa !important;
+  white-space:nowrap !important;
+  font-size:10.8px !important;
+  line-height:1 !important;
+  font-weight:800 !important;
+}
+.site-footer.site-footer-minimal .site-footer-note span{
+  color:#645b74 !important;
+  font-weight:950 !important;
+}
+.site-footer.site-footer-minimal .site-footer-note b{
+  color:#9a91aa !important;
+  font-size:10.8px !important;
+  line-height:1 !important;
+  font-weight:800 !important;
+}
+.admin-page + .site-footer,
+.admin-hub-page + .site-footer{
+  display:none !important;
+}
+@media(max-width:900px){
+  .site-footer.site-footer-minimal{padding:0 18px 84px !important;}
+  .site-footer.site-footer-minimal .site-footer-inner{display:grid !important;grid-template-columns:1fr !important;gap:10px !important;text-align:center !important;justify-items:center !important;padding-top:16px !important;}
+  .site-footer.site-footer-minimal .site-footer-logo{justify-content:center !important;}
+  .site-footer.site-footer-minimal .site-footer-note{white-space:normal !important;line-height:1.25 !important;justify-content:center !important;}
+}

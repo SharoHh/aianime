@@ -91,7 +91,8 @@ function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
   <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><em>★ {a.rating}</em></Link>)}</div>
   <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
-export default async function Home(){const [anime, weeklySchedule] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule()]); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
+export default async function Home(){const [anime, weeklySchedule] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule()]); return <main className="shell"><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
+<header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
   <picture className="hero-lcp-picture" aria-hidden="true">
     <source media="(max-width: 760px)" srcSet="/images/ai-hero-768.webp" />
     <img className="hero-lcp-image" src="/images/ai-hero-1280.webp" alt="" loading="eager" decoding="async" fetchPriority="high" />
@@ -101,10 +102,11 @@ export default async function Home(){const [anime, weeklySchedule] = await Promi
     <span>AI РЕКОМЕНДАЦИЯ ДНЯ</span>
     <h1>Твоё следующее <br/><strong>любимое</strong> аниме</h1>
     <p>Умный подбор на основе твоих предпочтений и настроения</p>
-    <input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
     <div className="hero-actions"><Link href="/ai" className="primary">Подобрать аниме</Link><label htmlFor="how-modal-toggle" className="secondary how-works-btn">Как это работает?</label></div>
     <div className="hero-prompts"><Link href="/ai?q=уютное%20аниме%20на%20вечер">Уютное на вечер</Link><Link href="/ai?q=мрачный%20психологический%20триллер">Психология</Link><Link href="/ai?q=романтика%20без%20кринжа">Романтика</Link></div>
-    <div className="how-modal" aria-hidden="true">
+  </div>
+</section>
+<div className="how-modal" aria-hidden="true">
       <label className="how-modal-backdrop" htmlFor="how-modal-toggle" />
       <div className="how-modal-card" role="dialog" aria-modal="true" aria-labelledby="how-modal-title">
         <label className="how-modal-close" htmlFor="how-modal-toggle" aria-label="Закрыть">×</label>
@@ -116,6 +118,4 @@ export default async function Home(){const [anime, weeklySchedule] = await Promi
         </div>
       </div>
     </div>
-  </div>
-</section>
 <SectionTitle icon="♨" title="Популярное сейчас"/><div className="poster-row">{anime.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}
