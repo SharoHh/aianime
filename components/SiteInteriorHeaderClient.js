@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v119: shared light menu for internal pages, hidden on home and title pages.
+// AIanime v120: shared compact light menu for internal pages, hidden on home and title pages.
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
@@ -17,7 +17,7 @@ export default function SiteInteriorHeaderClient(){
   const pathname = usePathname()
   if(shouldHide(pathname)) return null
 
-  return <header className="site-interior-header" data-aianime-interior-menu="v119" aria-label="Меню сайта">
+  return <header className="site-interior-header" data-aianime-interior-menu="v120" aria-label="Меню сайта">
     <div className="site-interior-header__bar">
       <Link href="/" className="site-interior-header__brand" aria-label="AIanime — на главную">
         <img src="/aianime-logo.png" alt="" aria-hidden="true" />

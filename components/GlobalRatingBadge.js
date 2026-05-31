@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v118: compact flat traffic-light community rating badge without star icon.
+// AIanime v121: subtle compact rating badge for cards and similar titles.
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings } from '@/lib/userStorage'
 
@@ -58,7 +58,7 @@ export default function GlobalRatingBadge({ slug, score = null, count = 0, class
 
   if(!label) return null
 
-  return <span className={`global-rating-badge ${toneClass(visibleScore)} ${className}`.trim()} title={`Рейтинг AIanime: ${label}/10`}>
+  return <span className={`global-rating-badge global-rating-badge-v121 ${toneClass(visibleScore)} ${className}`.trim()} title={`Рейтинг AIanime: ${label}/10`}>
     <b>{label}</b>
   </span>
 }
