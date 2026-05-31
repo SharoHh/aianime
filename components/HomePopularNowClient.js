@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v123: popular block is ranked from real user actions, not random rotation.
+// AIanime v125: popular block uses real actions internally, but does not expose raw action counts in UI.
 import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { trackPopularityEvent } from '@/components/PopularityTrackerClient'
@@ -13,11 +13,13 @@ function cleanText(value){
 
 function statusLabel(item){
   const actions = Number(item?.livePopularityActions || 0) || 0
-  if(actions > 0) return `${actions} действий`
   const status = String(item?.status || '').toLowerCase()
-  if(status === 'ongoing') return 'Сейчас смотрят'
+  // Сырые счётчики вроде "1 действие" не показываем пользователю:
+  // они нужны только для сортировки популярности, а в карточке выглядят как баг.
+  if(actions > 0) return 'Сейчас смотрят'
+  if(status === 'ongoing') return 'Онгоинг'
   if(item?.kind === 'movie') return 'Фильм'
-  return 'Набирает интерес'
+  return 'В тренде'
 }
 
 function metaLine(item){

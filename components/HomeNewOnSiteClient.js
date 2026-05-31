@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v123: latest additions block for the home page.
+// AIanime v126: latest additions use the same tall card format as Popular Now without extra status chips.
 import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { trackPopularityEvent } from '@/components/PopularityTrackerClient'
@@ -18,12 +18,6 @@ function metaLine(item){
   return parts.filter(Boolean).join(' • ')
 }
 
-function newLabel(item, index){
-  const status = String(item?.status || '').toLowerCase()
-  if(status === 'ongoing') return 'Онгоинг'
-  if(index < 3) return 'Новое'
-  return 'Добавлено'
-}
 
 export default function HomeNewOnSiteClient({ anime = [] }){
   const visible = Array.isArray(anime) ? anime.filter(item => item?.slug && item?.title).slice(0, 5) : []
@@ -46,8 +40,8 @@ export default function HomeNewOnSiteClient({ anime = [] }){
       >
         <img loading={index < 2 ? 'eager' : 'lazy'} decoding="async" src={item.poster} alt={item.title}/>
         <GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/>
+        <div className="home-new-shade" />
         <div className="home-new-copy">
-          <span>{newLabel(item, index)}</span>
           <b>{item.title}</b>
           {item.originalTitle || item.englishTitle ? <em>{cleanText(item.originalTitle || item.englishTitle)}</em> : null}
           <small>{metaLine(item)}</small>
