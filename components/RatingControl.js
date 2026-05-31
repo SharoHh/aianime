@@ -17,6 +17,16 @@ function displayScore(value){
   return (rating * 2).toFixed(1).replace('.0', '')
 }
 
+
+function ratingCountLabel(count){
+  const number = Math.max(0, Number(count || 0) || 0)
+  const mod10 = number % 10
+  const mod100 = number % 100
+  if(mod10 === 1 && mod100 !== 11) return `${number} оценка`
+  if(mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${number} оценки`
+  return `${number} оценок`
+}
+
 function averageScore(siteRating, ownValue){
   const value = Number(siteRating?.value || 0)
   const count = Number(siteRating?.count || 0)
@@ -48,13 +58,13 @@ export default function RatingControl({ slug, siteRating = null }){
 
   function rate(next){
     if(!user){
-      pushToast('Войди в аккаунт, чтобы ставить оценки.', 'error')
+      pushToast('Войди в аккаунт, чтобы оценивать тайтлы.', 'error')
       return
     }
     const valueToSave = value === next ? 0 : next
     const ok = setUserRating(slug, valueToSave)
     if(!ok){
-      pushToast('Войди в аккаунт, чтобы ставить оценки.', 'error')
+      pushToast('Войди в аккаунт, чтобы оценивать тайтлы.', 'error')
       return
     }
     setValue(valueToSave)
@@ -62,16 +72,15 @@ export default function RatingControl({ slug, siteRating = null }){
     pushToast(valueToSave ? `Оценка сохранена: ${displayScore(valueToSave)}/10` : 'Оценка удалена', 'success')
   }
 
-  return <section className="title-rating-panel" aria-label="Оценка тайтла">
+  return <section className="title-rating-panel title-rating-panel-v105" aria-label="Рейтинг тайтла">
     <div className="title-rating-panel__summary">
-      <span>Наш рейтинг</span>
       <b>{summary.score}</b>
-      <em>{summary.count ? `${summary.count} оценок` : 'пока нет оценок'}</em>
+      <em>{summary.count ? ratingCountLabel(summary.count) : 'пока нет оценок'}</em>
     </div>
     <div className="title-rating-panel__control">
-      <span>{user ? (value ? `Твоя оценка: ${displayScore(value)}/10` : 'Поставь оценку') : 'Войди, чтобы оценить'}</span>
+      <span>{user ? (value ? `Оценка учтена: ${displayScore(value)}/10` : 'Оценить тайтл') : 'Войди, чтобы оценить'}</span>
       <div className="rating-control" role="group" aria-label="Поставить оценку">
-        {[1,2,3,4,5].map(n=><button type="button" key={n} onClick={()=>rate(n)} className={n<=value?'active':''} aria-pressed={n<=value}>★</button>)}
+        {[1,2,3,4,5].map(n=><button type="button" key={n} onClick={()=>rate(n)} className={n<=value?'active':''} aria-pressed={n<=value} title={`Поставить ${n * 2}/10`}>★</button>)}
       </div>
       {!user ? <Link href={loginHref()} className="rating-login-link">Войти</Link> : null}
     </div>

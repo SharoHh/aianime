@@ -29,7 +29,7 @@ export default function UserRatingBadge({ slug, compact = false }){
   const score = displayScore(value)
   if(!score) return null
 
-  return <span className={compact ? 'user-rating-badge compact' : 'user-rating-badge'} title={`Твоя оценка: ${score}/10`}>
-    <span>★</span>{compact ? score : `Твоя ${score}`}
+  return <span className={compact ? 'user-rating-badge compact' : 'user-rating-badge'} title={`Оценка: ${score}/10`}>
+    <span>★</span>{compact ? score : score}
   </span>
 }
