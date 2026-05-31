@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v110: replace broken Shiki icon glyph with a clean branded badge.
+// AIanime v111: prevent optimistic rating count double increment after local sync event.
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings, setUserRating } from '@/lib/userStorage'
@@ -152,14 +152,22 @@ export default function RatingControl({ slug, siteRating = null, sources = [] })
     }
     const previousValue = value
     const valueToSave = value === next ? 0 : next
+
+    // Сначала обновляем UI, потом пишем localStorage/Supabase.
+    // Иначе setUserRating() успевает отправить anime:user-updated,
+    // локальный обработчик ставит count=1, а затем optimistic update добавляет
+    // тот же голос ещё раз — из-за этого после 1 звезды было "2 оценки".
+    setValue(valueToSave)
+    setOptimisticSiteRating(current => applyOptimisticVote(current, previousValue, valueToSave))
+
     const ok = setUserRating(slug, valueToSave)
     if(!ok){
+      setValue(previousValue)
+      setOptimisticSiteRating(normalizeSiteRating(siteRating))
       pushToast('Войди в аккаунт, чтобы оценивать тайтлы.', 'error')
       return
     }
-    setValue(valueToSave)
-    setOptimisticSiteRating(current => applyOptimisticVote(current, previousValue, valueToSave))
-    try{ window.dispatchEvent(new CustomEvent('anime:rating-updated', { detail:{ slug, value:valueToSave } })) }catch{}
+
     pushToast(valueToSave ? `Оценка сохранена: ${displayScoreFromFive(valueToSave)}/10` : 'Оценка удалена', 'success')
   }
 
