@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useAuthState } from '@/components/AuthStateClient'
 import { getHistory } from '@/lib/userStorage'
+import { trackPopularityEvent } from '@/components/PopularityTrackerClient'
 
 function imageSrc(value){
   const src = String(value || '').trim()
@@ -26,7 +27,7 @@ function normalizeHistoryItem(item){
     meta:item.meta || `Серия ${episode}`,
     voice:item.voice || null,
     provider:item.provider || null,
-    href:`/anime/${item.slug}?episode=${episode}${item.voice ? `&voice=${encodeURIComponent(item.voice)}` : ''}#player`
+    href:`/anime/${item.slug}?episode=${episode}${item.voice ? `&voice=${encodeURIComponent(item.voice)}` : ''}&resume=1#player`
   }
 }
 
@@ -34,6 +35,21 @@ function readHistory(){
   return getHistory().map(normalizeHistoryItem).filter(Boolean)
 }
 
+function rememberResumeClick(item){
+  if(typeof window === 'undefined' || !item?.slug) return
+  try{
+    sessionStorage.setItem('aianime:resume-target', JSON.stringify({
+      slug:item.slug,
+      episode:item.episode,
+      voice:item.voice || '',
+      at:Date.now()
+    }))
+  }catch{}
+  trackPopularityEvent(item.slug, 'continue')
+}
+
+
+// AIanime v135: continue watching opens the player directly and tracks resume actions.
 export default function ContinueWatchingClient(){
   const { user, loading } = useAuthState()
   const [items,setItems] = useState([])
@@ -71,12 +87,24 @@ export default function ContinueWatchingClient(){
         <Link href="/catalog">Открыть каталог</Link>
       </div>
     }
-    return <div className="continue-row">
-      {items.map(item => <Link href={item.href} className="continue-card" key={`${item.slug}-${item.episode}`}>
+    return <div className="continue-row continue-row-v135">
+      {items.map(item => <Link
+        href={item.href}
+        className="continue-card resume-watch-card resume-watch-card-v135"
+        key={`${item.slug}-${item.episode}`}
+        prefetch={false}
+        onClick={() => rememberResumeClick(item)}
+        aria-label={`Продолжить смотреть ${item.title}, серия ${item.episode}`}
+      >
         <img loading="lazy" decoding="async" src={item.poster} alt={item.title}/>
-        <div className="play">▶</div>
-        <div className="continue-info"><b>{item.title}</b><span>Серия {item.episode}{item.voice ? ` · ${item.voice}` : ''}</span><div className="bar"><i style={{width:`${Math.max(item.progress, 8)}%`}}/></div></div>
-        <em>{item.progress ? `${Math.round(item.progress)}%` : 'Kodik'}</em>
+        <div className="play" aria-hidden="true">▶</div>
+        <div className="continue-play-badge">Продолжить</div>
+        <div className="continue-info">
+          <b>{item.title}</b>
+          <span>Серия {item.episode}{item.voice ? ` · ${item.voice}` : ''}</span>
+          <div className="bar"><i style={{width:`${Math.max(item.progress, 8)}%`}}/></div>
+        </div>
+        <em>{item.progress ? `${Math.round(item.progress)}%` : 'Плеер'}</em>
       </Link>)}
     </div>
   }, [loading, hasAccount, items])

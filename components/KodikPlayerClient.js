@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { saveHistoryItem } from '@/lib/userStorage'
 import { useAuthState } from '@/components/AuthStateClient'
 
+// AIanime v135: resume links from the home page should land on the actual player, not just the title page.
+
 function playerEndpoint(slug, episode, voice){
   const params = new URLSearchParams({ slug:String(slug || ''), episode:String(episode || 1) })
   if(voice) params.set('voice', voice)
@@ -346,6 +348,37 @@ export default function KodikPlayerClient({
   const uniqueNativeEpisodes = new Set(activeEpisodes.map(item => Number(item.episodeNumber || 1)))
   const hasRealEpisodeButtons = activeEpisodes.length > 1 && uniqueNativeEpisodes.size > 1
   const canUseVoiceSelector = voices.length > 1
+
+
+  useEffect(() => {
+    if(typeof window === 'undefined') return
+    let shouldScroll = false
+    try{
+      const url = new URL(window.location.href)
+      shouldScroll = url.hash === '#player' || url.searchParams.get('resume') === '1'
+      const raw = sessionStorage.getItem('aianime:resume-target')
+      if(raw){
+        const target = JSON.parse(raw)
+        if(target?.slug === slug && Date.now() - Number(target?.at || 0) < 15000) shouldScroll = true
+      }
+    }catch{}
+    if(!shouldScroll) return
+
+    const scrollToPlayer = () => {
+      try{
+        const node = document.getElementById('player')
+        if(node) node.scrollIntoView({ behavior:'smooth', block:'start' })
+      }catch{}
+    }
+
+    scrollToPlayer()
+    const first = window.setTimeout(scrollToPlayer, 120)
+    const second = window.setTimeout(scrollToPlayer, 520)
+    return () => {
+      window.clearTimeout(first)
+      window.clearTimeout(second)
+    }
+  }, [slug])
 
   useEffect(() => {
     const normalized = normalizeOptions(playerOptions)
