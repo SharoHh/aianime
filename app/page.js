@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
 
 import Link from 'next/link'
 import { collections } from '@/lib/data'
@@ -90,6 +90,10 @@ function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
   <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
 export default async function Home(){const anime = await getAnimeList({limit:720}); const weeklySchedule = await getWeeklySchedule(); return <main className="shell"><Sidebar/><section className="content"><header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
+  <picture className="hero-lcp-picture" aria-hidden="true">
+    <source media="(max-width: 760px)" srcSet="/images/ai-hero-768.webp" />
+    <img className="hero-lcp-image" src="/images/ai-hero-1280.webp" alt="" loading="eager" decoding="async" fetchPriority="high" />
+  </picture>
   <div className="hero-image-overlay" />
   <div className="hero-copy">
     <span>AI РЕКОМЕНДАЦИЯ ДНЯ</span>

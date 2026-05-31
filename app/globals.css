@@ -75,7 +75,7 @@ a{text-decoration:none;color:inherit}button,input{font:inherit}
   display:block !important;
   height:390px !important;
   padding:0 !important;
-  background-image:url('/images/ai-hero.png') !important;
+  background-image:none !important;
   background-size:cover !important;
   background-position:center !important;
   border-radius:20px;
@@ -426,7 +426,7 @@ a{text-decoration:none;color:inherit}button,input{font:inherit}
   margin-bottom:26px !important;
   border-radius:24px !important;
   overflow:hidden !important;
-  background-image:url('/images/ai-hero.png') !important;
+  background-image:none !important;
   background-size:cover !important;
   background-position:center center !important;
   border:1px solid #eee8fb !important;
@@ -17679,4 +17679,54 @@ a.rate-chip.is-link:focus-visible{
 }
 html[data-aianime-nav-speed="v85"] body{
   background:#fdfcff;
+}
+
+
+/* AIanime v86: performance pass - lighter LCP hero and calmer navigation warmup */
+.hero.ai-hero-image{
+  background-image:none !important;
+  background-color:#f5f0ff !important;
+  contain:layout paint !important;
+}
+.hero.ai-hero-image .hero-lcp-picture,
+.hero.ai-hero-image .hero-lcp-image{
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  z-index:0 !important;
+}
+.hero.ai-hero-image .hero-lcp-image{
+  object-fit:cover !important;
+  object-position:center center !important;
+  transform:translateZ(0) !important;
+}
+.hero.ai-hero-image .hero-image-overlay{z-index:1 !important;}
+.hero.ai-hero-image .hero-copy{z-index:2 !important;}
+.mood-assistant{content-visibility:auto;}
+.poster img,
+.continue-card img,
+.mini img,
+.compact-similar img{
+  content-visibility:auto;
+}
+@media (max-width:760px){
+  .hero.ai-hero-image{
+    height:330px !important;
+    min-height:330px !important;
+  }
+  .hero.ai-hero-image .hero-lcp-image{object-position:58% center !important;}
+}
+
+/* AIanime v87: disable custom route warmup/progress layer completely.
+   Navigation now uses only native Next.js Link behavior to remove transition loops. */
+.route-progress-bar,
+.route-transition-surface,
+.route-transition-card{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  animation:none!important;
+  transition:none!important;
 }
