@@ -11,7 +11,7 @@ const footerLinks = [
 export default function SiteFooter(){
   const year = new Date().getFullYear()
 
-  return <footer className="site-footer site-footer-compact site-footer-clean" data-aianime-footer="v99">
+  return <footer className="site-footer site-footer-minimal" data-aianime-footer="v100">
     <div className="site-footer-inner">
       <Link href="/" className="site-footer-logo" aria-label="На главную Aianime">
         <span className="site-footer-logo-mark" aria-hidden="true"><img src="/aianime-logo.png" alt="" /></span>
