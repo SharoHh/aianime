@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v116: single solid-color community rating badge for cards.
+// AIanime v118: compact flat traffic-light community rating badge without star icon.
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings } from '@/lib/userStorage'
 
@@ -24,7 +24,7 @@ function formatScore(value){
 function toneClass(score){
   const value = Number(score || 0)
   if(!Number.isFinite(value) || value <= 0) return 'rating-tone-red'
-  if(value >= 8.5) return 'rating-tone-gold'
+  if(value >= 8.5) return 'rating-tone-green'
   if(value >= 6.5) return 'rating-tone-orange'
   return 'rating-tone-red'
 }
@@ -59,7 +59,6 @@ export default function GlobalRatingBadge({ slug, score = null, count = 0, class
   if(!label) return null
 
   return <span className={`global-rating-badge ${toneClass(visibleScore)} ${className}`.trim()} title={`Рейтинг AIanime: ${label}/10`}>
-    <span aria-hidden="true">★</span>
     <b>{label}</b>
   </span>
 }
