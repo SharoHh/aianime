@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v108: instant community rating update + strict external source ratings.
+// AIanime v110: replace broken Shiki icon glyph with a clean branded badge.
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings, setUserRating } from '@/lib/userStorage'
@@ -21,7 +21,8 @@ function displayScoreFromFive(value){
 function displayScoreFromTen(value){
   const rating = Number(value || 0)
   if(!Number.isFinite(rating) || rating <= 0) return '—'
-  return rating.toFixed(1).replace('.0', '')
+  const rounded = Math.round(rating * 100) / 100
+  return String(rounded).replace(/\.0$/, '')
 }
 
 function ratingCountLabel(count){
@@ -87,7 +88,7 @@ function sourceLogo(label, explicitLogo){
   if(logo) return logo
   const key = String(label || '').toLowerCase()
   if(key.includes('mal') || key.includes('myanimelist')) return 'MAL'
-  if(key.includes('shiki') || key.includes('shikimori')) return '鳥居'
+  if(key.includes('shiki') || key.includes('shikimori')) return 'Ш'
   return String(label || '').slice(0, 3).toUpperCase()
 }
 
@@ -101,8 +102,15 @@ function sourceClass(label){
 function normalizeSource(item){
   const label = String(item?.label || '').trim()
   const score = displayScoreFromTen(item?.score)
-  if(!label || score === '—') return null
-  return { label, logo:sourceLogo(label, item?.logo), cls:sourceClass(label), score, href:item?.href || '' }
+  const keepEmpty = Boolean(item?.showEmpty) || /mal|myanimelist|shiki|shikimori/i.test(label)
+  if(!label || (score === '—' && !keepEmpty)) return null
+  return {
+    label,
+    logo:sourceLogo(label, item?.logo),
+    cls:`${sourceClass(label)}${score === '—' ? ' is-empty' : ''}`,
+    score,
+    href:item?.href || ''
+  }
 }
 
 export default function RatingControl({ slug, siteRating = null, sources = [] }){
