@@ -1,4 +1,4 @@
-// AIanime v130: how-it-works popover is anchored to the button without background blur.
+// AIanime v137: decorative unicode icons replaced with clean SVG badges.
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 // AIanime v123: real popularity + latest additions blocks on the home page.
@@ -20,6 +20,7 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import HomePopularNowClient from '@/components/HomePopularNowClient'
 import HomeNewOnSiteClient from '@/components/HomeNewOnSiteClient'
 import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 const icons = ['home','catalog','schedule','collections','ai','favorites','profile','settings']
 const nav = ['Главная','Каталог','Расписание','Подборки','AI-подбор','Избранное','Профиль','Настройки']
@@ -74,7 +75,7 @@ function ratingToneClass(item){
 }
 function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
 function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
-function SectionTitle({icon,title}){return <div className="section-title"><h2><span>{icon}</span>{title}</h2><Link href="/catalog">Смотреть все ›</Link></div>}
+function SectionTitle({icon,title}){return <div className="section-title section-title-clean-icons"><h2><HomeSectionIcon type={icon}/>{title}</h2><Link href="/catalog">Смотреть все ›</Link></div>}
 
 function formatStat(value){
   return new Intl.NumberFormat('ru-RU').format(Number(value) || 0)
@@ -122,7 +123,7 @@ export default async function Home(){const [animeRaw, weeklySchedule, popularity
         <h2 id="how-modal-title">Как это работает?</h2>
         <div className="how-modal-steps">
           <article><b>☺</b><div><strong>Опиши настроение</strong><span>Расскажи, что хочешь почувствовать: умиротворение, драйв, ностальгию или что-то другое.</span></div></article>
-          <article><b>✦</b><div><strong>AI найдёт похожие тайтлы</strong><span>Наша система анализирует твои предпочтения и находит аниме, которые тебе подойдут.</span></div></article>
+          <article><b className="how-card-icon"><HomeSectionIcon type="ai"/></b><div><strong>AI найдёт похожие тайтлы</strong><span>Наша система анализирует твои предпочтения и находит аниме, которые тебе подойдут.</span></div></article>
           <article><b>▶</b><div><strong>Открой подборку и смотри</strong><span>Получай персональные рекомендации и наслаждайся просмотром!</span></div></article>
         </div>
       </div>
@@ -130,4 +131,4 @@ export default async function Home(){const [animeRaw, weeklySchedule, popularity
     <div className="hero-prompts"><Link href="/ai?q=уютное%20аниме%20на%20вечер">Уютное на вечер</Link><Link href="/ai?q=мрачный%20психологический%20триллер">Психология</Link><Link href="/ai?q=романтика%20без%20кринжа">Романтика</Link></div>
   </div>
 </section>
-<HomeNewOnSiteClient anime={newestAnime}/><HomePopularNowClient anime={popularAnime}/><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}
+<HomeNewOnSiteClient anime={newestAnime}/><HomePopularNowClient anime={popularAnime}/><SectionTitle icon="continue" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="collections" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}

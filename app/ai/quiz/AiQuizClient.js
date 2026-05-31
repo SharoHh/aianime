@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 const questions = [
   { key:'mood', title:'Какой вайб нужен?', options:['Уютный','Мрачный','Весёлый','Динамичный'] },
@@ -43,7 +44,7 @@ export default function AiQuizClient({ items = [] }){
       </div>)}
     </section>
 
-    <div className="section-title"><h2><span>✦</span>Результат</h2><Link href="/ai">Обычный AI ›</Link></div>
+    <div className="section-title"><h2><HomeSectionIcon type="ai"/>Результат</h2><Link href="/ai">Обычный AI ›</Link></div>
     {results.length ? <div className="ai-results-grid">{results.map(item=><Link className="ai-result-card" href={`/anime/${item.slug}`} key={item.slug}>
       <img loading="lazy" decoding="async" src={item.poster}/>
       <div><span>AI {Math.min(99, Math.round(item.quizScore))}%</span><b>{item.title}</b><p>{item.description}</p><em>{(item.genres || []).slice(0,2).join(' · ')}</em></div>

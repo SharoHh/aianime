@@ -158,8 +158,13 @@ a{text-decoration:none;color:inherit}button,input{font:inherit}
 }
 
 .ai-hero-image .hero-copy > span::before{
-  content: "✦";
-  font-size: 13px;
+  content: "";
+  width:7px;
+  height:7px;
+  border-radius:3px;
+  background:currentColor;
+  display:inline-block;
+  transform:rotate(45deg);
 }
 
 .ai-hero-image .hero-copy h1{
@@ -212,8 +217,13 @@ a{text-decoration:none;color:inherit}button,input{font:inherit}
 
 .ai-hero-image .hero-actions .primary::before,
 .ai-hero-image .hero-actions a.primary::before{
-  content: "✦";
-  font-size: 16px;
+  content: "";
+  width:8px;
+  height:8px;
+  border-radius:3px;
+  background:currentColor;
+  display:inline-block;
+  transform:rotate(45deg);
 }
 
 .ai-hero-image .hero-actions .secondary,
@@ -481,9 +491,14 @@ a{text-decoration:none;color:inherit}button,input{font:inherit}
 }
 
 .hero.ai-hero-image .hero-copy > span::before{
-  content:'✦';
+  content:'';
+  width:7px;
+  height:7px;
+  border-radius:3px;
+  background:currentColor;
+  display:inline-block;
+  transform:rotate(45deg);
   margin-right:7px;
-  font-size:12px;
 }
 
 .hero.ai-hero-image .hero-copy h1{
@@ -543,9 +558,14 @@ a{text-decoration:none;color:inherit}button,input{font:inherit}
 
 .hero.ai-hero-image .hero-actions a.primary::before,
 .hero.ai-hero-image .hero-actions .primary::before{
-  content:'✦';
+  content:'';
+  width:8px;
+  height:8px;
+  border-radius:3px;
+  background:currentColor;
+  display:inline-block;
+  transform:rotate(45deg);
   margin-right:9px;
-  font-size:15px;
 }
 
 .hero.ai-hero-image .hero-actions a.secondary,
@@ -20792,3 +20812,95 @@ html body .shell .rightcol .schedule-reference-item:hover{
   .continue-play-badge{opacity:1;transform:none;top:12px;left:12px;height:28px;font-size:11px;padding:0 10px;}
   .resume-watch-card em{font-size:10px;right:12px;bottom:12px;}
 }
+
+
+/* AIanime v136: replace rough unicode section markers on the home page with clean SVG badges. */
+.section-title h2 .home-section-icon{
+  width:22px;
+  height:22px;
+  border-radius:9px;
+  display:inline-grid;
+  place-items:center;
+  margin-right:9px;
+  color:#9c5cf6;
+  background:linear-gradient(180deg,#fbf8ff,#f3ecff);
+  border:1px solid rgba(157,115,255,.18);
+  box-shadow:0 6px 16px rgba(118,75,180,.07);
+  flex:0 0 auto;
+  vertical-align:-5px;
+}
+.section-title h2 .home-section-icon svg{width:14px;height:14px;display:block;}
+.section-title h2 .home-section-icon-popular{color:#cf61dd;background:linear-gradient(180deg,#fff8ff,#f8ecff);}
+.section-title h2 .home-section-icon-new{color:#b66df4;background:linear-gradient(180deg,#fff9ff,#f7efff);}
+.section-title h2 .home-section-icon-continue{color:#bc5ef0;background:linear-gradient(180deg,#fff8ff,#f5edff);}
+.section-title h2 .home-section-icon-collections{color:#9d67f2;background:linear-gradient(180deg,#fbfaff,#f0ebff);}
+@media(max-width:720px){
+  .section-title h2 .home-section-icon{width:20px;height:20px;border-radius:8px;margin-right:7px;vertical-align:-4px;}
+  .section-title h2 .home-section-icon svg{width:13px;height:13px;}
+}
+
+
+/* AIanime v137: clean decorative SVG icons across internal pages. */
+.site-interior-header__nav .home-section-icon,
+.title-full-nav__links .home-section-icon,
+.compact-ai .home-section-icon,
+.global-search-ai .home-section-icon,
+.top-card .home-section-icon{
+  width:20px;
+  height:20px;
+  border-radius:8px;
+  display:inline-grid;
+  place-items:center;
+  margin:0 7px 0 0;
+  color:currentColor;
+  background:rgba(255,255,255,.58);
+  border:1px solid rgba(157,115,255,.14);
+  box-shadow:none;
+  vertical-align:-5px;
+  flex:0 0 auto;
+}
+.site-interior-header__nav .home-section-icon svg,
+.title-full-nav__links .home-section-icon svg,
+.compact-ai .home-section-icon svg,
+.global-search-ai .home-section-icon svg,
+.top-card .home-section-icon svg{
+  width:13px;
+  height:13px;
+}
+.global-search-ai{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.global-search-ai .home-section-icon{
+  margin:0;
+  color:#fff;
+  background:rgba(255,255,255,.16);
+  border-color:rgba(255,255,255,.22);
+}
+.top-card i{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.top-card i .home-section-icon{
+  margin:0;
+}
+.compact-ai{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.compact-ai .home-section-icon{
+  margin:0;
+}
+.how-card-icon .home-section-icon{
+  width:24px;
+  height:24px;
+  margin:0;
+  color:#9c5cf6;
+  background:#f8efff;
+  border:1px solid rgba(157,115,255,.16);
+}
+.how-card-icon .home-section-icon svg{width:15px;height:15px;}

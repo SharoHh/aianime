@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { getAnimeList } from '@/lib/animeRepository'
 
 function Poster({item}){
@@ -28,13 +29,13 @@ export default async function SeasonPage(){
       <Link className="primary" href="/schedule">Расписание</Link>
     </section>
 
-    <div className="section-title"><h2><span>▻</span>Выходит сейчас</h2><Link href="/catalog">Каталог ›</Link></div>
+    <div className="section-title"><h2><HomeSectionIcon type="continue"/>Выходит сейчас</h2><Link href="/catalog">Каталог ›</Link></div>
     <div className="poster-row">{ongoing.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div>
 
-    <div className="section-title"><h2><span>✦</span>Новинки</h2><Link href="/catalog">Все ›</Link></div>
+    <div className="section-title"><h2><HomeSectionIcon type="new"/>Новинки</h2><Link href="/catalog">Все ›</Link></div>
     <div className="poster-row">{fresh.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div>
 
-    <div className="section-title"><h2><span>♨</span>Топ сезона</h2><Link href="/catalog">Все ›</Link></div>
+    <div className="section-title"><h2><HomeSectionIcon type="popular"/>Топ сезона</h2><Link href="/catalog">Все ›</Link></div>
     <div className="poster-row">{top.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div>
   </main>
 }

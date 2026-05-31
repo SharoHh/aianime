@@ -1,4 +1,4 @@
-// AIanime v119: larger title-page logo; shared internal menu lives outside home.
+// AIanime v137: title menu decorative icons replaced with clean SVG badges.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -16,6 +16,7 @@ import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import WatchTracker from '@/components/WatchTracker'
 import PopularityTrackerClient from '@/components/PopularityTrackerClient'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { encodeSlug } from '@/lib/routeSlugs'
 import { cleanPublicText, isPlaceholderText } from '@/lib/ruContent'
 
@@ -732,7 +733,7 @@ export default async function AnimePage({ params, searchParams }){
           <Link href="/catalog"><span>▦</span>Каталог</Link>
           <Link href="/season"><span>▷</span>Онгоинги</Link>
           <Link href="/schedule"><span>◷</span>Расписание</Link>
-          <Link href="/collections"><span>☆</span>Подборки</Link>
+          <Link href="/collections"><HomeSectionIcon type="new"/>Подборки</Link>
           <Link href="/ai"><span>?</span>Что посмотреть?</Link>
           <Link href="/recommend"><span>↝</span>Случайное</Link>
         </nav>
@@ -784,7 +785,7 @@ export default async function AnimePage({ params, searchParams }){
 
         <div className="compact-actions">
           <Link className="compact-watch" href={titleEpisodeHref(currentEpisodeNumber)}>▶ Смотреть</Link>
-          <Link className="compact-ai" href={`/ai?similar=${item.slug}`}>✦ Похожие через AI</Link>
+          <Link className="compact-ai" href={`/ai?similar=${item.slug}`}><HomeSectionIcon type="ai"/>Похожие через AI</Link>
           <TitleActions item={item}/>
         </div>
       </div>

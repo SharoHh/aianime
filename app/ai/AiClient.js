@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { readJson, saveAiQuery } from '@/lib/userStorage'
 import { scoreAiItem, explainAiMatch, getCatalogHint } from '@/lib/searchRelevance'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 function localScore(item, query){
   return scoreAiItem(item, query)
@@ -90,7 +91,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div> : null}
     </section>
 
-    <div className="section-title"><h2><span>✦</span>AI рекомендует</h2><Link href="/catalog">Каталог ›</Link></div>
+    <div className="section-title"><h2><HomeSectionIcon type="ai"/>AI рекомендует</h2><Link href="/catalog">Каталог ›</Link></div>
     <div className="ai-results-grid">
       {results.slice(0,6).map(item=><Link className="ai-result-card" href={`/anime/${item.slug}`} key={item.slug}>
         <img loading="lazy" decoding="async" src={item.poster} alt="Аниме"/>
