@@ -1,5 +1,6 @@
 'use client'
 
+// AIanime v106: Yummy-like compact global rating strip, no duplicate personal badge/title.
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings, setUserRating } from '@/lib/userStorage'
@@ -11,12 +12,17 @@ function loginHref(){
   return `/auth?next=${encodeURIComponent(window.location.pathname + window.location.hash)}`
 }
 
-function displayScore(value){
+function displayScoreFromFive(value){
   const rating = Number(value || 0)
   if(!Number.isFinite(rating) || rating <= 0) return '—'
   return (rating * 2).toFixed(1).replace('.0', '')
 }
 
+function displayScoreFromTen(value){
+  const rating = Number(value || 0)
+  if(!Number.isFinite(rating) || rating <= 0) return '—'
+  return rating.toFixed(1).replace('.0', '')
+}
 
 function ratingCountLabel(count){
   const number = Math.max(0, Number(count || 0) || 0)
@@ -27,21 +33,36 @@ function ratingCountLabel(count){
   return `${number} оценок`
 }
 
-function averageScore(siteRating, ownValue){
-  const value = Number(siteRating?.value || 0)
-  const count = Number(siteRating?.count || 0)
-  const own = Number(ownValue || 0)
-  if(count > 0 && Number.isFinite(value) && value > 0){
-    return { score:displayScore(value), count }
+function globalSummary(siteRating, localValue, baseScore){
+  const communityValue = Number(siteRating?.value || 0)
+  const communityCount = Number(siteRating?.count || 0)
+  const local = Number(localValue || 0)
+  const fallback = Number(baseScore || 0)
+
+  if(communityCount > 0 && Number.isFinite(communityValue) && communityValue > 0){
+    return { score:displayScoreFromFive(communityValue), label:ratingCountLabel(communityCount) }
   }
-  if(own > 0) return { score:displayScore(own), count:1 }
-  return { score:'—', count:0 }
+  if(local > 0){
+    return { score:displayScoreFromFive(local), label:'1 оценка' }
+  }
+  if(Number.isFinite(fallback) && fallback > 0){
+    return { score:displayScoreFromTen(fallback), label:'рейтинг источников' }
+  }
+  return { score:'—', label:'нет оценок' }
 }
 
-export default function RatingControl({ slug, siteRating = null }){
+function normalizeSource(item){
+  const label = String(item?.label || '').trim()
+  const score = displayScoreFromTen(item?.score)
+  if(!label || score === '—') return null
+  return { label, score, href:item?.href || '' }
+}
+
+export default function RatingControl({ slug, siteRating = null, baseScore = null, sources = [] }){
   const { user } = useAuthState()
   const [value,setValue] = useState(0)
-  const summary = useMemo(() => averageScore(siteRating, value), [siteRating, value])
+  const summary = useMemo(() => globalSummary(siteRating, value, baseScore), [siteRating, value, baseScore])
+  const sourceItems = useMemo(() => (Array.isArray(sources) ? sources : []).map(normalizeSource).filter(Boolean), [sources])
 
   useEffect(()=>{
     const update = () => setValue(user ? Number(getRatings()[slug] || 0) : 0)
@@ -69,18 +90,26 @@ export default function RatingControl({ slug, siteRating = null }){
     }
     setValue(valueToSave)
     try{ window.dispatchEvent(new CustomEvent('anime:rating-updated', { detail:{ slug, value:valueToSave } })) }catch{}
-    pushToast(valueToSave ? `Оценка сохранена: ${displayScore(valueToSave)}/10` : 'Оценка удалена', 'success')
+    pushToast(valueToSave ? `Оценка сохранена: ${displayScoreFromFive(valueToSave)}/10` : 'Оценка удалена', 'success')
   }
 
-  return <section className="title-rating-panel title-rating-panel-v105" aria-label="Рейтинг тайтла">
-    <div className="title-rating-panel__summary">
+  return <section className="title-rating-strip title-rating-strip-v106" aria-label="Рейтинг">
+    <div className="title-rating-main-score" title="Рейтинг AIanime">
+      <span>★</span>
       <b>{summary.score}</b>
-      <em>{summary.count ? ratingCountLabel(summary.count) : 'пока нет оценок'}</em>
+      <em>{summary.label}</em>
     </div>
-    <div className="title-rating-panel__control">
-      <span>{user ? (value ? `Оценка учтена: ${displayScore(value)}/10` : 'Оценить тайтл') : 'Войди, чтобы оценить'}</span>
+
+    {sourceItems.length ? <div className="title-rating-source-list" aria-label="Рейтинги на внешних сервисах">
+      {sourceItems.map(source => source.href
+        ? <a key={source.label} href={source.href} target="_blank" rel="noopener noreferrer" className="title-rating-source-chip" title={`${source.label}: ${source.score}`}>{source.label}<b>{source.score}</b></a>
+        : <span key={source.label} className="title-rating-source-chip" title={`${source.label}: ${source.score}`}>{source.label}<b>{source.score}</b></span>
+      )}
+    </div> : null}
+
+    <div className="title-rating-vote" aria-label="Поставить оценку">
       <div className="rating-control" role="group" aria-label="Поставить оценку">
-        {[1,2,3,4,5].map(n=><button type="button" key={n} onClick={()=>rate(n)} className={n<=value?'active':''} aria-pressed={n<=value} title={`Поставить ${n * 2}/10`}>★</button>)}
+        {[1,2,3,4,5].map(n=><button type="button" key={n} onClick={()=>rate(n)} className={n<=value?'active':''} aria-pressed={n<=value} title={`${n * 2}/10`}>★</button>)}
       </div>
       {!user ? <Link href={loginHref()} className="rating-login-link">Войти</Link> : null}
     </div>
