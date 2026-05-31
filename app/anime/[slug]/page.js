@@ -1,4 +1,4 @@
-// AIanime v113: fix title page crash after v112 rating badge change.
+// AIanime v115: live similar-card rating badges and softer rating tones.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -9,6 +9,7 @@ import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
 import RatingControl from '@/components/RatingControl'
+import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import CommentsClient from '@/components/CommentsClient'
@@ -820,7 +821,7 @@ export default async function AnimePage({ params, searchParams }){
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
           <img loading="lazy" decoding="async" src={a.poster} alt={a.title}/>
-          {hasGlobalRating(a) ? <em className={`compact-similar-rating rating-gold ${ratingToneClass(a)}`}><span aria-hidden="true">★</span><b>{a.rating}</b></em> : null}
+          <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="compact-similar-rating"/>
           <b>{a.title}</b>
           <span>{a.meta}</span>
         </Link>)}

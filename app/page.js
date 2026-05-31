@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-// AIanime v114: softer rating badges with tone classes by community score.
+// AIanime v115: live card rating badges update immediately after user vote.
 
 import Link from 'next/link'
 import { collections } from '@/lib/data'
@@ -15,6 +15,7 @@ import OnboardingClient from '@/components/OnboardingClient'
 import SidebarAccountClient from '@/components/SidebarAccountClient'
 import HeaderAccountClient from '@/components/HeaderAccountClient'
 import SiteStatsClient from '@/components/SiteStatsClient'
+import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 
 const icons = ['home','catalog','schedule','collections','ai','favorites','profile','settings']
 const nav = ['Главная','Каталог','Расписание','Подборки','AI-подбор','Избранное','Профиль','Настройки']
@@ -67,7 +68,7 @@ function ratingToneClass(item){
   if(value >= 6.5) return 'rating-tone-orange'
   return 'rating-tone-red'
 }
-function Poster({item}){const showRating = hasGlobalRating(item); return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/>{showRating ? <div className={`rating rating-gold ${ratingToneClass(item)}`}><span aria-hidden="true">★</span><b>{item.rating}</b></div> : null}<div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
+function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount} className="rating"/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
 function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
 function SectionTitle({icon,title}){return <div className="section-title"><h2><span>{icon}</span>{title}</h2><Link href="/catalog">Смотреть все ›</Link></div>}
 
@@ -96,7 +97,7 @@ function SiteStatsWidget({anime, weeklySchedule}){
 function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
   <HomeScheduleWidgetClient scheduleDays={weeklySchedule?.days || []} initialDay={weeklySchedule?.todayIndex || 0}/>
   <HomeMoodPickerClient anime={anime.slice(0,40)}/>
-  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div>{hasGlobalRating(a) ? <em className={`mini-rating-gold ${ratingToneClass(a)}`}><span aria-hidden="true">★</span><b>{a.rating}</b></em> : null}</Link>)}</div>
+  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
   <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
 export default async function Home(){const [anime, weeklySchedule] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule()]); return <main className="shell"><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
