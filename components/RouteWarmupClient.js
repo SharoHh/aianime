@@ -1,9 +1,8 @@
 'use client'
 
-// AIanime v90
-// Безопасный фикс зацикливания переходов: убираем кастомный слой прогрева ссылок,
-// глобальные обработчики pointer/focus/touch/click и искусственный progress bar.
-// Навигация теперь работает штатно через Next.js Link без дополнительных router.prefetch.
+// AIanime v91
+// Кастомный prefetch/progress отключён полностью: Next.js сам обрабатывает переходы.
+// Это убирает зацикливание при навигации и не трогает каталог, картинки, Supabase или плеер.
 export default function RouteWarmupClient(){
   return null
 }
