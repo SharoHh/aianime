@@ -1,3 +1,4 @@
+// AIanime v95: title page fetches list/episodes/rating in parallel.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -59,7 +60,7 @@ async function fetchJsonSoft(url, options = {}){
 async function getSiteRatingStats(slug){
   if(!hasSupabase() || !slug) return { value:null, count:0 }
   try{
-    const res = await supabaseRequest(`user_ratings?select=rating&anime_slug=eq.${encodeURIComponent(slug)}&limit=1000`, { method:'GET', timeout:650 })
+    const res = await supabaseRequest(`user_ratings?select=rating&anime_slug=eq.${encodeURIComponent(slug)}&limit=1000`, { method:'GET', timeout:180 })
     if(!res.ok) return { value:null, count:0 }
     const rows = await res.json()
     if(!Array.isArray(rows) || !rows.length) return { value:null, count:0 }
@@ -655,9 +656,10 @@ export default async function AnimePage({ params, searchParams }){
   const title = cleanPublicText(item.title) || 'Без названия'
   const originalTitle = cleanPublicText(item.originalTitle || item.englishTitle || item.title)
   const description = cleanPublicText(item.description) || 'Описание скоро появится.'
-  const [allAnime, episodes] = await Promise.all([
+  const [allAnime, episodes, siteRating] = await Promise.all([
     getAnimeList({limit:220}),
-    getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12)
+    getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12),
+    getSiteRatingStats(item?.slug)
   ])
   const playerOptions = buildNativePlayerOptions(episodes, item)
   const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
@@ -679,7 +681,6 @@ export default async function AnimePage({ params, searchParams }){
     return `/anime/${encodeURIComponent(item.slug)}?${params.toString()}#player`
   }
   const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
-  const siteRating = await getSiteRatingStats(item?.slug)
 
   const info = visibleInfoRows([
     ['Статус', statusLabel(item.status)],
@@ -695,7 +696,7 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <header className="title-wide-header-v80" data-aianime-title-nav="v85" aria-label="Меню страницы тайтла">
+    <header className="title-wide-header-v80" data-aianime-title-nav="v95" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
           <span className="title-wide-header-v80__spark">✦</span>

@@ -17728,3 +17728,142 @@ html[data-aianime-nav-speed="v85"] body{
   opacity:0 !important;
   pointer-events:none !important;
 }
+
+/* AIanime v93: route loading should not collapse page to only footer */
+.route-loading-shell{
+  min-height:calc(100vh - 320px);
+  padding:clamp(42px, 7vw, 88px) clamp(18px, 5vw, 72px);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  background:linear-gradient(180deg, rgba(250,247,255,.98), rgba(255,255,255,.94));
+}
+.route-loading-panel{
+  width:min(1180px, 100%);
+  border:1px solid rgba(126,87,194,.12);
+  border-radius:32px;
+  padding:clamp(22px, 4vw, 38px);
+  background:rgba(255,255,255,.72);
+  box-shadow:0 22px 70px rgba(82,47,137,.08);
+  overflow:hidden;
+}
+.route-loading-topline{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:22px;
+}
+.route-loading-topline i,
+.route-loading-topline span,
+.route-loading-hero,
+.route-loading-row i,
+.route-loading-grid i,
+.route-loading-title-grid i,
+.route-loading-title-grid b,
+.route-loading-title-grid span,
+.route-loading-wide{
+  display:block;
+  border-radius:999px;
+  background:linear-gradient(90deg, rgba(237,229,255,.85), rgba(255,255,255,.95), rgba(237,229,255,.85));
+  background-size:220% 100%;
+  animation:aianimeSoftLoading 1.35s ease-in-out infinite;
+}
+.route-loading-topline i{width:190px;height:22px;}
+.route-loading-topline span{width:110px;height:22px;}
+.route-loading-hero{
+  height:clamp(180px, 24vw, 310px);
+  border-radius:28px;
+  margin-bottom:20px;
+}
+.route-loading-row,
+.route-loading-grid{
+  display:grid;
+  gap:14px;
+}
+.route-loading-row{grid-template-columns:repeat(4, minmax(0,1fr));}
+.route-loading-row i{height:88px;border-radius:22px;}
+.route-loading-grid{grid-template-columns:repeat(6, minmax(0,1fr));}
+.route-loading-grid i{height:220px;border-radius:24px;}
+.route-loading-title-grid{
+  display:grid;
+  grid-template-columns:132px minmax(0,1fr);
+  gap:22px;
+  align-items:center;
+  margin-bottom:22px;
+}
+.route-loading-title-grid i{height:178px;border-radius:22px;}
+.route-loading-title-grid div{display:grid;gap:14px;}
+.route-loading-title-grid b{width:min(520px, 88%);height:42px;}
+.route-loading-title-grid span{width:min(360px, 70%);height:20px;}
+.route-loading-title-grid span:last-child{width:min(720px, 94%);height:64px;border-radius:20px;}
+.route-loading-wide{height:320px;border-radius:28px;}
+@keyframes aianimeSoftLoading{0%{background-position:120% 0}100%{background-position:-120% 0}}
+@media (max-width: 860px){
+  .route-loading-shell{min-height:calc(100vh - 260px);padding:28px 14px;}
+  .route-loading-panel{border-radius:24px;padding:18px;}
+  .route-loading-row{grid-template-columns:repeat(2, minmax(0,1fr));}
+  .route-loading-grid{grid-template-columns:repeat(2, minmax(0,1fr));}
+  .route-loading-grid i{height:180px;}
+  .route-loading-title-grid{grid-template-columns:92px minmax(0,1fr);gap:14px;}
+  .route-loading-title-grid i{height:126px;}
+  .route-loading-wide{height:220px;}
+}
+@media (prefers-reduced-motion: reduce){
+  .route-loading-topline i,
+  .route-loading-topline span,
+  .route-loading-hero,
+  .route-loading-row i,
+  .route-loading-grid i,
+  .route-loading-title-grid i,
+  .route-loading-title-grid b,
+  .route-loading-title-grid span,
+  .route-loading-wide{animation:none;}
+}
+
+/* AIanime v95: fast route intent prefetch + thin non-blocking progress */
+.aianime-route-fastbar{
+  position:fixed;
+  left:0;
+  top:0;
+  z-index:2147482500;
+  width:100%;
+  height:3px;
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(-5px);
+  background:rgba(243,235,255,.72);
+  overflow:hidden;
+  transition:opacity .12s ease, transform .12s ease;
+}
+.aianime-route-fastbar.is-active{
+  opacity:1;
+  transform:translateY(0);
+}
+.aianime-route-fastbar.is-finishing{
+  opacity:0;
+  transform:translateY(-5px);
+}
+.aianime-route-fastbar i{
+  display:block;
+  width:38%;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#f08ee1,#8d55ee,#68e8c0);
+  box-shadow:0 0 16px rgba(141,85,238,.22);
+  animation:aianimeRouteFastBar .78s cubic-bezier(.22,.8,.26,1) infinite;
+}
+html.aianime-route-pending body{
+  cursor:progress;
+}
+@keyframes aianimeRouteFastBar{
+  0%{transform:translateX(-120%)}
+  60%{transform:translateX(165%)}
+  100%{transform:translateX(260%)}
+}
+@media (prefers-reduced-motion: reduce){
+  .aianime-route-fastbar,
+  .aianime-route-fastbar i{transition:none!important;animation:none!important;}
+}
+
+/* AIanime v95 */
