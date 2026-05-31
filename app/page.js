@@ -1,4 +1,4 @@
-// AIanime v128: right recommendations show 4 anime.
+// AIanime v130: how-it-works popover is anchored to the button without background blur.
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 // AIanime v123: real popularity + latest additions blocks on the home page.
@@ -115,11 +115,7 @@ export default async function Home(){const [animeRaw, weeklySchedule, popularity
     <span>AI РЕКОМЕНДАЦИЯ ДНЯ</span>
     <h1>Твоё следующее <br/><strong>любимое</strong> аниме</h1>
     <p>Умный подбор на основе твоих предпочтений и настроения</p>
-    <div className="hero-actions"><Link href="/ai" className="primary">Подобрать аниме</Link><label htmlFor="how-modal-toggle" className="secondary how-works-btn">Как это работает?</label></div>
-    <div className="hero-prompts"><Link href="/ai?q=уютное%20аниме%20на%20вечер">Уютное на вечер</Link><Link href="/ai?q=мрачный%20психологический%20триллер">Психология</Link><Link href="/ai?q=романтика%20без%20кринжа">Романтика</Link></div>
-  </div>
-</section>
-<div className="how-modal" aria-hidden="true">
+    <div className="hero-actions"><Link href="/ai" className="primary">Подобрать аниме</Link><label htmlFor="how-modal-toggle" className="secondary how-works-btn">Как это работает?</label><div className="how-modal" aria-hidden="true">
       <label className="how-modal-backdrop" htmlFor="how-modal-toggle" />
       <div className="how-modal-card" role="dialog" aria-modal="true" aria-labelledby="how-modal-title">
         <label className="how-modal-close" htmlFor="how-modal-toggle" aria-label="Закрыть">×</label>
@@ -130,5 +126,8 @@ export default async function Home(){const [animeRaw, weeklySchedule, popularity
           <article><b>▶</b><div><strong>Открой подборку и смотри</strong><span>Получай персональные рекомендации и наслаждайся просмотром!</span></div></article>
         </div>
       </div>
-    </div>
+    </div></div>
+    <div className="hero-prompts"><Link href="/ai?q=уютное%20аниме%20на%20вечер">Уютное на вечер</Link><Link href="/ai?q=мрачный%20психологический%20триллер">Психология</Link><Link href="/ai?q=романтика%20без%20кринжа">Романтика</Link></div>
+  </div>
+</section>
 <HomeNewOnSiteClient anime={newestAnime}/><HomePopularNowClient anime={popularAnime}/><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}

@@ -19992,3 +19992,145 @@ html body .how-modal .how-modal-close{
     display:none!important;
   }
 }
+
+/* AIanime v130: anchor how-it-works popover to the button, no page blur. */
+html body .hero.ai-hero-image{
+  overflow:visible!important;
+  contain:layout!important;
+}
+html body .hero.ai-hero-image .hero-lcp-picture,
+html body .hero.ai-hero-image .hero-image-overlay{
+  border-radius:inherit!important;
+  overflow:hidden!important;
+}
+html body .hero.ai-hero-image .hero-actions{
+  position:relative!important;
+  z-index:80!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal{
+  position:absolute!important;
+  inset:auto!important;
+  left:calc(100% + 16px)!important;
+  top:50%!important;
+  width:370px!important;
+  max-width:min(370px, calc(100vw - 40px))!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  display:block!important;
+  background:transparent!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transform:translate(8px,-50%) scale(.985)!important;
+  transition:opacity .16s ease, transform .16s ease, visibility .16s ease!important;
+  z-index:120!important;
+}
+html body .how-modal-toggle:checked ~ .hero.ai-hero-image .hero-actions > .how-modal{
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  transform:translate(0,-50%) scale(1)!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-backdrop{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-card{
+  width:370px!important;
+  max-width:min(370px, calc(100vw - 40px))!important;
+  padding:18px 18px 16px!important;
+  border-radius:22px!important;
+  background:rgba(255,255,255,.98)!important;
+  border:1px solid rgba(157,129,220,.18)!important;
+  box-shadow:0 18px 40px rgba(64,45,108,.14)!important;
+  overflow:visible!important;
+  max-height:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-card::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  left:-8px!important;
+  top:50%!important;
+  width:15px!important;
+  height:15px!important;
+  border-radius:4px!important;
+  background:rgba(255,255,255,.98)!important;
+  border-left:1px solid rgba(157,129,220,.18)!important;
+  border-bottom:1px solid rgba(157,129,220,.18)!important;
+  transform:translateY(-50%) rotate(45deg)!important;
+  box-shadow:-6px 6px 14px rgba(64,45,108,.05)!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-card h2{
+  font-size:22px!important;
+  line-height:1.08!important;
+  margin:0 36px 13px 0!important;
+  letter-spacing:-.65px!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-close{
+  right:12px!important;
+  top:12px!important;
+  width:31px!important;
+  height:31px!important;
+  border-radius:11px!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-steps{
+  display:grid!important;
+  gap:8px!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-steps article{
+  grid-template-columns:36px minmax(0,1fr)!important;
+  gap:10px!important;
+  padding:10px!important;
+  border-radius:15px!important;
+  background:#fff!important;
+  border:1px solid rgba(157,129,220,.12)!important;
+  box-shadow:none!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-steps b{
+  width:36px!important;
+  height:36px!important;
+  font-size:16px!important;
+  border-radius:13px!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-steps strong{
+  font-size:12.8px!important;
+  line-height:1.12!important;
+}
+html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-steps span{
+  font-size:11.4px!important;
+  line-height:1.32!important;
+}
+@media (max-width:1180px){
+  html body .hero.ai-hero-image .hero-actions > .how-modal{
+    left:0!important;
+    top:calc(100% + 12px)!important;
+    transform:translateY(8px) scale(.985)!important;
+  }
+  html body .how-modal-toggle:checked ~ .hero.ai-hero-image .hero-actions > .how-modal{
+    transform:translateY(0) scale(1)!important;
+  }
+  html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-card::before{
+    left:50%!important;
+    top:-8px!important;
+    transform:translateX(-50%) rotate(135deg)!important;
+  }
+}
+@media (max-width:760px){
+  html body .hero.ai-hero-image .hero-actions > .how-modal{
+    width:calc(100vw - 32px)!important;
+    max-width:calc(100vw - 32px)!important;
+  }
+  html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-card{
+    width:calc(100vw - 32px)!important;
+    max-width:calc(100vw - 32px)!important;
+  }
+}
