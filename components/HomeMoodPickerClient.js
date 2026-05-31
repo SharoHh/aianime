@@ -59,7 +59,7 @@ export default function HomeMoodPickerClient({ anime = [] }){
         <p>{messages[mood.label]}</p>
         <Link className="bot-action" href={`/ai?q=${encodeURIComponent(mood.query)}`}>Подобрать ✨</Link>
       </div>
-      <img className="mood-assistant" src="/images/ai-assistant.png" alt="AI помощник"/>
+      <img className="mood-assistant" src="/images/ai-assistant-320.webp" alt="AI помощник" loading="lazy" decoding="async"/>
     </div>
   </div>
 }
