@@ -17718,3 +17718,13 @@ html[data-aianime-nav-speed="v85"] body{
   }
   .hero.ai-hero-image .hero-lcp-image{object-position:58% center !important;}
 }
+
+/* AIanime v92: убираем визуальное зацикливание route-loading после переходов */
+.route-progress-bar,
+.route-transition-overlay,
+[data-route-progress],
+[data-route-transition]{
+  display:none !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
