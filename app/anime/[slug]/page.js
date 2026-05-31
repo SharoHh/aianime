@@ -80,36 +80,48 @@ function externalQuery(item){
 
 function scoreNumber(value){
   const number = Number(value)
-  return Number.isFinite(number) && number > 0 ? number : null
+  return Number.isFinite(number) && number > 0 ? Number(number.toFixed(2)) : null
+}
+
+function closeTitleMatch(row, item){
+  const needle = externalQuery(item).toLowerCase().replace(/[^a-z0-9а-яё]+/gi, '')
+  const candidates = [row?.name, row?.russian, row?.english, row?.title]
+    .filter(Boolean)
+    .map(value => String(value).toLowerCase().replace(/[^a-z0-9а-яё]+/gi, ''))
+  if(!needle || !candidates.length) return true
+  return candidates.some(value => value.includes(needle) || needle.includes(value))
 }
 
 async function fetchMalRating(item){
-  const malId = Number(item?.malId || item?.shikimoriId || 0)
+  // MAL берём только по настоящему malId. shikimoriId сюда не подставляем,
+  // иначе получаются фейковые одинаковые 9.1 для разных источников.
+  const malId = Number(item?.malId || 0)
   if(Number.isFinite(malId) && malId > 0){
-    const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2500, revalidate:21600 })
+    const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2600, revalidate:43200 })
     const score = scoreNumber(data?.data?.score)
     if(score) return score
   }
 
   const query = encodeURIComponent(externalQuery(item))
-  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime?q=${query}&limit=1`, { timeout:900, revalidate:21600 })
-  return scoreNumber(data?.data?.[0]?.score)
+  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime?q=${query}&limit=5`, { timeout:1600, revalidate:43200 })
+  const rows = Array.isArray(data?.data) ? data.data : []
+  const picked = rows.find(row => closeTitleMatch(row, item)) || rows[0]
+  return scoreNumber(picked?.score)
 }
 
 async function fetchShikiRating(item){
-  // В текущей базе shikimori_id часто используется как legacy MAL id.
-  // Поэтому Shikimori не берём по этому id, а ищем тайтл на стороне Shikimori.
   const query = encodeURIComponent(externalQuery(item))
-  const rows = await fetchJsonSoft(`https://shikimori.one/api/animes?search=${query}&limit=5`, {
-    timeout:900,
-    revalidate:21600,
+  const rows = await fetchJsonSoft(`https://shikimori.one/api/animes?search=${query}&limit=8`, {
+    timeout:1800,
+    revalidate:43200,
     headers:{ 'User-Agent':'AIanime/1.0 (+https://aianime.ru)' }
   })
   if(!Array.isArray(rows) || !rows.length) return null
 
-  const malId = Number(item?.malId || item?.shikimoriId || 0)
-  const byMal = rows.find(row => Number(row?.mal_id) === malId || Number(row?.id) === Number(item?.shikimoriId || 0))
-  const picked = byMal || rows[0]
+  const malId = Number(item?.malId || 0)
+  const byMal = Number.isFinite(malId) && malId > 0 ? rows.find(row => Number(row?.mal_id) === malId) : null
+  const byTitle = rows.find(row => closeTitleMatch(row, item))
+  const picked = byMal || byTitle || rows[0]
   return scoreNumber(picked?.score)
 }
 
@@ -734,14 +746,13 @@ export default async function AnimePage({ params, searchParams }){
           <span>{item.year || '—'}</span>
         </div>
 
-        <div className="compact-rating-row compact-rating-row-v106" aria-label="Рейтинг тайтла">
+        <div className="compact-rating-row compact-rating-row-v107" aria-label="Рейтинг тайтла">
           <RatingControl
             slug={item.slug}
             siteRating={siteRating}
-            baseScore={Number(item.score || item.rating || 0) || null}
             sources={[
-              { label:'Shiki', score:externalRatings?.shiki, href:externalSearchUrl('shiki', item) },
-              { label:'MAL', score:externalRatings?.mal, href:externalSearchUrl('mal', item) }
+              { label:'Shiki', logo:'鳥居', score:externalRatings?.shiki, href:externalSearchUrl('shiki', item) },
+              { label:'MAL', logo:'MAL', score:externalRatings?.mal, href:externalSearchUrl('mal', item) }
             ]}
           />
         </div>
