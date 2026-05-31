@@ -11,7 +11,7 @@ const footerLinks = [
 export default function SiteFooter(){
   const year = new Date().getFullYear()
 
-  return <footer className="site-footer site-footer-compact" data-aianime-footer="v97">
+  return <footer className="site-footer site-footer-compact site-footer-clean" data-aianime-footer="v99">
     <div className="site-footer-inner">
       <Link href="/" className="site-footer-logo" aria-label="На главную Aianime">
         <span className="site-footer-logo-mark" aria-hidden="true"><img src="/aianime-logo.png" alt="" /></span>
@@ -22,7 +22,7 @@ export default function SiteFooter(){
         {footerLinks.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
       </nav>
 
-      <p className="site-footer-note">© {year} Aianime · каталог, озвучки и расписание обновляются автоматически.</p>
+      <p className="site-footer-note"><span>© {year}</span><b>Каталог обновляется автоматически</b></p>
     </div>
   </footer>
 }
