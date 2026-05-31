@@ -1,4 +1,4 @@
-// AIanime v106: Yummy-like compact global rating strip on title page.
+// AIanime v108: strict external ratings only by real IDs + instant rating UI.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -93,36 +93,25 @@ function closeTitleMatch(row, item){
 }
 
 async function fetchMalRating(item){
-  // MAL берём только по настоящему malId. shikimoriId сюда не подставляем,
-  // иначе получаются фейковые одинаковые 9.1 для разных источников.
+  // MAL показываем только по реальному MAL ID из базы.
+  // Поиск по названию отключён: он часто цеплял не тот тайтл и давал фейковые 9.1.
   const malId = Number(item?.malId || 0)
-  if(Number.isFinite(malId) && malId > 0){
-    const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2600, revalidate:43200 })
-    const score = scoreNumber(data?.data?.score)
-    if(score) return score
-  }
-
-  const query = encodeURIComponent(externalQuery(item))
-  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime?q=${query}&limit=5`, { timeout:1600, revalidate:43200 })
-  const rows = Array.isArray(data?.data) ? data.data : []
-  const picked = rows.find(row => closeTitleMatch(row, item)) || rows[0]
-  return scoreNumber(picked?.score)
+  if(!Number.isFinite(malId) || malId <= 0) return null
+  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2600, revalidate:43200 })
+  return scoreNumber(data?.data?.score)
 }
 
 async function fetchShikiRating(item){
-  const query = encodeURIComponent(externalQuery(item))
-  const rows = await fetchJsonSoft(`https://shikimori.one/api/animes?search=${query}&limit=8`, {
+  // Shiki показываем только по реальному Shikimori ID.
+  // Поиск по названию отключён, чтобы не подтягивать случайные оценки источников.
+  const shikiId = Number(item?.shikimoriId || 0)
+  if(!Number.isFinite(shikiId) || shikiId <= 0) return null
+  const data = await fetchJsonSoft(`https://shikimori.one/api/animes/${shikiId}`, {
     timeout:1800,
     revalidate:43200,
     headers:{ 'User-Agent':'AIanime/1.0 (+https://aianime.ru)' }
   })
-  if(!Array.isArray(rows) || !rows.length) return null
-
-  const malId = Number(item?.malId || 0)
-  const byMal = Number.isFinite(malId) && malId > 0 ? rows.find(row => Number(row?.mal_id) === malId) : null
-  const byTitle = rows.find(row => closeTitleMatch(row, item))
-  const picked = byMal || byTitle || rows[0]
-  return scoreNumber(picked?.score)
+  return scoreNumber(data?.score)
 }
 
 async function getExternalRatings(item){
