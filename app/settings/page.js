@@ -1,16 +1,13 @@
+// AIanime v131: /settings is not a separate page anymore. Use profile as the account hub.
+import { redirect } from 'next/navigation'
+
 export const dynamic = 'force-dynamic'
 
-import Link from 'next/link'
-import SettingsClient from './SettingsClient'
-
 export const metadata = {
-  title: 'Настройки — Aianime',
-  description: 'Настройки аккаунта, уведомлений и AI-рекомендаций.'
+  title: 'Профиль — Aianime',
+  description: 'Профиль, избранное, история и персональные данные аккаунта.'
 }
 
 export default function SettingsPage(){
-  return <main className="page">
-    <div className="page-head"><Link href="/">← На главную</Link><h1>Настройки</h1><p>Настройки аккаунта, уведомлений и персонализации AI.</p></div>
-    <SettingsClient/>
-  </main>
+  redirect('/profile')
 }

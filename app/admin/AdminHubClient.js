@@ -1,5 +1,7 @@
 'use client'
 
+// AIanime v131: removed redundant public settings page entry.
+
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
@@ -77,7 +79,6 @@ const cards = {
     { title:'Health-check', value:'API', hint:'Публичный /api/health без секретов', href:'/api/health' },
     { title:'Sitemap', value:'SEO', hint:'Публичный /sitemap.xml', href:'/sitemap.xml' },
     { title:'Расписание', value:'API', hint:'/api/cron/schedule', href:'/admin/sync' },
-    { title:'Настройки', value:'Открыть', hint:'Параметры сайта и профиля', href:'/settings' },
   ],
 }
 

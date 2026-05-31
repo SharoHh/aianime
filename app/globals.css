@@ -20134,3 +20134,93 @@ html body .hero.ai-hero-image .hero-actions > .how-modal .how-modal-steps span{
     max-width:calc(100vw - 32px)!important;
   }
 }
+
+/* AIanime v131: removed redundant settings navigation; /settings redirects to /profile. */
+
+/* AIanime v132: softer home-page typography, less heavy titles and card text. */
+html body .shell .content .hero-copy h1{
+  font-weight:760!important;
+  letter-spacing:-1.45px!important;
+}
+html body .shell .content .hero-copy h1 strong{
+  font-weight:760!important;
+}
+html body .shell .content .hero-copy p{
+  font-weight:520!important;
+  color:#5f5874!important;
+}
+html body .shell .content .section-title h2,
+html body .shell .rightcol .widget-head h3{
+  font-weight:730!important;
+  letter-spacing:-.38px!important;
+}
+html body .shell .content .section-title h2{
+  font-size:19px!important;
+}
+html body .shell .content .section-title a,
+html body .shell .rightcol .widget-head a{
+  font-weight:640!important;
+}
+html body .shell .home-new-title p,
+html body .shell .popular-live-title p{
+  font-weight:500!important;
+  color:#9b92b8!important;
+  letter-spacing:.01em!important;
+}
+html body .shell .poster-info b,
+html body .shell .continue-info b,
+html body .shell .collection b,
+html body .shell .popular-live-copy b,
+html body .shell .home-new-copy b,
+html body .shell .mini b{
+  font-weight:720!important;
+  letter-spacing:-.12px!important;
+}
+html body .shell .poster-info span,
+html body .shell .continue-info span,
+html body .shell .collection span,
+html body .shell .popular-live-copy em,
+html body .shell .home-new-copy em,
+html body .shell .popular-live-copy small,
+html body .shell .home-new-copy small,
+html body .shell .mini span{
+  font-weight:500!important;
+  letter-spacing:.01em!important;
+}
+html body .shell .rightcol .sch b{
+  font-weight:720!important;
+}
+html body .shell .rightcol .sch span,
+html body .shell .schedule-empty span,
+html body .shell .moods span,
+html body .shell .bot-card p{
+  font-weight:520!important;
+}
+html body .shell .nav,
+html body .shell .brand span,
+html body .shell .profile-card .user span{
+  font-weight:560!important;
+}
+html body .shell .brand b,
+html body .shell .profile-card .user b{
+  font-weight:760!important;
+}
+
+/* AIanime v133: remove hover frame from schedule items */
+html body .sch,
+html body .schedule-reference-item,
+html body .schedule-release{
+  outline:none !important;
+}
+html body .sch:hover,
+html body .schedule-reference-item:hover,
+html body .schedule-release:hover{
+  border-color:transparent !important;
+  box-shadow:none !important;
+  outline:none !important;
+}
+html body .shell .rightcol .sch:hover,
+html body .shell .rightcol .schedule-reference-item:hover{
+  background:#fbfaff !important;
+  transform:none !important;
+}

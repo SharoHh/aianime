@@ -2,6 +2,7 @@ function siteUrl(){
   return String(process.env.NEXT_PUBLIC_SITE_URL || 'https://aianime.ru').replace(/\/$/, '')
 }
 
+// AIanime v131: settings route redirects to profile.
 export default function robots(){
   const base = siteUrl()
   return {
@@ -15,7 +16,6 @@ export default function robots(){
         '/api/',
         '/auth',
         '/profile',
-        '/settings',
         '/favorites',
         '/history',
         '/notifications',
