@@ -722,7 +722,7 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <header className="title-wide-header-v80" data-aianime-title-nav="v120" aria-label="Меню страницы тайтла">
+    <header className="title-wide-header-v80" data-aianime-title-nav="v138" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
           <img src="/aianime-logo.png" alt="" aria-hidden="true" />
@@ -730,12 +730,12 @@ export default async function AnimePage({ params, searchParams }){
         </Link>
 
         <nav className="title-wide-header-v80__nav" aria-label="Разделы сайта">
-          <Link href="/catalog"><span>▦</span>Каталог</Link>
-          <Link href="/season"><span>▷</span>Онгоинги</Link>
-          <Link href="/schedule"><span>◷</span>Расписание</Link>
-          <Link href="/collections"><HomeSectionIcon type="new"/>Подборки</Link>
-          <Link href="/ai"><span>?</span>Что посмотреть?</Link>
-          <Link href="/recommend"><span>↝</span>Случайное</Link>
+          <Link href="/catalog"><HomeSectionIcon type="catalog"/>Каталог</Link>
+          <Link href="/season"><HomeSectionIcon type="ongoing"/>Онгоинги</Link>
+          <Link href="/schedule"><HomeSectionIcon type="schedule"/>Расписание</Link>
+          <Link href="/collections"><HomeSectionIcon type="collections"/>Подборки</Link>
+          <Link href="/ai"><HomeSectionIcon type="question"/>Что посмотреть?</Link>
+          <Link href="/recommend"><HomeSectionIcon type="random"/>Случайное</Link>
         </nav>
 
         <div className="title-wide-header-v80__actions">

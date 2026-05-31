@@ -20904,3 +20904,53 @@ html body .shell .rightcol .schedule-reference-item:hover{
   border:1px solid rgba(157,115,255,.16);
 }
 .how-card-icon .home-section-icon svg{width:15px;height:15px;}
+
+
+/* AIanime v138: restore collection cards without extra right-side decorative icons and improve horizontal menu icons. */
+.collection{justify-content:flex-start!important;}
+.collection em{display:none!important;}
+.collection div{max-width:100%;}
+
+.site-interior-header__nav .home-section-icon,
+.title-wide-header-v80__nav .home-section-icon,
+.title-full-nav__links .home-section-icon{
+  width:26px!important;
+  height:26px!important;
+  border-radius:10px!important;
+  margin:0 7px 0 0!important;
+  color:#7b45df!important;
+  background:linear-gradient(180deg,#fff,#f4edff)!important;
+  border:1px solid rgba(144,94,232,.24)!important;
+  box-shadow:0 7px 16px rgba(115,74,176,.08)!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  flex:0 0 auto!important;
+}
+.site-interior-header__nav .home-section-icon svg,
+.title-wide-header-v80__nav .home-section-icon svg,
+.title-full-nav__links .home-section-icon svg{
+  width:16px!important;
+  height:16px!important;
+}
+.site-interior-header__nav a:hover .home-section-icon,
+.title-wide-header-v80__nav a:hover .home-section-icon,
+.title-full-nav__links a:hover .home-section-icon{
+  color:#fff!important;
+  background:linear-gradient(135deg,#9f6cff,#d35ada)!important;
+  border-color:transparent!important;
+}
+.site-interior-header__search .home-section-icon{
+  width:24px!important;
+  height:24px!important;
+  margin:0 8px 0 0!important;
+  color:#8d55ee!important;
+  background:#f8f2ff!important;
+  border:1px solid rgba(144,94,232,.18)!important;
+}
+.site-interior-header__search .home-section-icon svg{width:15px!important;height:15px!important;}
+@media(max-width:760px){
+  .site-interior-header__nav .home-section-icon,
+  .title-wide-header-v80__nav .home-section-icon{width:24px!important;height:24px!important;border-radius:9px!important;}
+  .site-interior-header__nav .home-section-icon svg,
+  .title-wide-header-v80__nav .home-section-icon svg{width:15px!important;height:15px!important;}
+}
