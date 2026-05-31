@@ -20907,9 +20907,6 @@ html body .shell .rightcol .schedule-reference-item:hover{
 
 
 /* AIanime v138: restore collection cards without extra right-side decorative icons and improve horizontal menu icons. */
-.collection{justify-content:flex-start!important;}
-.collection em{display:none!important;}
-.collection div{max-width:100%;}
 
 .site-interior-header__nav .home-section-icon,
 .title-wide-header-v80__nav .home-section-icon,
@@ -20953,4 +20950,66 @@ html body .shell .rightcol .schedule-reference-item:hover{
   .title-wide-header-v80__nav .home-section-icon{width:24px!important;height:24px!important;border-radius:9px!important;}
   .site-interior-header__nav .home-section-icon svg,
   .title-wide-header-v80__nav .home-section-icon svg{width:15px!important;height:15px!important;}
+}
+
+/* AIanime v139: restore original icons in home collection cards. */
+html body .shell .collection{justify-content:space-between!important;align-items:flex-start!important;}
+html body .shell .collection em{display:block!important;font-style:normal!important;font-size:34px!important;line-height:1!important;color:#c17cff!important;opacity:.62!important;margin-left:12px!important;flex-shrink:0!important;}
+html body .shell .collection div{max-width:calc(100% - 46px)!important;}
+@media(max-width:760px){html body .shell .collection em{font-size:30px!important;opacity:.54!important;}}
+
+/* AIanime v140: restore compact logo size in internal/title menus. */
+.title-wide-header-v80[data-aianime-title-nav="v138"] .title-wide-header-v80__brand img,
+.title-wide-header-v80[data-aianime-title-nav="v120"] .title-wide-header-v80__brand img,
+.site-interior-header[data-aianime-interior-menu="v120"] .site-interior-header__brand img{
+  width:38px!important;
+  height:38px!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 8px 16px rgba(219,67,194,.13))!important;
+}
+.title-wide-header-v80[data-aianime-title-nav="v138"] .title-wide-header-v80__brand,
+.title-wide-header-v80[data-aianime-title-nav="v120"] .title-wide-header-v80__brand,
+.site-interior-header[data-aianime-interior-menu="v120"] .site-interior-header__brand{
+  gap:10px!important;
+}
+.title-wide-header-v80[data-aianime-title-nav="v138"] .title-wide-header-v80__brand b,
+.title-wide-header-v80[data-aianime-title-nav="v120"] .title-wide-header-v80__brand b,
+.site-interior-header[data-aianime-interior-menu="v120"] .site-interior-header__brand b{
+  font-size:23px!important;
+}
+@media(max-width:760px){
+  .title-wide-header-v80[data-aianime-title-nav="v138"] .title-wide-header-v80__brand img,
+  .title-wide-header-v80[data-aianime-title-nav="v120"] .title-wide-header-v80__brand img,
+  .site-interior-header[data-aianime-interior-menu="v120"] .site-interior-header__brand img{
+    width:36px!important;
+    height:36px!important;
+  }
+  .title-wide-header-v80[data-aianime-title-nav="v138"] .title-wide-header-v80__brand b,
+  .title-wide-header-v80[data-aianime-title-nav="v120"] .title-wide-header-v80__brand b,
+  .site-interior-header[data-aianime-interior-menu="v120"] .site-interior-header__brand b{
+    font-size:20px!important;
+  }
+}
+
+/* AIanime v141: align home section icons with heading text. */
+html body .shell .content .section-title-clean-icons h2{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  line-height:1.08!important;
+}
+html body .shell .content .section-title-clean-icons h2 .home-section-icon{
+  margin:0!important;
+  vertical-align:0!important;
+  transform:none!important;
+  position:relative!important;
+  top:0!important;
+  align-self:center!important;
+}
+html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
+  display:block!important;
+}
+@media(max-width:720px){
+  html body .shell .content .section-title-clean-icons h2{gap:7px!important;}
+  html body .shell .content .section-title-clean-icons h2 .home-section-icon{margin:0!important;top:0!important;}
 }
