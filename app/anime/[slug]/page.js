@@ -25,19 +25,79 @@ export async function generateMetadata({ params }){
   const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
   if(!item){
     return {
-      title: 'Тайтл не найден — Aianime',
-      description: 'Этот тайтл удалён или больше не доступен в каталоге Aianime.'
+      title: 'Тайтл не найден — AIanime',
+      description: 'Этот тайтл удалён или больше не доступен в каталоге AIanime.',
+      robots: { index:false, follow:false }
     }
   }
+
   const title = cleanPublicText(item.title) || 'Без названия'
-  const description = cleanPublicText(item.description)?.slice(0, 160) || 'Аниме онлайн: описание, серии, комментарии и похожие тайтлы.'
+  const original = cleanPublicText(item.originalTitle || item.englishTitle || item.original_title || '')
+  const year = item.year ? ` ${item.year}` : ''
+  const episodeText = Number(item.episodes || 0) > 1 ? `, ${Number(item.episodes)} серий` : ''
+  const description = cleanPublicText(item.description)?.slice(0, 155)
+    || `${title}${original && original !== title ? ` / ${original}` : ''} — смотреть онлайн на русском в AIanime. Описание, серии, озвучки, рейтинг, похожие аниме и комментарии.`
+
   return {
-    title: `${title} смотреть онлайн — Aianime`,
+    title: `${title}${year} смотреть онлайн на русском — AIanime`,
     description,
-    openGraph: { title, description, images: [item.poster] }
+    alternates: { canonical: `/anime/${encodeURIComponent(item.slug).replace(/%2F/g, '/')}` },
+    openGraph: {
+      title: `${title} — смотреть онлайн`,
+      description,
+      url: `/anime/${encodeURIComponent(item.slug).replace(/%2F/g, '/')}`,
+      type: 'video.tv_show',
+      images: item.poster ? [{ url:item.poster, alt:title }] : []
+    },
+    twitter: { card:'summary_large_image', title:`${title} смотреть онлайн`, description, images:item.poster ? [item.poster] : [] }
   }
 }
 
+function absoluteSiteUrl(path = ''){
+  const base = String(process.env.NEXT_PUBLIC_SITE_URL || 'https://aianime.ru').replace(/\/$/, '')
+  if(!path) return base
+  if(/^https?:\/\//i.test(path)) return path
+  return `${base}${String(path).startsWith('/') ? path : `/${path}`}`
+}
+
+function jsonLd(data){
+  return JSON.stringify(data).replace(/</g, '\\u003c')
+}
+
+function buildAnimeJsonLd(item, title, description, siteRating){
+  const url = absoluteSiteUrl(`/anime/${encodeURIComponent(item.slug).replace(/%2F/g, '/')}`)
+  const type = item.kind === 'movie' ? 'Movie' : 'TVSeries'
+  const data = {
+    '@context':'https://schema.org',
+    '@type':type,
+    name:title,
+    alternateName:cleanPublicText(item.originalTitle || item.englishTitle || item.original_title || ''),
+    url,
+    image:item.poster ? absoluteSiteUrl(item.poster) : undefined,
+    description,
+    inLanguage:'ru-RU',
+    datePublished:item.year ? String(item.year) : undefined,
+    numberOfEpisodes:Number(item.episodes || 0) > 0 ? Number(item.episodes) : undefined,
+    genre:Array.isArray(item.genres) ? item.genres.slice(0, 8) : undefined,
+    productionCompany:item.studio && item.studio !== '—' ? { '@type':'Organization', name:item.studio } : undefined,
+    provider:{ '@type':'Organization', name:'AIanime', url:absoluteSiteUrl('/') },
+    potentialAction:{ '@type':'WatchAction', target:url }
+  }
+
+  const ratingValue = Number(siteRating?.value || 0)
+  const ratingCount = Number(siteRating?.count || 0)
+  if(Number.isFinite(ratingValue) && ratingValue > 0 && ratingCount > 0){
+    data.aggregateRating = {
+      '@type':'AggregateRating',
+      ratingValue:Number((ratingValue * 2).toFixed(1)),
+      bestRating:10,
+      worstRating:1,
+      ratingCount
+    }
+  }
+
+  return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined && value !== null && value !== ''))
+}
 
 
 async function fetchJsonSoft(url, options = {}){
@@ -721,7 +781,10 @@ export default async function AnimePage({ params, searchParams }){
     ['Озвучка', currentEpisode?.voice || item.translationTitle || 'Kodik'],
   ])
 
+  const animeJsonLd = buildAnimeJsonLd(item, title, description, siteRating)
+
   return <main className="anime-compact-page">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(animeJsonLd)}} />
     <header className="title-wide-header-v80" data-aianime-title-nav="v138" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">

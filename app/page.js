@@ -1,6 +1,17 @@
 // AIanime v137: decorative unicode icons replaced with clean SVG badges.
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+export const metadata = {
+  title: 'AIanime — смотреть аниме онлайн на русском',
+  description: 'Смотри аниме онлайн на русском в AIanime: каталог тайтлов, AI-подбор по настроению, онгоинги, расписание выхода серий, избранное и история просмотра.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'AIanime — смотреть аниме онлайн на русском',
+    description: 'Русскоязычный каталог аниме с онлайн-плеером, AI-рекомендациями, расписанием и подборками.',
+    url: '/',
+    type: 'website'
+  }
+}
 // AIanime v123: real popularity + latest additions blocks on the home page.
 
 import Link from 'next/link'
