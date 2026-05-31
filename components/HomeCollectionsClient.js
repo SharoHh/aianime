@@ -1,5 +1,7 @@
 'use client'
 
+// AIanime v139: restore original collection card icons.
+
 import Link from 'next/link'
 
 const routes = [
@@ -18,7 +20,7 @@ export default function HomeCollectionsClient({ collections = [] }){
       key={c[0]}
       title={`Открыть подборку: ${c[0]}`}
     >
-      <div><b>{c[0]}</b><span>{c[1]}</span></div>
+      <div><b>{c[0]}</b><span>{c[1]}</span></div><em>{c[2]}</em>
     </Link>)}
   </div>
 }
