@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v107: clean global AIanime rating + real external source badges with logos.
+// AIanime v108: instant community rating update + strict external source ratings.
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings, setUserRating } from '@/lib/userStorage'
@@ -31,6 +31,42 @@ function ratingCountLabel(count){
   if(mod10 === 1 && mod100 !== 11) return `${number} оценка`
   if(mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${number} оценки`
   return `${number} оценок`
+}
+
+function normalizeSiteRating(siteRating){
+  const value = Number(siteRating?.value || 0)
+  const count = Math.max(0, Number(siteRating?.count || 0) || 0)
+  return {
+    value: Number.isFinite(value) && value > 0 ? value : null,
+    count
+  }
+}
+
+function applyOptimisticVote(currentRating, previousValue, nextValue){
+  const previous = Math.max(0, Number(previousValue || 0) || 0)
+  const next = Math.max(0, Number(nextValue || 0) || 0)
+  let count = Math.max(0, Number(currentRating?.count || 0) || 0)
+  let value = Number(currentRating?.value || 0)
+
+  if(!Number.isFinite(value) || value <= 0){
+    value = previous > 0 ? previous : 0
+    if(previous > 0 && count < 1) count = 1
+  }
+
+  if(previous > 0 && next > 0){
+    if(count < 1) count = 1
+    value = ((value * count) - previous + next) / count
+  }else if(previous > 0 && next <= 0){
+    if(count <= 1) return { value:null, count:0 }
+    value = ((value * count) - previous) / (count - 1)
+    count -= 1
+  }else if(previous <= 0 && next > 0){
+    value = ((value * count) + next) / (count + 1)
+    count += 1
+  }
+
+  if(!Number.isFinite(value) || value <= 0 || count <= 0) return { value:null, count:0 }
+  return { value, count }
 }
 
 function globalSummary(siteRating){
@@ -72,11 +108,24 @@ function normalizeSource(item){
 export default function RatingControl({ slug, siteRating = null, sources = [] }){
   const { user } = useAuthState()
   const [value,setValue] = useState(0)
-  const summary = useMemo(() => globalSummary(siteRating), [siteRating])
+  const [optimisticSiteRating,setOptimisticSiteRating] = useState(() => normalizeSiteRating(siteRating))
+  const summary = useMemo(() => globalSummary(optimisticSiteRating), [optimisticSiteRating])
   const sourceItems = useMemo(() => (Array.isArray(sources) ? sources : []).map(normalizeSource).filter(Boolean), [sources])
 
   useEffect(()=>{
-    const update = () => setValue(user ? Number(getRatings()[slug] || 0) : 0)
+    setOptimisticSiteRating(normalizeSiteRating(siteRating))
+  }, [siteRating?.value, siteRating?.count])
+
+  useEffect(()=>{
+    const update = () => {
+      const storedValue = user ? Number(getRatings()[slug] || 0) : 0
+      setValue(storedValue)
+      // Если пользователь уже поставил оценку локально, но Supabase ещё не вернул
+      // обновлённый общий рейтинг, показываем его сразу без перезагрузки страницы.
+      if(user && storedValue > 0){
+        setOptimisticSiteRating(current => current?.count > 0 ? current : { value:storedValue, count:1 })
+      }
+    }
     update()
     window.addEventListener('storage', update)
     window.addEventListener('anime:user-updated', update)
@@ -93,6 +142,7 @@ export default function RatingControl({ slug, siteRating = null, sources = [] })
       pushToast('Войди в аккаунт, чтобы оценивать тайтлы.', 'error')
       return
     }
+    const previousValue = value
     const valueToSave = value === next ? 0 : next
     const ok = setUserRating(slug, valueToSave)
     if(!ok){
@@ -100,11 +150,12 @@ export default function RatingControl({ slug, siteRating = null, sources = [] })
       return
     }
     setValue(valueToSave)
+    setOptimisticSiteRating(current => applyOptimisticVote(current, previousValue, valueToSave))
     try{ window.dispatchEvent(new CustomEvent('anime:rating-updated', { detail:{ slug, value:valueToSave } })) }catch{}
     pushToast(valueToSave ? `Оценка сохранена: ${displayScoreFromFive(valueToSave)}/10` : 'Оценка удалена', 'success')
   }
 
-  return <section className="title-rating-strip title-rating-strip-v107" aria-label="Рейтинг">
+  return <section className="title-rating-strip title-rating-strip-v107 title-rating-strip-v108" aria-label="Рейтинг">
     <div className="title-rating-main-score" title="Рейтинг AIanime">
       <span>★</span>
       <b>{summary.score}</b>
