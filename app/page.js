@@ -1,4 +1,6 @@
-export const revalidate = 600
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+// AIanime v91: homepage must read Supabase at runtime, not seed fallback during build.
 
 import Link from 'next/link'
 import { collections } from '@/lib/data'
