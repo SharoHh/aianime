@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-// AIanime v115: live card rating badges update immediately after user vote.
+// AIanime v116: card rating badge uses one clean solid-color badge.
 
 import Link from 'next/link'
 import { collections } from '@/lib/data'
@@ -68,7 +68,7 @@ function ratingToneClass(item){
   if(value >= 6.5) return 'rating-tone-orange'
   return 'rating-tone-red'
 }
-function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount} className="rating"/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
+function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
 function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
 function SectionTitle({icon,title}){return <div className="section-title"><h2><span>{icon}</span>{title}</h2><Link href="/catalog">Смотреть все ›</Link></div>}
 

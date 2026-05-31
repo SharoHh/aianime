@@ -1,3 +1,4 @@
+// AIanime v116: catalog uses one clean global rating badge, no duplicate old rating class.
 'use client'
 
 import Link from 'next/link'

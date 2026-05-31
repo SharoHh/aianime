@@ -1,4 +1,4 @@
-// AIanime v115: live similar-card rating badges and softer rating tones.
+// AIanime v116: similar-card rating badge uses one clean solid-color badge.
 export const revalidate = 600
 export const dynamicParams = true
 
