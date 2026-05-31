@@ -1,4 +1,4 @@
-// AIanime v104: title page uses one global rating block, no personal duplicate badges.
+// AIanime v106: Yummy-like compact global rating strip on title page.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -92,7 +92,7 @@ async function fetchMalRating(item){
   }
 
   const query = encodeURIComponent(externalQuery(item))
-  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime?q=${query}&limit=1`, { timeout:2500, revalidate:21600 })
+  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime?q=${query}&limit=1`, { timeout:900, revalidate:21600 })
   return scoreNumber(data?.data?.[0]?.score)
 }
 
@@ -101,7 +101,7 @@ async function fetchShikiRating(item){
   // Поэтому Shikimori не берём по этому id, а ищем тайтл на стороне Shikimori.
   const query = encodeURIComponent(externalQuery(item))
   const rows = await fetchJsonSoft(`https://shikimori.one/api/animes?search=${query}&limit=5`, {
-    timeout:2500,
+    timeout:900,
     revalidate:21600,
     headers:{ 'User-Agent':'AIanime/1.0 (+https://aianime.ru)' }
   })
@@ -114,12 +114,11 @@ async function fetchShikiRating(item){
 }
 
 async function getExternalRatings(item){
-  const [mal, shiki, site] = await Promise.all([
+  const [mal, shiki] = await Promise.all([
     fetchMalRating(item),
-    fetchShikiRating(item),
-    getSiteRatingStats(item?.slug)
+    fetchShikiRating(item)
   ])
-  return { site, mal, shiki }
+  return { mal, shiki }
 }
 
 function ratingLabel(value){
@@ -657,10 +656,11 @@ export default async function AnimePage({ params, searchParams }){
   const title = cleanPublicText(item.title) || 'Без названия'
   const originalTitle = cleanPublicText(item.originalTitle || item.englishTitle || item.title)
   const description = cleanPublicText(item.description) || 'Описание скоро появится.'
-  const [allAnime, episodes, siteRating] = await Promise.all([
+  const [allAnime, episodes, siteRating, externalRatings] = await Promise.all([
     getAnimeList({limit:220}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12),
-    getSiteRatingStats(item?.slug)
+    getSiteRatingStats(item?.slug),
+    getExternalRatings(item)
   ])
   const playerOptions = buildNativePlayerOptions(episodes, item)
   const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
@@ -734,13 +734,16 @@ export default async function AnimePage({ params, searchParams }){
           <span>{item.year || '—'}</span>
         </div>
 
-        <div className="compact-rating-row compact-rating-row-v102" aria-label="Рейтинг AIanime и внешние ссылки">
-          <RatingControl slug={item.slug} siteRating={siteRating}/>
-          <div className="compact-rating-links">
-            <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki ↗</a>
-            <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI-похожие</Link>
-            <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL ↗</a>
-          </div>
+        <div className="compact-rating-row compact-rating-row-v106" aria-label="Рейтинг тайтла">
+          <RatingControl
+            slug={item.slug}
+            siteRating={siteRating}
+            baseScore={Number(item.score || item.rating || 0) || null}
+            sources={[
+              { label:'Shiki', score:externalRatings?.shiki, href:externalSearchUrl('shiki', item) },
+              { label:'MAL', score:externalRatings?.mal, href:externalSearchUrl('mal', item) }
+            ]}
+          />
         </div>
 
         <div id="title-info" className="compact-info-list">
