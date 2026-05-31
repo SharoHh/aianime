@@ -8,6 +8,8 @@ const statusLabels = { all:'Все статусы', ongoing:'Онгоинг', co
 const kindLabels = { all:'Любой тип', tv:'TV сериал', movie:'Фильм', ova:'OVA' }
 const sortLabels = { relevant:'Сначала релевантные', popular:'Популярные', rating:'По рейтингу', newest:'Сначала новые', episodes:'Больше серий' }
 
+function hasGlobalRating(item){return item?.siteRatingCount > 0 && String(item?.rating || '') !== '—'}
+
 function unique(list){ return Array.from(new Set(list)).filter(Boolean) }
 
 export default function CatalogClient({ items }){
@@ -56,11 +58,11 @@ export default function CatalogClient({ items }){
       <div className="catalog-results">
         {!filtered.length ? <div className="catalog-empty widget"><b>Ничего не нашли</b><p>Попробуй другое название, жанр, настроение или сбрось фильтры. Поиск понимает русские и английские названия, описание, студию и год.</p><button className="secondary" onClick={reset}>Сбросить фильтры</button></div> : null}
         {filtered.slice(0, visible).map(a=><Link className="catalog-card catalog-card-live" href={`/anime/${a.slug}`} key={a.slug}>
-          <div className="catalog-cover"><img loading="lazy" decoding="async" src={a.poster} alt={a.title || "Аниме"}/><span>★ {a.rating}</span></div>
+          <div className="catalog-cover"><img loading="lazy" decoding="async" src={a.poster} alt={a.title || "Аниме"}/>{hasGlobalRating(a) ? <span className="rating-gold">★ {a.rating}</span> : null}</div>
           <div className="catalog-body"><b>{a.title}</b><em>{a.originalTitle}</em><p>{a.description}</p><div>{a.genres.slice(0,3).map(g=><i key={g}>{g}</i>)}</div><small>{a.year} · {a.meta} · {statusLabels[a.status] || a.status}</small></div>
           <div className="catalog-hover-preview">
             <strong>{a.title}</strong>
-            <span>★ {a.rating} · {a.year} · {a.meta}</span>
+            <span>{hasGlobalRating(a) ? `★ ${a.rating} · ` : ""}{a.year} · {a.meta}</span>
             <p>{a.description}</p>
             <em>Открыть тайтл →</em>
           </div>

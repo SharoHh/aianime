@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-// AIanime v104: global rating display without personal duplicate badges on cards.
+// AIanime v112: cards show only real AIanime rating badges.
 
 import Link from 'next/link'
 import { collections } from '@/lib/data'
@@ -59,7 +59,8 @@ function Sidebar(){return <aside className="sidebar">
   </nav>
   <SidebarAccountClient/>
 </aside>}
-function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
+function hasGlobalRating(item){return item?.siteRatingCount > 0 && String(item?.rating || '') !== '—'}
+function Poster({item}){const showRating = hasGlobalRating(item); return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/>{showRating ? <div className="rating rating-gold">★ {item.rating}</div> : null}<div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
 function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
 function SectionTitle({icon,title}){return <div className="section-title"><h2><span>{icon}</span>{title}</h2><Link href="/catalog">Смотреть все ›</Link></div>}
 
@@ -88,7 +89,7 @@ function SiteStatsWidget({anime, weeklySchedule}){
 function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
   <HomeScheduleWidgetClient scheduleDays={weeklySchedule?.days || []} initialDay={weeklySchedule?.todayIndex || 0}/>
   <HomeMoodPickerClient anime={anime.slice(0,40)}/>
-  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><em>★ {a.rating}</em></Link>)}</div>
+  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div>{hasGlobalRating(a) ? <em className="mini-rating-gold">★ {a.rating}</em> : null}</Link>)}</div>
   <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
 export default async function Home(){const [anime, weeklySchedule] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule()]); return <main className="shell"><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />

@@ -1,4 +1,4 @@
-// AIanime v110: clean Shiki badge icon instead of broken glyphs.
+// AIanime v112: similar cards show only real AIanime community rating badges.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -807,7 +807,7 @@ export default async function AnimePage({ params, searchParams }){
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
           <img loading="lazy" decoding="async" src={a.poster} alt={a.title}/>
-          <em className="compact-similar-rating">★ {a.rating}</em>
+          {hasGlobalRating(a) ? <em className="compact-similar-rating rating-gold">★ {a.rating}</em> : null}
           <b>{a.title}</b>
           <span>{a.meta}</span>
         </Link>)}
