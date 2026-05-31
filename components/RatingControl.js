@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v106: Yummy-like compact global rating strip, no duplicate personal badge/title.
+// AIanime v107: clean global AIanime rating + real external source badges with logos.
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings, setUserRating } from '@/lib/userStorage'
@@ -33,35 +33,46 @@ function ratingCountLabel(count){
   return `${number} оценок`
 }
 
-function globalSummary(siteRating, localValue, baseScore){
+function globalSummary(siteRating){
   const communityValue = Number(siteRating?.value || 0)
   const communityCount = Number(siteRating?.count || 0)
-  const local = Number(localValue || 0)
-  const fallback = Number(baseScore || 0)
 
   if(communityCount > 0 && Number.isFinite(communityValue) && communityValue > 0){
     return { score:displayScoreFromFive(communityValue), label:ratingCountLabel(communityCount) }
   }
-  if(local > 0){
-    return { score:displayScoreFromFive(local), label:'1 оценка' }
-  }
-  if(Number.isFinite(fallback) && fallback > 0){
-    return { score:displayScoreFromTen(fallback), label:'рейтинг источников' }
-  }
-  return { score:'—', label:'нет оценок' }
+
+  // Не подставляем MAL/Shiki/старый score как рейтинг AIanime.
+  // Пока пользователи не поставили оценки, общий рейтинг сайта должен быть пустым.
+  return { score:'—', label:'0 оценок' }
+}
+
+function sourceLogo(label, explicitLogo){
+  const logo = String(explicitLogo || '').trim()
+  if(logo) return logo
+  const key = String(label || '').toLowerCase()
+  if(key.includes('mal') || key.includes('myanimelist')) return 'MAL'
+  if(key.includes('shiki') || key.includes('shikimori')) return '鳥居'
+  return String(label || '').slice(0, 3).toUpperCase()
+}
+
+function sourceClass(label){
+  const key = String(label || '').toLowerCase()
+  if(key.includes('mal') || key.includes('myanimelist')) return ' mal'
+  if(key.includes('shiki') || key.includes('shikimori')) return ' shiki'
+  return ''
 }
 
 function normalizeSource(item){
   const label = String(item?.label || '').trim()
   const score = displayScoreFromTen(item?.score)
   if(!label || score === '—') return null
-  return { label, score, href:item?.href || '' }
+  return { label, logo:sourceLogo(label, item?.logo), cls:sourceClass(label), score, href:item?.href || '' }
 }
 
-export default function RatingControl({ slug, siteRating = null, baseScore = null, sources = [] }){
+export default function RatingControl({ slug, siteRating = null, sources = [] }){
   const { user } = useAuthState()
   const [value,setValue] = useState(0)
-  const summary = useMemo(() => globalSummary(siteRating, value, baseScore), [siteRating, value, baseScore])
+  const summary = useMemo(() => globalSummary(siteRating), [siteRating])
   const sourceItems = useMemo(() => (Array.isArray(sources) ? sources : []).map(normalizeSource).filter(Boolean), [sources])
 
   useEffect(()=>{
@@ -93,7 +104,7 @@ export default function RatingControl({ slug, siteRating = null, baseScore = nul
     pushToast(valueToSave ? `Оценка сохранена: ${displayScoreFromFive(valueToSave)}/10` : 'Оценка удалена', 'success')
   }
 
-  return <section className="title-rating-strip title-rating-strip-v106" aria-label="Рейтинг">
+  return <section className="title-rating-strip title-rating-strip-v107" aria-label="Рейтинг">
     <div className="title-rating-main-score" title="Рейтинг AIanime">
       <span>★</span>
       <b>{summary.score}</b>
@@ -102,8 +113,16 @@ export default function RatingControl({ slug, siteRating = null, baseScore = nul
 
     {sourceItems.length ? <div className="title-rating-source-list" aria-label="Рейтинги на внешних сервисах">
       {sourceItems.map(source => source.href
-        ? <a key={source.label} href={source.href} target="_blank" rel="noopener noreferrer" className="title-rating-source-chip" title={`${source.label}: ${source.score}`}>{source.label}<b>{source.score}</b></a>
-        : <span key={source.label} className="title-rating-source-chip" title={`${source.label}: ${source.score}`}>{source.label}<b>{source.score}</b></span>
+        ? <a key={source.label} href={source.href} target="_blank" rel="noopener noreferrer" className={`title-rating-source-chip${source.cls}`} title={`${source.label}: ${source.score}`}>
+            <span className="title-rating-source-logo" aria-hidden="true">{source.logo}</span>
+            <span className="sr-only">{source.label}</span>
+            <b>{source.score}</b>
+          </a>
+        : <span key={source.label} className={`title-rating-source-chip${source.cls}`} title={`${source.label}: ${source.score}`}>
+            <span className="title-rating-source-logo" aria-hidden="true">{source.logo}</span>
+            <span className="sr-only">{source.label}</span>
+            <b>{source.score}</b>
+          </span>
       )}
     </div> : null}
 
