@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v115: live community rating badge for cards; local vote updates immediately.
+// AIanime v116: single solid-color community rating badge for cards.
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings } from '@/lib/userStorage'
 
@@ -58,7 +58,7 @@ export default function GlobalRatingBadge({ slug, score = null, count = 0, class
 
   if(!label) return null
 
-  return <span className={`rating-gold ${toneClass(visibleScore)} ${className}`.trim()} title={`Рейтинг AIanime: ${label}/10`}>
+  return <span className={`global-rating-badge ${toneClass(visibleScore)} ${className}`.trim()} title={`Рейтинг AIanime: ${label}/10`}>
     <span aria-hidden="true">★</span>
     <b>{label}</b>
   </span>
