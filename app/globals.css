@@ -19212,3 +19212,81 @@ a.title-rating-source-chip{
 .catalog-cover .rating:not(.global-rating-badge){
   display:none!important;
 }
+
+/* AIanime v117: flat compact community rating badge; fixes catalog span inheritance. */
+.global-rating-badge{
+  min-width:46px!important;
+  height:24px!important;
+  padding:0 8px!important;
+  gap:4px!important;
+  border-radius:999px!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  letter-spacing:-.025em!important;
+  border:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  background-image:none!important;
+}
+.global-rating-badge span,
+.catalog-cover .global-rating-badge span,
+.poster .global-rating-badge span,
+.compact-similar-rating.global-rating-badge span,
+.mini-rating-gold.global-rating-badge span{
+  position:static!important;
+  left:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:auto!important;
+  min-width:0!important;
+  height:auto!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:inherit!important;
+  display:inline-block!important;
+  font-size:18px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  transform:translateY(-1px)!important;
+}
+.global-rating-badge b,
+.catalog-cover .global-rating-badge b,
+.poster .global-rating-badge b,
+.compact-similar-rating.global-rating-badge b,
+.mini-rating-gold.global-rating-badge b{
+  color:inherit!important;
+  font:inherit!important;
+  line-height:1!important;
+  position:static!important;
+}
+.global-rating-badge.rating-tone-red{
+  background:#cf5b62!important;
+  color:#fff!important;
+}
+.global-rating-badge.rating-tone-orange{
+  background:#d97824!important;
+  color:#fff!important;
+}
+.global-rating-badge.rating-tone-gold{
+  background:#d5ae4a!important;
+  color:#2f230c!important;
+}
+.catalog-cover .global-rating-badge,
+.poster .global-rating-badge,
+.compact-similar-rating.global-rating-badge{
+  left:9px!important;
+  top:9px!important;
+  right:auto!important;
+  bottom:auto!important;
+}
+.mini-rating-gold.global-rating-badge{
+  min-width:42px!important;
+  height:22px!important;
+  padding:0 7px!important;
+  margin-left:auto!important;
+}
