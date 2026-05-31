@@ -19848,3 +19848,147 @@ a.title-rating-source-chip{
 .home-new-copy small{font-size:12px!important;color:#f3eefc!important;}
 @media (max-width:1200px){.home-new-card{height:270px!important;min-height:270px!important;}}
 @media (max-width:760px){.home-new-card{min-width:214px!important;height:292px!important;min-height:292px!important;}}
+
+/* AIanime v127: remove status/action pills from Popular Now cards. */
+.popular-live-tag{display:none!important;}
+.popular-live-copy{gap:4px;}
+
+/* AIanime v129: how-it-works popover without background blur. */
+html:has(.how-modal-toggle:checked) body{
+  overflow:auto!important;
+}
+html body .content > .how-modal,
+html body .how-modal{
+  position:fixed!important;
+  inset:auto!important;
+  left:clamp(330px, 31vw, 600px)!important;
+  top:235px!important;
+  width:430px!important;
+  max-width:calc(100vw - 32px)!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  display:block!important;
+  place-items:unset!important;
+  background:transparent!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transform:translate(-8px, 4px) scale(.985)!important;
+  transition:opacity .16s ease, transform .16s ease, visibility .16s ease!important;
+  z-index:120!important;
+}
+html body .content > .how-modal-toggle:checked ~ .how-modal,
+html body .how-modal-toggle:checked ~ .how-modal{
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  transform:translate(0, 0) scale(1)!important;
+}
+html body .content > .how-modal .how-modal-backdrop,
+html body .how-modal .how-modal-backdrop{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  background:transparent!important;
+}
+html body .content > .how-modal .how-modal-card,
+html body .how-modal .how-modal-card{
+  position:relative!important;
+  width:430px!important;
+  max-width:calc(100vw - 32px)!important;
+  max-height:none!important;
+  overflow:visible!important;
+  padding:22px 22px 20px!important;
+  border-radius:24px!important;
+  background:rgba(255,255,255,.96)!important;
+  border:1px solid rgba(157,129,220,.18)!important;
+  box-shadow:0 24px 55px rgba(64,45,108,.16)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body .content > .how-modal .how-modal-card::before,
+html body .how-modal .how-modal-card::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  left:-8px!important;
+  top:148px!important;
+  width:16px!important;
+  height:16px!important;
+  border-radius:4px!important;
+  background:rgba(255,255,255,.96)!important;
+  border-left:1px solid rgba(157,129,220,.18)!important;
+  border-bottom:1px solid rgba(157,129,220,.18)!important;
+  transform:rotate(45deg)!important;
+  box-shadow:-8px 8px 18px rgba(64,45,108,.06)!important;
+}
+html body .content > .how-modal .how-modal-card h2,
+html body .how-modal .how-modal-card h2{
+  font-size:24px!important;
+  line-height:1.05!important;
+  margin:0 38px 16px 0!important;
+  letter-spacing:-.7px!important;
+}
+html body .content > .how-modal .how-modal-steps,
+html body .how-modal .how-modal-steps{
+  display:grid!important;
+  gap:10px!important;
+}
+html body .content > .how-modal .how-modal-steps article,
+html body .how-modal .how-modal-steps article{
+  grid-template-columns:42px minmax(0,1fr)!important;
+  gap:12px!important;
+  padding:12px!important;
+  border-radius:16px!important;
+  background:#fff!important;
+  border:1px solid rgba(157,129,220,.13)!important;
+  box-shadow:none!important;
+}
+html body .content > .how-modal .how-modal-steps b,
+html body .how-modal .how-modal-steps b{
+  width:42px!important;
+  height:42px!important;
+  font-size:18px!important;
+  border-radius:14px!important;
+}
+html body .content > .how-modal .how-modal-steps strong,
+html body .how-modal .how-modal-steps strong{
+  font-size:13.5px!important;
+  line-height:1.15!important;
+}
+html body .content > .how-modal .how-modal-steps span,
+html body .how-modal .how-modal-steps span{
+  font-size:12px!important;
+  line-height:1.35!important;
+}
+html body .content > .how-modal .how-modal-close,
+html body .how-modal .how-modal-close{
+  right:15px!important;
+  top:15px!important;
+  width:34px!important;
+  height:34px!important;
+  border-radius:12px!important;
+}
+@media (max-width:900px){
+  html body .content > .how-modal,
+  html body .how-modal{
+    left:16px!important;
+    right:16px!important;
+    top:92px!important;
+    width:auto!important;
+    max-width:none!important;
+  }
+  html body .content > .how-modal .how-modal-card,
+  html body .how-modal .how-modal-card{
+    width:auto!important;
+    max-width:none!important;
+  }
+  html body .content > .how-modal .how-modal-card::before,
+  html body .how-modal .how-modal-card::before{
+    display:none!important;
+  }
+}

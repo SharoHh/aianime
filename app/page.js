@@ -1,3 +1,4 @@
+// AIanime v128: right recommendations show 4 anime.
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 // AIanime v123: real popularity + latest additions blocks on the home page.
@@ -100,7 +101,7 @@ function SiteStatsWidget({anime, weeklySchedule}){
 function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
   <HomeScheduleWidgetClient scheduleDays={weeklySchedule?.days || []} initialDay={weeklySchedule?.todayIndex || 0}/>
   <HomeMoodPickerClient anime={anime.slice(0,40)}/>
-  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
+  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,9).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
   <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
 export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const popularAnime = rankPopularAnime(anime, 24); const newestAnime = rankNewAnime(anime, 12); return <main className="shell"><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
