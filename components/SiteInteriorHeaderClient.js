@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v137: shared compact light menu with clean SVG icons.
+// AIanime v138: shared compact light menu with brighter unique SVG icons.
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
@@ -26,17 +26,17 @@ export default function SiteInteriorHeaderClient(){
       </Link>
 
       <nav className="site-interior-header__nav" aria-label="Разделы сайта">
-        <Link href="/catalog"><HomeSectionIcon type="collections"/>Каталог</Link>
-        <Link href="/season"><HomeSectionIcon type="continue"/>Онгоинги</Link>
+        <Link href="/catalog"><HomeSectionIcon type="catalog"/>Каталог</Link>
+        <Link href="/season"><HomeSectionIcon type="ongoing"/>Онгоинги</Link>
         <Link href="/schedule"><HomeSectionIcon type="schedule"/>Расписание</Link>
-        <Link href="/collections"><HomeSectionIcon type="new"/>Подборки</Link>
-        <Link href="/ai"><HomeSectionIcon type="ai"/>Что посмотреть?</Link>
-        <Link href="/recommend"><HomeSectionIcon type="top"/>Случайное</Link>
+        <Link href="/collections"><HomeSectionIcon type="collections"/>Подборки</Link>
+        <Link href="/ai"><HomeSectionIcon type="question"/>Что посмотреть?</Link>
+        <Link href="/recommend"><HomeSectionIcon type="random"/>Случайное</Link>
       </nav>
 
       <div className="site-interior-header__actions">
         <Link href="/catalog" className="site-interior-header__search" aria-label="Открыть поиск в каталоге">
-          <span>⌕</span><strong>Поиск аниме...</strong><kbd>Ctrl K</kbd>
+          <HomeSectionIcon type="search"/><strong>Поиск аниме...</strong><kbd>Ctrl K</kbd>
         </Link>
         <TitleAuthActionClient/>
       </div>

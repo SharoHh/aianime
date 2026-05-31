@@ -1,4 +1,4 @@
-// AIanime v137: clean SVG section icons reused across the site.
+// AIanime v138: cleaner section/menu SVG icons; collection cards no longer use decorative icons.
 export default function HomeSectionIcon({ type = 'spark' }){
   const common = {
     width: 16,
@@ -44,6 +44,32 @@ export default function HomeSectionIcon({ type = 'spark' }){
       <path d="M12 4.2l1.25 4.05L17.3 9.5l-4.05 1.25L12 14.8l-1.25-4.05L6.7 9.5l4.05-1.25L12 4.2Z" fill="currentColor"/>
       <path d="M18 14.2l.65 1.95 1.95.65-1.95.65L18 19.4l-.65-1.95-1.95-.65 1.95-.65L18 14.2Z" fill="currentColor" opacity=".65"/>
       <path d="M6 14.7l.5 1.5 1.5.5-1.5.5L6 18.7l-.5-1.5-1.5-.5 1.5-.5.5-1.5Z" fill="currentColor" opacity=".45"/>
+    </svg> : null}
+
+
+    {type === 'catalog' ? <svg {...common}>
+      <path d="M5.4 5.4h5.1v5.1H5.4V5.4ZM13.5 5.4h5.1v5.1h-5.1V5.4ZM5.4 13.5h5.1v5.1H5.4v-5.1ZM13.5 13.5h5.1v5.1h-5.1v-5.1Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+    </svg> : null}
+
+    {type === 'ongoing' ? <svg {...common}>
+      <path d="M8.2 6.7c0-.9 1-1.5 1.8-1l7.2 4.3c.8.5.8 1.6 0 2.1L10 16.3c-.8.5-1.8-.1-1.8-1V6.7Z" fill="currentColor"/>
+      <path d="M5.2 6v12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" opacity=".45"/>
+    </svg> : null}
+
+    {type === 'question' ? <svg {...common}>
+      <path d="M9.2 9.1A3 3 0 0 1 12.1 7c1.8 0 3.2 1.1 3.2 2.7 0 1.4-.8 2.1-2.1 2.9-.8.5-1.2 1-1.2 1.9" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"/>
+      <path d="M12 18.1h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+    </svg> : null}
+
+    {type === 'random' ? <svg {...common}>
+      <path d="M4.8 7.4h2.4c2.6 0 3.6 7.2 6.2 7.2h1.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M4.8 16.6h2.4c1.2 0 2.1-1.4 2.9-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".6"/>
+      <path d="M15.4 5.6l3.8 1.8-3.8 1.9M15.4 12.7l3.8 1.9-3.8 1.8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg> : null}
+
+    {type === 'search' ? <svg {...common}>
+      <path d="M10.8 17.1a6.3 6.3 0 1 0 0-12.6 6.3 6.3 0 0 0 0 12.6Z" stroke="currentColor" strokeWidth="2"/>
+      <path d="m15.5 15.5 4 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
     </svg> : null}
 
     {type === 'collections' ? <svg {...common}>
