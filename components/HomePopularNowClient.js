@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v125: popular block uses real actions internally, but does not expose raw action counts in UI.
+// AIanime v127: popular cards do not show internal status/action labels.
 import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { trackPopularityEvent } from '@/components/PopularityTrackerClient'
@@ -9,17 +9,6 @@ const PAGE_SIZE = 5
 
 function cleanText(value){
   return String(value || '').replace(/\s+/g, ' ').trim()
-}
-
-function statusLabel(item){
-  const actions = Number(item?.livePopularityActions || 0) || 0
-  const status = String(item?.status || '').toLowerCase()
-  // Сырые счётчики вроде "1 действие" не показываем пользователю:
-  // они нужны только для сортировки популярности, а в карточке выглядят как баг.
-  if(actions > 0) return 'Сейчас смотрят'
-  if(status === 'ongoing') return 'Онгоинг'
-  if(item?.kind === 'movie') return 'Фильм'
-  return 'В тренде'
 }
 
 function metaLine(item){
@@ -55,7 +44,6 @@ export default function HomePopularNowClient({ anime = [] }){
         <GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/>
         <div className="popular-live-shade" />
         <div className="popular-live-copy">
-          <span className="popular-live-tag">{statusLabel(item)}</span>
           <b>{item.title}</b>
           {item.originalTitle || item.englishTitle ? <em>{item.originalTitle || item.englishTitle}</em> : null}
           <small>{metaLine(item)}</small>
