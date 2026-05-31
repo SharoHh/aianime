@@ -18462,3 +18462,146 @@ html body .content > .how-modal .how-modal-steps span{
   .site-footer.site-footer-minimal .site-footer-logo{justify-content:center !important;}
   .site-footer.site-footer-minimal .site-footer-note{white-space:normal !important;line-height:1.25 !important;justify-content:center !important;}
 }
+
+
+/* AIanime v101: title menu auth state + main-page logo mark */
+.title-wide-header-v80[data-aianime-title-nav="v101"]{
+  margin:-24px 0 24px calc(50% - 50vw);
+  background:rgba(255,255,255,.965);
+  border-bottom:1px solid rgba(226,219,241,.9);
+  box-shadow:0 12px 30px rgba(58,44,93,.045);
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__bar{
+  width:min(1760px, calc(100% - 64px));
+  min-height:74px;
+  gap:22px;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__brand{
+  gap:10px;
+  min-width:max-content;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__brand img{
+  width:38px;
+  height:38px;
+  object-fit:contain;
+  display:block;
+  filter:drop-shadow(0 10px 20px rgba(219,67,194,.16));
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__spark{
+  display:none!important;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__brand b{
+  font-size:23px;
+  letter-spacing:-.06em;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__brand b span{
+  background:linear-gradient(135deg,#c067f0 0%,#ef5bb8 90%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__nav{
+  justify-content:center;
+  gap:7px;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__actions{
+  gap:10px;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-nav-profile,
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__signup{
+  min-height:42px;
+  border-radius:15px;
+}
+
+.title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__signup{
+  padding:0 18px;
+}
+
+@media(max-width:1180px){
+  .title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__bar{
+    width:min(100% - 28px, 1180px);
+    gap:12px;
+  }
+}
+
+@media(max-width:760px){
+  .title-wide-header-v80[data-aianime-title-nav="v101"]{
+    position:static;
+  }
+  .title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__bar{
+    width:min(100% - 24px, 760px);
+    min-height:auto;
+    padding:12px 0;
+  }
+  .title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__brand img{
+    width:34px;
+    height:34px;
+  }
+  .title-wide-header-v80[data-aianime-title-nav="v101"] .title-wide-header-v80__brand b{
+    font-size:21px;
+  }
+}
+
+/* AIanime v102 — working user ratings */
+.compact-rating-row-v102{
+  display:flex;
+  align-items:stretch;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.title-rating-panel{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:58px;
+  padding:8px 10px;
+  border:1px solid rgba(139,92,246,.16);
+  background:rgba(255,255,255,.84);
+  border-radius:18px;
+  box-shadow:0 12px 34px rgba(91,70,135,.08);
+}
+.title-rating-panel__summary{
+  min-width:104px;
+  height:42px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:0 14px;
+  border-radius:14px;
+  background:linear-gradient(135deg,rgba(255,233,250,.9),rgba(239,232,255,.9));
+}
+.title-rating-panel__summary span,
+.title-rating-panel__summary em,
+.title-rating-panel__control span{font-size:11px;font-weight:850;color:#8b7ba5;line-height:1.1;font-style:normal}
+.title-rating-panel__summary b{font-size:22px;line-height:1;color:#362752;letter-spacing:-.04em;margin:1px 0}
+.title-rating-panel__control{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:230px}
+.title-rating-panel .rating-control{margin:0;gap:2px;display:inline-flex;align-items:center}
+.title-rating-panel .rating-control button{
+  width:29px;height:29px;display:grid;place-items:center;padding:0;border-radius:10px;
+  background:#f7f1ff;border:1px solid rgba(139,92,246,.14);color:#c8bfd8;font-size:17px;
+}
+.title-rating-panel .rating-control button:hover{background:#fff;transform:translateY(-1px)}
+.title-rating-panel .rating-control button.active{color:#f59e0b;background:#fff7dc;border-color:rgba(245,158,11,.26);box-shadow:0 8px 18px rgba(245,158,11,.10)}
+.rating-login-link{font-size:12px;font-weight:900;color:#8d55ee;padding:7px 10px;border-radius:999px;background:#f5efff}
+.compact-rating-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.user-rating-badge{position:absolute;right:10px;bottom:67px;z-index:3;display:inline-flex;align-items:center;gap:4px;height:25px;border-radius:999px;padding:0 9px;background:linear-gradient(135deg,#fff7dc,#fff);color:#5a3a00;font-size:11px;font-weight:950;box-shadow:0 8px 18px rgba(60,44,10,.16);border:1px solid rgba(245,158,11,.26);pointer-events:none}
+.user-rating-badge span{color:#f59e0b}
+.user-rating-badge.compact{position:static;height:22px;padding:0 7px;font-size:11px;vertical-align:middle}
+.catalog-cover .user-rating-badge{position:absolute;right:10px;top:10px;bottom:auto}
+.mini .user-rating-badge{margin-left:auto;flex-shrink:0}
+.compact-ai-recs a{position:relative}
+.compact-ai-recs .user-rating-badge{position:absolute;right:9px;top:9px;bottom:auto}
+@media (max-width:760px){
+  .title-rating-panel{width:100%;align-items:flex-start;flex-direction:column}
+  .title-rating-panel__control{min-width:0;width:100%}
+  .title-rating-panel .rating-control button{width:34px;height:34px}
+}

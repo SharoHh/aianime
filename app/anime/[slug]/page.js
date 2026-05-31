@@ -1,4 +1,4 @@
-// AIanime v95: title page fetches list/episodes/rating in parallel.
+// AIanime v102: title page has working user rating control and rating badges.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -8,6 +8,8 @@ import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/a
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
+import RatingControl from '@/components/RatingControl'
+import UserRatingBadge from '@/components/UserRatingBadge'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import CommentsClient from '@/components/CommentsClient'
@@ -60,7 +62,7 @@ async function fetchJsonSoft(url, options = {}){
 async function getSiteRatingStats(slug){
   if(!hasSupabase() || !slug) return { value:null, count:0 }
   try{
-    const res = await supabaseRequest(`user_ratings?select=rating&anime_slug=eq.${encodeURIComponent(slug)}&limit=1000`, { method:'GET', timeout:180 })
+    const res = await supabaseRequest(`user_ratings?select=rating&anime_slug=eq.${encodeURIComponent(slug)}&limit=1000`, { method:'GET', timeout:650 })
     if(!res.ok) return { value:null, count:0 }
     const rows = await res.json()
     if(!Array.isArray(rows) || !rows.length) return { value:null, count:0 }
@@ -696,11 +698,11 @@ export default async function AnimePage({ params, searchParams }){
   ])
 
   return <main className="anime-compact-page">
-    <header className="title-wide-header-v80" data-aianime-title-nav="v95" aria-label="Меню страницы тайтла">
+    <header className="title-wide-header-v80" data-aianime-title-nav="v101" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
-          <span className="title-wide-header-v80__spark">✦</span>
-          <b>AI<span>anime</span></b>
+          <img src="/aianime-logo.png" alt="" aria-hidden="true" />
+          <b>Aianime</b>
         </Link>
 
         <nav className="title-wide-header-v80__nav" aria-label="Разделы сайта">
@@ -715,7 +717,6 @@ export default async function AnimePage({ params, searchParams }){
         <div className="title-wide-header-v80__actions">
           <GlobalSearchOverlay items={allAnime.slice(0,120)}/>
           <TitleAuthActionClient/>
-          <Link href="/auth" className="title-wide-header-v80__signup">Регистрация</Link>
         </div>
       </div>
 
@@ -734,11 +735,13 @@ export default async function AnimePage({ params, searchParams }){
           <span>{item.year || '—'}</span>
         </div>
 
-        <div className="compact-rating-row" aria-label="Рейтинг AIanime и внешние ссылки">
-          <div className="main-rate site-rate" title={siteRating.count ? `Средняя оценка пользователей AIanime: ${siteRating.count}` : 'Оценок пользователей AIanime пока нет'}><b>{ratingLabel(siteRating.value)}</b><span>{siteRating.count ? `${siteRating.count} оценок` : 'наш рейтинг'}</span></div>
-          <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki ↗</a>
-          <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI-похожие</Link>
-          <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL ↗</a>
+        <div className="compact-rating-row compact-rating-row-v102" aria-label="Рейтинг AIanime и внешние ссылки">
+          <RatingControl slug={item.slug} siteRating={siteRating}/>
+          <div className="compact-rating-links">
+            <a className="rate-chip shiki is-link" href={externalSearchUrl('shiki', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на Shikimori">Shiki ↗</a>
+            <Link className="rate-chip ai is-link" href={`/ai?similar=${item.slug}`} title="Найти похожие тайтлы через AI">AI-похожие</Link>
+            <a className="rate-chip mal is-link" href={externalSearchUrl('mal', item)} target="_blank" rel="noopener noreferrer" title="Открыть тайтл на MyAnimeList">MAL ↗</a>
+          </div>
         </div>
 
         <div id="title-info" className="compact-info-list">
@@ -794,6 +797,7 @@ export default async function AnimePage({ params, searchParams }){
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
           <img loading="lazy" decoding="async" src={a.poster} alt={a.title}/>
+          <UserRatingBadge slug={a.slug} compact/>
           <b>{a.title}</b>
           <span>{a.meta}</span>
         </Link>)}
