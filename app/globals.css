@@ -19823,3 +19823,28 @@ a.title-rating-source-chip{
 .poster .rating:not(.global-rating-badge),
 .catalog-cover .rating:not(.global-rating-badge),
 .catalog-cover .rating-gold:not(.global-rating-badge){display:none!important;}
+
+/* AIanime v125: hide raw popularity action counters; compact popular tag. */
+.popular-live-tag{max-width:132px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+
+/* AIanime v126: New on site cards match Popular Now height and no inner status chips. */
+.home-new-card{
+  height:299px!important;
+  min-height:299px!important;
+  box-shadow:0 16px 38px rgba(52,43,91,.10)!important;
+}
+.home-new-shade{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:linear-gradient(180deg,rgba(11,10,26,.02) 20%,rgba(9,8,24,.34) 55%,rgba(9,8,24,.88) 100%);
+  pointer-events:none;
+}
+.home-new-card:after{display:none!important;}
+.home-new-copy{left:14px!important;right:14px!important;bottom:14px!important;gap:5px!important;}
+.home-new-copy>span{display:none!important;}
+.home-new-copy b{font-size:14px!important;line-height:1.18!important;}
+.home-new-copy small{font-size:12px!important;color:#f3eefc!important;}
+@media (max-width:1200px){.home-new-card{height:270px!important;min-height:270px!important;}}
+@media (max-width:760px){.home-new-card{min-width:214px!important;height:292px!important;min-height:292px!important;}}
