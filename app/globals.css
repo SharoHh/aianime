@@ -19290,3 +19290,59 @@ a.title-rating-source-chip{
   padding:0 7px!important;
   margin-left:auto!important;
 }
+
+
+/* AIanime v118: compact flat traffic-light rating badge, no star icon. */
+.global-rating-badge,
+.catalog-cover .global-rating-badge,
+.poster .global-rating-badge,
+.compact-similar-rating.global-rating-badge{
+  min-width:34px!important;
+  height:22px!important;
+  padding:0 8px!important;
+  border-radius:7px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  border:0!important;
+  box-shadow:none!important;
+  background-image:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  letter-spacing:-.02em!important;
+  line-height:1!important;
+  color:#fff!important;
+}
+.global-rating-badge > span{display:none!important;}
+.global-rating-badge b,
+.catalog-cover .global-rating-badge b,
+.poster .global-rating-badge b,
+.compact-similar-rating.global-rating-badge b,
+.mini-rating-gold.global-rating-badge b{
+  color:inherit!important;
+  font:inherit!important;
+  line-height:1!important;
+  position:static!important;
+}
+.global-rating-badge.rating-tone-red{background:#d94b4b!important;color:#fff!important;}
+.global-rating-badge.rating-tone-orange{background:#e27a22!important;color:#fff!important;}
+.global-rating-badge.rating-tone-green,
+.global-rating-badge.rating-tone-gold{background:#39a85a!important;color:#fff!important;}
+.catalog-cover .global-rating-badge,
+.poster .global-rating-badge,
+.compact-similar-rating.global-rating-badge{
+  left:10px!important;
+  top:10px!important;
+  right:auto!important;
+  bottom:auto!important;
+}
+.mini-rating-gold.global-rating-badge{
+  position:static!important;
+  min-width:32px!important;
+  height:21px!important;
+  padding:0 7px!important;
+  margin-left:auto!important;
+}
