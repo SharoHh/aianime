@@ -1,6 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
+
+const iconTypes = ['collections','continue','schedule','new','top']
 
 const routes = [
   `/ai?q=${encodeURIComponent('тёплые добрые аниме когда грустно')}`,
@@ -18,7 +21,7 @@ export default function HomeCollectionsClient({ collections = [] }){
       key={c[0]}
       title={`Открыть подборку: ${c[0]}`}
     >
-      <div><b>{c[0]}</b><span>{c[1]}</span></div><em>{c[2]}</em>
+      <div><b>{c[0]}</b><span>{c[1]}</span></div><em><HomeSectionIcon type={iconTypes[i] || 'collections'}/></em>
     </Link>)}
   </div>
 }

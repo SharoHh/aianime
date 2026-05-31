@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { scoreCatalogItem } from '@/lib/searchRelevance'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 function score(item, query){
   return scoreCatalogItem(item, query)
@@ -62,7 +63,7 @@ export default function GlobalSearchOverlay({ items = [] }){
           </Link>) : <div className="global-search-empty">Ничего не найдено. Попробуй название, жанр, настроение или похожий тайтл.</div>}
         </div>
 
-        <Link onClick={()=>setOpen(false)} href={`/ai?q=${encodeURIComponent(query || 'что посмотреть вечером')}`} className="global-search-ai">✦ Подобрать через AI</Link>
+        <Link onClick={()=>setOpen(false)} href={`/ai?q=${encodeURIComponent(query || 'что посмотреть вечером')}`} className="global-search-ai"><HomeSectionIcon type="ai"/> Подобрать через AI</Link>
       </section>
     </div> : null}
   </>

@@ -1,9 +1,10 @@
 'use client'
 
-// AIanime v120: shared compact light menu for internal pages, hidden on home and title pages.
+// AIanime v137: shared compact light menu with clean SVG icons.
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 const HIDDEN_PREFIXES = ['/admin', '/auth', '/anime']
 
@@ -25,12 +26,12 @@ export default function SiteInteriorHeaderClient(){
       </Link>
 
       <nav className="site-interior-header__nav" aria-label="Разделы сайта">
-        <Link href="/catalog"><span>▦</span>Каталог</Link>
-        <Link href="/season"><span>▷</span>Онгоинги</Link>
-        <Link href="/schedule"><span>◷</span>Расписание</Link>
-        <Link href="/collections"><span>☆</span>Подборки</Link>
-        <Link href="/ai"><span>?</span>Что посмотреть?</Link>
-        <Link href="/recommend"><span>↝</span>Случайное</Link>
+        <Link href="/catalog"><HomeSectionIcon type="collections"/>Каталог</Link>
+        <Link href="/season"><HomeSectionIcon type="continue"/>Онгоинги</Link>
+        <Link href="/schedule"><HomeSectionIcon type="schedule"/>Расписание</Link>
+        <Link href="/collections"><HomeSectionIcon type="new"/>Подборки</Link>
+        <Link href="/ai"><HomeSectionIcon type="ai"/>Что посмотреть?</Link>
+        <Link href="/recommend"><HomeSectionIcon type="top"/>Случайное</Link>
       </nav>
 
       <div className="site-interior-header__actions">

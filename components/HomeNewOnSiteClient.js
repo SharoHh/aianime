@@ -4,6 +4,7 @@
 import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { trackPopularityEvent } from '@/components/PopularityTrackerClient'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 function cleanText(value){
   return String(value || '').replace(/\s+/g, ' ').trim()
@@ -26,7 +27,7 @@ export default function HomeNewOnSiteClient({ anime = [] }){
   return <section className="home-new-site" aria-label="Новое на сайте">
     <div className="section-title home-new-title">
       <div>
-        <h2><span>✦</span>Новое на сайте</h2>
+        <h2><HomeSectionIcon type="new"/>Новое на сайте</h2>
         <p>Последние добавленные тайтлы. Онгоинги оставим в расписании и отдельных подборках.</p>
       </div>
       <Link href="/catalog">В каталог ›</Link>

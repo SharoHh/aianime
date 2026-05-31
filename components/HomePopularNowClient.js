@@ -4,6 +4,7 @@
 import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { trackPopularityEvent } from '@/components/PopularityTrackerClient'
+import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 const PAGE_SIZE = 5
 
@@ -26,7 +27,7 @@ export default function HomePopularNowClient({ anime = [] }){
   return <section className="home-popular-live home-popular-real" aria-label="Популярное сейчас">
     <div className="section-title popular-live-title">
       <div>
-        <h2><span>♨</span>Популярное сейчас</h2>
+        <h2><HomeSectionIcon type="popular"/>Популярное сейчас</h2>
         <p>Считаем по действиям пользователей: просмотры, переходы, продолжение просмотра, оценки и избранное.</p>
       </div>
       <Link href="/catalog">Смотреть все ›</Link>
