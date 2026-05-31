@@ -1,4 +1,4 @@
-// AIanime v108: strict external ratings only by real IDs + instant rating UI.
+// AIanime v110: clean Shiki badge icon instead of broken glyphs.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -92,34 +92,42 @@ function closeTitleMatch(row, item){
   return candidates.some(value => value.includes(needle) || needle.includes(value))
 }
 
-async function fetchMalRating(item){
-  // MAL показываем только по реальному MAL ID из базы.
-  // Поиск по названию отключён: он часто цеплял не тот тайтл и давал фейковые 9.1.
-  const malId = Number(item?.malId || 0)
-  if(!Number.isFinite(malId) || malId <= 0) return null
-  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime/${malId}`, { timeout:2600, revalidate:43200 })
-  return scoreNumber(data?.data?.score)
+async function fetchMalRatingById(malId){
+  const safeMalId = Number(malId || 0)
+  if(!Number.isFinite(safeMalId) || safeMalId <= 0) return { score:null, malId:null }
+  const data = await fetchJsonSoft(`https://api.jikan.moe/v4/anime/${safeMalId}`, { timeout:2600, revalidate:43200 })
+  return { score:scoreNumber(data?.data?.score), malId:safeMalId }
 }
 
-async function fetchShikiRating(item){
+async function fetchShikiData(item){
   // Shiki показываем только по реальному Shikimori ID.
   // Поиск по названию отключён, чтобы не подтягивать случайные оценки источников.
   const shikiId = Number(item?.shikimoriId || 0)
-  if(!Number.isFinite(shikiId) || shikiId <= 0) return null
+  if(!Number.isFinite(shikiId) || shikiId <= 0) return { score:null, shikiId:null, malId:null }
   const data = await fetchJsonSoft(`https://shikimori.one/api/animes/${shikiId}`, {
-    timeout:1800,
+    timeout:2200,
     revalidate:43200,
     headers:{ 'User-Agent':'AIanime/1.0 (+https://aianime.ru)' }
   })
-  return scoreNumber(data?.score)
+  return {
+    score:scoreNumber(data?.score),
+    shikiId,
+    malId:Number(data?.myanimelist_id || data?.mal_id || 0) || null
+  }
 }
 
 async function getExternalRatings(item){
-  const [mal, shiki] = await Promise.all([
-    fetchMalRating(item),
-    fetchShikiRating(item)
-  ])
-  return { mal, shiki }
+  const shikiData = await fetchShikiData(item)
+  const malId = Number(item?.malId || 0) > 0 ? Number(item.malId) : shikiData.malId
+  const malData = await fetchMalRatingById(malId)
+  return {
+    mal:malData.score,
+    malId:malData.malId || malId || null,
+    shiki:shikiData.score,
+    shikiId:shikiData.shikiId || Number(item?.shikimoriId || 0) || null,
+    malHref:malId ? `https://myanimelist.net/anime/${malId}` : null,
+    shikiHref:shikiData.shikiId ? `https://shikimori.one/animes/${shikiData.shikiId}` : null
+  }
 }
 
 function ratingLabel(value){
@@ -740,8 +748,8 @@ export default async function AnimePage({ params, searchParams }){
             slug={item.slug}
             siteRating={siteRating}
             sources={[
-              { label:'Shiki', logo:'鳥居', score:externalRatings?.shiki, href:externalSearchUrl('shiki', item) },
-              { label:'MAL', logo:'MAL', score:externalRatings?.mal, href:externalSearchUrl('mal', item) }
+              { label:'Shiki', logo:'Ш', score:externalRatings?.shiki, href:externalRatings?.shikiHref || externalSearchUrl('shiki', item), showEmpty:true },
+              { label:'MAL', logo:'MAL', score:externalRatings?.mal, href:externalRatings?.malHref || externalSearchUrl('mal', item), showEmpty:true }
             ]}
           />
         </div>

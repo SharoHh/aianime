@@ -18931,7 +18931,8 @@ a.title-rating-source-chip{
   letter-spacing:-.03em;
 }
 .title-rating-strip-v107 .title-rating-source-chip.mal .title-rating-source-logo{background:#eef3ff;color:#3053b8;}
-.title-rating-strip-v107 .title-rating-source-chip.shiki .title-rating-source-logo{background:#f3f0ff;color:#7c3aed;font-size:12px;}
+.title-rating-strip-v107 .title-rating-source-chip.shiki .title-rating-source-logo{background:#f3f0ff;color:#7c3aed;font-size:13px;font-weight:900;letter-spacing:-.02em;}
+/* AIanime v110: clean Shiki badge icon */
 .title-rating-strip-v107 .title-rating-source-chip b{color:#2f2447;font-size:13px;letter-spacing:-.02em;}
 .title-rating-strip-v107 .title-rating-vote{
   margin-left:auto;
@@ -18987,3 +18988,8 @@ a.title-rating-source-chip{
 /* AIanime v108: instant rating UI update and strict external source ratings. */
 .title-rating-strip-v108 .title-rating-main-score{transition:background-color .18s ease, border-color .18s ease;}
 .title-rating-strip-v108 .title-rating-source-chip{white-space:nowrap;}
+
+
+/* AIanime v109: keep real external rating chips visible; MAL may be resolved through Shiki id. */
+.title-rating-source-chip.is-empty{opacity:.55;}
+.title-rating-source-chip.is-empty b{color:#a9a0c8;}
