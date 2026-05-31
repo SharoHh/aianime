@@ -18607,3 +18607,128 @@ html body .content > .how-modal .how-modal-steps span{
 }
 
 /* AIanime v103: Supabase egress optimization; no visual changes. */
+
+
+/* AIanime v104: global rating, no personal duplicate badges on cards. */
+.title-rating-panel-v104{
+  min-height:64px;
+  align-items:center;
+  gap:14px;
+  padding:10px 12px;
+  border-radius:20px;
+  background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(250,246,255,.94));
+  border:1px solid rgba(139,92,246,.14);
+  box-shadow:0 14px 34px rgba(73,54,120,.08);
+}
+.title-rating-panel-v104 .title-rating-panel__summary{
+  min-width:132px;
+  height:48px;
+  background:linear-gradient(135deg,#fff7fc,#f4efff);
+  border:1px solid rgba(139,92,246,.10);
+}
+.title-rating-panel-v104 .title-rating-panel__summary span{
+  color:#7b6f92;
+  font-size:11px;
+  letter-spacing:.01em;
+}
+.title-rating-panel-v104 .title-rating-panel__summary b{
+  font-size:26px;
+  color:#2f2447;
+}
+.title-rating-panel-v104 .title-rating-panel__summary em{
+  color:#8f83a3;
+  font-size:11px;
+}
+.title-rating-panel-v104 .title-rating-panel__control{
+  min-width:0;
+  flex:1;
+  justify-content:flex-start;
+}
+.title-rating-panel-v104 .title-rating-panel__control span{
+  min-width:112px;
+  color:#675b79;
+  font-size:12px;
+}
+.title-rating-panel-v104 .rating-control{gap:4px}
+.title-rating-panel-v104 .rating-control button{
+  width:32px;
+  height:32px;
+  border-radius:11px;
+  font-size:17px;
+}
+.user-rating-badge{display:none!important}
+.compact-similar-rating{
+  position:absolute;
+  top:9px;
+  right:9px;
+  z-index:3;
+  height:24px;
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:0 8px;
+  background:rgba(255,255,255,.94);
+  color:#2f2948;
+  font-size:11px;
+  font-weight:900;
+  font-style:normal;
+  box-shadow:0 8px 18px rgba(46,35,82,.12);
+}
+@media (max-width:760px){
+  .title-rating-panel-v104{gap:10px}
+  .title-rating-panel-v104 .title-rating-panel__summary{min-width:100%;}
+  .title-rating-panel-v104 .title-rating-panel__control span{min-width:0;width:100%}
+}
+
+
+/* AIanime v105: rating block without redundant title label. */
+.title-rating-panel-v105{
+  min-height:58px;
+  align-items:center;
+  gap:14px;
+  padding:9px 12px;
+  border-radius:20px;
+  background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(250,246,255,.94));
+  border:1px solid rgba(139,92,246,.14);
+  box-shadow:0 14px 34px rgba(73,54,120,.08);
+}
+.title-rating-panel-v105 .title-rating-panel__summary{
+  min-width:104px;
+  height:44px;
+  padding:0 14px;
+  background:linear-gradient(135deg,#fff7fc,#f4efff);
+  border:1px solid rgba(139,92,246,.10);
+}
+.title-rating-panel-v105 .title-rating-panel__summary b{
+  font-size:26px;
+  color:#2f2447;
+  line-height:1;
+  margin:0;
+}
+.title-rating-panel-v105 .title-rating-panel__summary em{
+  color:#8f83a3;
+  font-size:11px;
+  font-weight:850;
+}
+.title-rating-panel-v105 .title-rating-panel__control{
+  min-width:0;
+  flex:1;
+  justify-content:flex-start;
+}
+.title-rating-panel-v105 .title-rating-panel__control span{
+  min-width:112px;
+  color:#675b79;
+  font-size:12px;
+}
+.title-rating-panel-v105 .rating-control{gap:4px}
+.title-rating-panel-v105 .rating-control button{
+  width:32px;
+  height:32px;
+  border-radius:11px;
+  font-size:17px;
+}
+@media (max-width:760px){
+  .title-rating-panel-v105{gap:10px}
+  .title-rating-panel-v105 .title-rating-panel__summary{min-width:100%;}
+  .title-rating-panel-v105 .title-rating-panel__control span{min-width:0;width:100%}
+}

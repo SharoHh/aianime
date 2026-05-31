@@ -1,4 +1,4 @@
-// AIanime v102: title page has working user rating control and rating badges.
+// AIanime v104: title page uses one global rating block, no personal duplicate badges.
 export const revalidate = 600
 export const dynamicParams = true
 
@@ -9,7 +9,6 @@ import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
 import RatingControl from '@/components/RatingControl'
-import UserRatingBadge from '@/components/UserRatingBadge'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import CommentsClient from '@/components/CommentsClient'
@@ -797,7 +796,7 @@ export default async function AnimePage({ params, searchParams }){
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
           <img loading="lazy" decoding="async" src={a.poster} alt={a.title}/>
-          <UserRatingBadge slug={a.slug} compact/>
+          <em className="compact-similar-rating">★ {a.rating}</em>
           <b>{a.title}</b>
           <span>{a.meta}</span>
         </Link>)}
