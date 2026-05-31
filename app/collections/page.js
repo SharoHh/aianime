@@ -7,6 +7,7 @@ export const metadata = {
 }
 
 import Link from 'next/link'
+import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { collections } from '@/lib/data'
 import { getAnimeList } from '@/lib/animeRepository'
 
@@ -20,7 +21,7 @@ const collectionRules = [
 
 function Poster({item}){
   return <Link href={`/anime/${item.slug}`} className="poster">
-    <img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><div className="rating">★ {item.rating}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
+    <img loading="lazy" decoding="async" src={item.poster} alt={item.title}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
   </Link>
 }
 

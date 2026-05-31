@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
+import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 import { decodeRouteSlug, slugifyRu, titleFromSlug } from '@/lib/routeSlugs'
 
@@ -53,7 +54,7 @@ export default async function GenrePage({ params }){
     {filtered.length ? <div className="poster-row seo-poster-row">
       {filtered.slice(0,40).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}>
         <img loading="lazy" decoding="async" src={a.poster} alt={a.title || 'Аниме'}/>
-        <div className="rating">★ {a.rating}</div>
+        <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount}/>
         <div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
       </Link>)}
     </div> : <section className="empty-state widget">

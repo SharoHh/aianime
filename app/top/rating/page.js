@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
+import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 
 export const metadata = {
@@ -24,7 +25,7 @@ export default async function TopListPage(){
         <strong>{index+1}</strong>
         <img loading="lazy" decoding="async" src={a.poster}/>
         <div><b>{a.title}</b><span>{a.year} · {a.meta} · {(a.genres || []).slice(0,3).join(' · ')}</span></div>
-        <em>★ {a.rating}</em>
+        <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="top-list-rating-badge"/>
       </Link>)}
     </section>
   </main>

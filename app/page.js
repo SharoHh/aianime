@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-// AIanime v116: card rating badge uses one clean solid-color badge.
+// AIanime v123: real popularity + latest additions blocks on the home page.
 
 import Link from 'next/link'
 import { collections } from '@/lib/data'
@@ -16,6 +16,9 @@ import SidebarAccountClient from '@/components/SidebarAccountClient'
 import HeaderAccountClient from '@/components/HeaderAccountClient'
 import SiteStatsClient from '@/components/SiteStatsClient'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
+import HomePopularNowClient from '@/components/HomePopularNowClient'
+import HomeNewOnSiteClient from '@/components/HomeNewOnSiteClient'
+import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
 
 const icons = ['home','catalog','schedule','collections','ai','favorites','profile','settings']
 const nav = ['Главная','Каталог','Расписание','Подборки','AI-подбор','Избранное','Профиль','Настройки']
@@ -100,7 +103,7 @@ function RightPanel({anime, weeklySchedule}){return <aside className="rightcol">
   <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,8).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
   <SiteStatsWidget anime={anime} weeklySchedule={weeklySchedule}/>
 </aside>}
-export default async function Home(){const [anime, weeklySchedule] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule()]); return <main className="shell"><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
+export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const popularAnime = rankPopularAnime(anime, 24); const newestAnime = rankNewAnime(anime, 12); return <main className="shell"><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
 <header className="topbar"><GlobalSearchOverlay items={anime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
   <picture className="hero-lcp-picture" aria-hidden="true">
     <source media="(max-width: 760px)" srcSet="/images/ai-hero-768.webp" />
@@ -127,4 +130,4 @@ export default async function Home(){const [anime, weeklySchedule] = await Promi
         </div>
       </div>
     </div>
-<SectionTitle icon="♨" title="Популярное сейчас"/><div className="poster-row">{anime.slice(0,5).map(a=><Poster key={a.slug} item={a}/>)}</div><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}
+<HomeNewOnSiteClient anime={newestAnime}/><HomePopularNowClient anime={popularAnime}/><SectionTitle icon="▻" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="✣" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={anime} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}

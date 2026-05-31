@@ -15,6 +15,7 @@ import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import WatchTracker from '@/components/WatchTracker'
+import PopularityTrackerClient from '@/components/PopularityTrackerClient'
 import { encodeSlug } from '@/lib/routeSlugs'
 import { cleanPublicText, isPlaceholderText } from '@/lib/ruContent'
 
@@ -814,6 +815,7 @@ export default async function AnimePage({ params, searchParams }){
         historyItem={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta }}
       />
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>
+      <PopularityTrackerClient slug={item.slug} type="view" delay={1200}/>
     </section>
 
     <section className="compact-similar compact-ai-recs" id="similar">

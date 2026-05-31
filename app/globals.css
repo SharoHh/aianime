@@ -19685,3 +19685,141 @@ a.title-rating-source-chip{
   padding:0 7px!important;
   margin-left:auto!important;
 }
+
+
+/* AIanime v122: clearer auto-updating popular block on the home page. */
+.home-popular-live{margin-top:26px;}
+.popular-live-title{align-items:flex-end;margin:24px 0 15px;}
+.popular-live-title>div{min-width:0;}
+.popular-live-title h2{margin:0;}
+.popular-live-title p{margin:7px 0 0;color:#8c84a6;font-size:12.5px;font-weight:700;line-height:1.35;max-width:620px;}
+.popular-live-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;}
+.popular-live-card{position:relative;height:299px;border-radius:16px;overflow:hidden;background:#f3f0fb;box-shadow:0 16px 38px rgba(52,43,91,.10);color:#fff;isolation:isolate;animation:popular-card-in .22s ease both;animation-delay:var(--card-delay,0ms);}
+.popular-live-card img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.01);transition:transform .28s ease, filter .28s ease;}
+.popular-live-card:hover img{transform:scale(1.045);filter:saturate(1.04) contrast(1.03);}
+.popular-live-card .global-rating-badge{top:11px;left:11px;right:auto;z-index:4;}
+.popular-live-shade{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(11,10,26,.02) 20%,rgba(9,8,24,.34) 55%,rgba(9,8,24,.88) 100%);pointer-events:none;}
+.popular-live-copy{position:absolute;z-index:3;left:14px;right:14px;bottom:14px;display:flex;flex-direction:column;gap:5px;}
+.popular-live-tag{align-self:flex-start;display:inline-flex;height:23px;align-items:center;border-radius:999px;background:rgba(255,255,255,.88);color:#7b4bea;padding:0 9px;font-size:11px;font-weight:900;box-shadow:0 5px 14px rgba(18,14,46,.12);}
+.popular-live-copy b{font-size:14px;line-height:1.18;font-weight:900;letter-spacing:-.25px;text-shadow:0 2px 12px rgba(0,0,0,.35);}
+.popular-live-copy em{font-style:normal;font-size:11.5px;line-height:1.15;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;}
+.popular-live-copy small{font-size:12px;color:#f3eefc;font-weight:800;}
+@keyframes popular-card-in{from{opacity:.001;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media (max-width:1200px){.popular-live-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.popular-live-card{height:270px}.popular-live-title p{display:none}}
+@media (max-width:760px){.popular-live-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}.popular-live-card{min-width:214px;height:292px;scroll-snap-align:start}.popular-live-title{align-items:flex-start}.popular-live-title a{display:none}}
+
+/* AIanime v123: real popularity and latest additions blocks. */
+.home-new-site{margin-top:26px;}
+.home-new-title{align-items:flex-end;margin:24px 0 15px;}
+.home-new-title>div{min-width:0;}
+.home-new-title h2{margin:0;}
+.home-new-title p{margin:7px 0 0;color:#8c84a6;font-size:12.5px;font-weight:700;line-height:1.35;max-width:620px;}
+.home-new-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;}
+.home-new-card{position:relative;min-height:184px;border-radius:16px;overflow:hidden;background:#f7f3ff;color:#fff;box-shadow:0 14px 32px rgba(51,43,91,.08);isolation:isolate;}
+.home-new-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform .28s ease, filter .28s ease;}
+.home-new-card:after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(15,12,34,.04) 0%,rgba(15,12,34,.28) 48%,rgba(15,12,34,.86) 100%);}
+.home-new-card:hover img{transform:scale(1.035);filter:saturate(1.05) contrast(1.02);}
+.home-new-card .global-rating-badge{top:11px;left:11px;right:auto;z-index:4;}
+.home-new-copy{position:absolute;z-index:3;left:13px;right:13px;bottom:13px;display:flex;flex-direction:column;gap:4px;}
+.home-new-copy span{align-self:flex-start;display:inline-flex;height:22px;align-items:center;border-radius:999px;background:rgba(255,255,255,.9);color:#8b5cf6;padding:0 9px;font-size:10.5px;font-weight:900;box-shadow:0 5px 14px rgba(18,14,46,.10);}
+.home-new-copy b{font-size:14px;line-height:1.18;font-weight:900;letter-spacing:-.25px;text-shadow:0 2px 12px rgba(0,0,0,.35);}
+.home-new-copy em{font-style:normal;font-size:11.5px;line-height:1.15;color:rgba(255,255,255,.74);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;}
+.home-new-copy small{font-size:11.5px;color:#f3eefc;font-weight:800;}
+.home-popular-real .popular-live-tag{background:rgba(255,255,255,.9);color:#6f48d8;}
+.home-popular-real .popular-live-title p{max-width:720px;}
+@media (max-width:1200px){.home-new-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.home-new-card{min-height:170px}.home-new-title p{display:none}}
+@media (max-width:760px){.home-new-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}.home-new-card{min-width:214px;min-height:178px;scroll-snap-align:start}.home-new-title{align-items:flex-start}.home-new-title a{display:none}}
+
+
+/* AIanime v124: unified rating badge style across cards, catalog, similar, collections and top lists. */
+.global-rating-badge,
+.global-rating-badge-v124,
+.catalog-cover .global-rating-badge,
+.poster .global-rating-badge,
+.popular-live-card .global-rating-badge,
+.home-new-card .global-rating-badge,
+.compact-similar-rating.global-rating-badge,
+.mini-rating-gold.global-rating-badge{
+  position:absolute!important;
+  left:10px!important;
+  top:10px!important;
+  right:auto!important;
+  bottom:auto!important;
+  z-index:9!important;
+  min-width:0!important;
+  width:auto!important;
+  height:24px!important;
+  padding:0 8px!important;
+  border-radius:6px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  border:0!important;
+  box-shadow:none!important;
+  background-image:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  color:#fff!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  letter-spacing:-.02em!important;
+  line-height:1!important;
+  text-shadow:none!important;
+}
+.global-rating-badge .global-rating-badge__star,
+.catalog-cover .global-rating-badge .global-rating-badge__star,
+.poster .global-rating-badge .global-rating-badge__star,
+.compact-similar-rating.global-rating-badge .global-rating-badge__star,
+.mini-rating-gold.global-rating-badge .global-rating-badge__star{
+  display:inline-block!important;
+  position:static!important;
+  width:auto!important;
+  height:auto!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:inherit!important;
+  font-size:13px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  transform:translateY(-.5px)!important;
+}
+.global-rating-badge b,
+.catalog-cover .global-rating-badge b,
+.poster .global-rating-badge b,
+.compact-similar-rating.global-rating-badge b,
+.mini-rating-gold.global-rating-badge b{
+  display:inline-block!important;
+  position:static!important;
+  color:inherit!important;
+  font:inherit!important;
+  line-height:1!important;
+  padding:0!important;
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.global-rating-badge.rating-tone-red{background:#d94d4d!important;color:#fff!important;}
+.global-rating-badge.rating-tone-orange{background:#e47a2e!important;color:#fff!important;}
+.global-rating-badge.rating-tone-green,
+.global-rating-badge.rating-tone-gold{background:#38b864!important;color:#fff!important;}
+.mini-rating-gold.global-rating-badge,
+.top-list-rating-badge.global-rating-badge{
+  position:static!important;
+  left:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  flex-shrink:0!important;
+}
+.top-list-rating-badge.global-rating-badge{margin-left:auto!important;}
+/* Hide old legacy source/fallback badges inside poster cards where the new global badge is used. */
+.poster .rating:not(.global-rating-badge),
+.catalog-cover .rating:not(.global-rating-badge),
+.catalog-cover .rating-gold:not(.global-rating-badge){display:none!important;}
