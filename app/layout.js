@@ -5,6 +5,13 @@ import AccountSyncClient from '@/components/AccountSyncClient'
 import SiteFooter from '@/components/SiteFooter'
 import SiteInteriorHeaderClient from '@/components/SiteInteriorHeaderClient'
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#f7f4fb',
+}
+
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: { default: 'Aianime — anime catalog', template: '%s | Aianime' },
