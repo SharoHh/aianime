@@ -17718,15 +17718,3 @@ html[data-aianime-nav-speed="v85"] body{
   }
   .hero.ai-hero-image .hero-lcp-image{object-position:58% center !important;}
 }
-
-/* AIanime v87: disable custom route warmup/progress layer completely.
-   Navigation now uses only native Next.js Link behavior to remove transition loops. */
-.route-progress-bar,
-.route-transition-surface,
-.route-transition-card{
-  display:none!important;
-  opacity:0!important;
-  visibility:hidden!important;
-  animation:none!important;
-  transition:none!important;
-}
