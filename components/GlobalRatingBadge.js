@@ -1,6 +1,6 @@
 'use client'
 
-// AIanime v121: subtle compact rating badge for cards and similar titles.
+// AIanime v124: unified compact traffic-light rating badge across the site.
 import { useEffect, useMemo, useState } from 'react'
 import { getRatings } from '@/lib/userStorage'
 
@@ -18,7 +18,7 @@ function scoreFromLocalRating(value){
 function formatScore(value){
   const score = normalizeScore(value)
   if(!score) return ''
-  return score.toFixed(1).replace('.0', '')
+  return score.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')
 }
 
 function toneClass(score){
@@ -58,7 +58,8 @@ export default function GlobalRatingBadge({ slug, score = null, count = 0, class
 
   if(!label) return null
 
-  return <span className={`global-rating-badge global-rating-badge-v121 ${toneClass(visibleScore)} ${className}`.trim()} title={`Рейтинг AIanime: ${label}/10`}>
+  return <span className={`global-rating-badge global-rating-badge-v124 ${toneClass(visibleScore)} ${className}`.trim()} title={`Рейтинг AIanime: ${label}/10`}>
+    <span className="global-rating-badge__star" aria-hidden="true">★</span>
     <b>{label}</b>
   </span>
 }
