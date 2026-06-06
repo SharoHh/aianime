@@ -177,6 +177,28 @@ function withSecurityHeaders(response){
   return response
 }
 
+function isPublicHtmlPath(pathname = ''){
+  const path = String(pathname || '/')
+  if(!path || path.startsWith('/api') || path.startsWith('/admin')) return false
+  if(path.startsWith('/_next') || path.startsWith('/images') || path.startsWith('/posters')) return false
+  if(path === '/' || path === '/catalog' || path === '/collections' || path === '/genres' || path === '/studios' || path === '/schedule' || path === '/season' || path === '/ai' || path === '/ai/quiz') return true
+  if(path === '/anime-2023' || path === '/anime-2024' || path === '/anime-2025' || path === '/anime-2026') return true
+  if(path.startsWith('/anime/')) return true
+  if(path.startsWith('/genre/')) return true
+  if(path.startsWith('/studio/')) return true
+  if(path === '/top' || path.startsWith('/top/')) return true
+  return false
+}
+
+function withPublicHtmlCache(response, pathname){
+  if(!isPublicHtmlPath(pathname)) return response
+  // Не переводим страницы в build-time static, чтобы каталог Supabase не откатывался в seed-40.
+  // Просто убираем private/no-store у публичного HTML и даём кэш прокси/CDN/ботам.
+  response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=900, stale-while-revalidate=3600')
+  response.headers.set('x-aianime-cache-policy', 'public-html-900')
+  return response
+}
+
 export function proxy(req){
   const { pathname, searchParams } = req.nextUrl
 
@@ -263,9 +285,29 @@ export function proxy(req){
     return withSecurityHeaders(response)
   }
 
-  return withSecurityHeaders(NextResponse.next())
+  return withPublicHtmlCache(withSecurityHeaders(NextResponse.next()), pathname)
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/:path*']
+  matcher: [
+    '/admin/:path*',
+    '/api/:path*',
+    '/',
+    '/catalog',
+    '/collections',
+    '/genres',
+    '/studios',
+    '/schedule',
+    '/season',
+    '/ai',
+    '/ai/quiz',
+    '/top/:path*',
+    '/anime/:path*',
+    '/genre/:path*',
+    '/studio/:path*',
+    '/anime-2023',
+    '/anime-2024',
+    '/anime-2025',
+    '/anime-2026'
+  ]
 }
