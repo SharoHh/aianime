@@ -23948,3 +23948,34 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   .anime-compact-poster .title-listbox-menu{top:calc(100% + 6px)!important;border-radius:14px!important;padding:7px!important;}
   .anime-compact-poster .title-listbox-menu button{min-height:38px!important;padding:0 11px!important;}
 }
+
+/* AIanime v185: center the watchlist dropdown arrow */
+.anime-compact-poster .title-listbox-arrow{
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:22px!important;
+  height:22px!important;
+  padding:0!important;
+  font-size:0!important;
+  line-height:0!important;
+  transform:none!important;
+}
+.anime-compact-poster .title-listbox-arrow::before{
+  content:""!important;
+  display:block!important;
+  width:6px!important;
+  height:6px!important;
+  border-right:2px solid currentColor!important;
+  border-bottom:2px solid currentColor!important;
+  transform:translateY(-1px) rotate(45deg)!important;
+  transform-origin:center!important;
+  transition:transform .14s ease!important;
+}
+.anime-compact-poster .title-listbox.is-open .title-listbox-arrow{
+  transform:none!important;
+}
+.anime-compact-poster .title-listbox.is-open .title-listbox-arrow::before{
+  transform:translateY(1px) rotate(225deg)!important;
+}
