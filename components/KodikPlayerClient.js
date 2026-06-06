@@ -547,7 +547,7 @@ export default function KodikPlayerClient({
           referrerPolicy="origin-when-cross-origin"
         />
       </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame native-kodik-v65-frame">
-        <img src={banner} alt="Аниме"/>
+        <img src={banner} alt={title ? `Кадр из аниме ${title}` : 'Кадр из аниме'}/>
         <div className="compact-player-shade"/>
         <div className="compact-player-center kodik-player-simple-fallback">
           <h3>{title}</h3>

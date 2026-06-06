@@ -54,7 +54,7 @@ export default function LocalAnimeList({ storageKey, emptyTitle, emptyText }){
     <div className="filter-summary"><b>{items.length}</b> тайтлов <button type="button" onClick={clear}>Очистить</button></div>
     <div className="catalog-grid">
       {items.map(a=><Link className="poster" href={itemHref(a, storageKey)} key={a.slug}>
-        <img loading="lazy" decoding="async" src={safePoster(a.poster)}/><div className="rating">★ {a.rating || '—'}</div><div className="poster-info"><b>{a.title || 'Без названия'}</b><span>{storageKey === 'anime:history' ? `Серия ${a.episode || 1}${a.progress ? ` · ${Math.round(a.progress)}%` : ''}` : (a.meta || '')}</span></div>
+        <img loading="lazy" decoding="async" src={safePoster(a.poster)} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div className="rating">★ {a.rating || '—'}</div><div className="poster-info"><b>{a.title || 'Без названия'}</b><span>{storageKey === 'anime:history' ? `Серия ${a.episode || 1}${a.progress ? ` · ${Math.round(a.progress)}%` : ''}` : (a.meta || '')}</span></div>
       </Link>)}
     </div>
   </>

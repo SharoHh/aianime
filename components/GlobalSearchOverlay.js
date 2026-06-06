@@ -58,7 +58,7 @@ export default function GlobalSearchOverlay({ items = [] }){
 
         <div className="global-search-results">
           {results.length ? results.map(item=><Link onClick={()=>setOpen(false)} href={`/anime/${item.slug}`} className="global-search-item" key={item.slug}>
-            <img loading="lazy" decoding="async" src={item.poster} alt="Аниме"/>
+            <img loading="lazy" decoding="async" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
             <div><b>{item.title}</b><span>{item.year} · {item.meta} · ★ {item.rating}</span><p>{(item.genres || []).slice(0,3).join(' · ')}</p></div>
           </Link>) : <div className="global-search-empty">Ничего не найдено. Попробуй название, жанр, настроение или похожий тайтл.</div>}
         </div>
