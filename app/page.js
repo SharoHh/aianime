@@ -126,8 +126,8 @@ function ratingToneClass(item){
   if(value >= 6.5) return 'rating-tone-orange'
   return 'rating-tone-red'
 }
-function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster"><img loading="lazy" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
-function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card"><img loading="lazy" decoding="async" width="160" height="230" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
+function Poster({item}){return <Link href={`/anime/${item.slug}`} className="poster" prefetch={false}><img loading="lazy" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div></Link>}
+function Continue({item}){return <Link href={`/anime/${item.slug}`} className="continue-card" prefetch={false}><img loading="lazy" decoding="async" width="160" height="230" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/><div className="play">▶</div><div className="continue-info"><b>{item.title}</b><span>{item.meta}</span><div className="bar"><i style={{width:item.progress+'%'}}/></div></div><em>{item.progress}%</em></Link>}
 function SectionTitle({icon,title}){return <div className="section-title section-title-clean-icons"><h2><HomeSectionIcon type={icon}/>{title}</h2><Link href="/catalog">Смотреть все ›</Link></div>}
 
 function formatStat(value){
@@ -140,12 +140,12 @@ function buildSiteStats(anime, todaySchedule, totalAnimeCount = null){
   const newEpisodesToday = Array.isArray(todaySchedule) ? todaySchedule.length : 0
 
   return [
-    { key:'accounts', icon:'accounts', label:'Аккаунтов на сайте', value:'—' },
+    { key:'accounts', icon:'accounts', label:'Аккаунтов на сайте', value:'0' },
     { key:'anime', icon:'anime', label:'Всего аниме', value:formatStat(animeCount) },
     { key:'episodesToday', icon:'episodesToday', label:'Новых серий сегодня', value:formatStat(newEpisodesToday) },
-    { key:'comments', icon:'comments', label:'Комментариев', value:'—' },
-    { key:'openTabs', icon:'openTabs', label:'Вкладок открыто', value:'—', dividerBefore:true },
-    { key:'online', icon:'online', label:'Пользователей онлайн', value:'—', isOnline:true },
+    { key:'comments', icon:'comments', label:'Комментариев', value:'0' },
+    { key:'openTabs', icon:'openTabs', label:'Вкладок открыто', value:'1', dividerBefore:true },
+    { key:'online', icon:'online', label:'Пользователей онлайн', value:'1', isOnline:true },
   ]
 }
 
@@ -156,7 +156,7 @@ function SiteStatsWidget({animeCount, weeklySchedule}){
 function RightPanel({anime, animeCount, weeklySchedule}){return <aside className="rightcol">
   <HomeScheduleWidgetClient scheduleDays={weeklySchedule?.days || []} initialDay={weeklySchedule?.todayIndex || 0}/>
   <HomeMoodPickerClient anime={anime.slice(0,40)}/>
-  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,9).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug}><img loading="lazy" decoding="async" width="72" height="102" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
+  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,9).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug} prefetch={false}><img loading="lazy" decoding="async" width="72" height="102" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
   <SiteStatsWidget animeCount={animeCount} weeklySchedule={weeklySchedule}/>
 </aside>}
 export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const popularAnime = rankPopularAnime(anime, 24); const newestAnime = rankNewAnime(anime, 12); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 12, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />

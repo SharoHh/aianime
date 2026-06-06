@@ -30,7 +30,7 @@ export default async function TopListPage(){
     }))}} />
     <div className="page-head seo-head"><Link href="/top">← Все топы</Link><h1>Новые аниме</h1><p>Свежие тайтлы и новые релизы.</p></div>
     <section className="top-list">
-      {items.map((a,index)=><Link className="top-list-item widget" href={`/anime/${a.slug}`} key={a.slug}>
+      {items.map((a,index)=><Link className="top-list-item widget" href={`/anime/${a.slug}`} key={a.slug} prefetch={false}>
         <strong>{index+1}</strong>
         <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/>
         <div><b>{a.title}</b><span>{a.year} · {a.meta} · {(a.genres || []).slice(0,3).join(' · ')}</span></div>

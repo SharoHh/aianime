@@ -1037,7 +1037,7 @@ export default async function AnimePage({ params, searchParams }){
     <section className="compact-similar compact-ai-recs" id="similar">
       <div className="compact-section-head"><h2>Похожие тайтлы</h2><Link href={`/ai?similar=${item.slug}`}>Ещё через AI ›</Link></div>
       <div>
-        {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
+        {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug} prefetch={false}>
           <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/>
           <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="compact-similar-rating"/>
           <b>{a.title}</b>

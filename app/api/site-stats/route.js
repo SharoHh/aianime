@@ -68,7 +68,7 @@ async function countPresence(){
 
 export async function GET(){
   if(!hasSupabase()){
-    return NextResponse.json({ accounts:null, comments:null, online:null, openTabs:null, source:'local' })
+    return NextResponse.json({ accounts:0, comments:0, online:1, openTabs:1, source:'local' })
   }
 
   const presence = await countPresence()
@@ -76,10 +76,10 @@ export async function GET(){
   const comments = await countTable('anime_comments') ?? await countTable('comments')
 
   return NextResponse.json({
-    accounts,
-    comments,
-    online:presence.online,
-    openTabs:presence.openTabs,
+    accounts: accounts ?? 0,
+    comments: comments ?? 0,
+    online: presence.online ?? 1,
+    openTabs: presence.openTabs ?? 1,
     source:'supabase',
   })
 }

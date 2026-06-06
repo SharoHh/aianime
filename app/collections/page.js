@@ -15,7 +15,7 @@ import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
 import { COLLECTION_SEO, collectionFaq, faqJsonLd, webPageJsonLd } from '@/lib/seoContent'
 
 function Poster({item}){
-  return <Link href={`/anime/${item.slug}`} className="poster">
+  return <Link href={`/anime/${item.slug}`} className="poster" prefetch={false}>
     <img loading="lazy" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/><GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
   </Link>
 }

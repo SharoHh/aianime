@@ -85,7 +85,7 @@ export default async function GenrePage({ params }){
     </details>
 
     <div className="poster-row seo-poster-row">
-      {filtered.slice(0,40).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}>
+      {filtered.slice(0,40).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug} prefetch={false}>
         <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/>
         <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount}/>
         <div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
