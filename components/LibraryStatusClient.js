@@ -14,7 +14,8 @@ function loginHref(){
 export default function LibraryStatusClient({ item }){
   const { user } = useAuthState()
   const [status,setStatus] = useState('')
-  const detailsRef = useRef(null)
+  const [open,setOpen] = useState(false)
+  const wrapRef = useRef(null)
 
   const safeItem = useMemo(() => ({
     slug:item?.slug,
@@ -40,6 +41,22 @@ export default function LibraryStatusClient({ item }){
     }
   }, [safeItem.slug, user?.id])
 
+  useEffect(()=>{
+    if(!open) return
+    const onPointerDown = event => {
+      if(wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false)
+    }
+    const onKeyDown = event => {
+      if(event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
   function choose(nextStatus){
     if(!user){
       pushToast('Войди, чтобы вести свою библиотеку.', 'error')
@@ -52,43 +69,52 @@ export default function LibraryStatusClient({ item }){
       return
     }
     setStatus(value)
-    if(detailsRef.current) detailsRef.current.open = false
+    setOpen(false)
     pushToast(value ? `Добавлено в библиотеку: ${libraryStatusLabel(value)}` : 'Удалено из библиотеки', 'success')
   }
 
   if(!safeItem.slug) return null
 
+  const label = status ? libraryStatusLabel(status) : 'Добавить в список'
+
   if(!user){
-    return <div className="title-library-select title-library-select-guest" aria-label="Моя библиотека">
-      <Link className="title-library-select-button" href={loginHref()} prefetch={false}>
-        <span className="title-library-select-icon" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span className="title-library-select-label">Войти и добавить</span>
-        <span className="title-library-select-arrow" aria-hidden="true">›</span>
+    return <div className="title-watchlist" aria-label="Моя библиотека">
+      <Link className="title-watchlist-trigger" href={loginHref()} prefetch={false}>
+        <span className="title-watchlist-icon" aria-hidden="true">☰</span>
+        <span className="title-watchlist-label">Войти и добавить</span>
+        <span className="title-watchlist-caret" aria-hidden="true">›</span>
       </Link>
     </div>
   }
 
-  return <details ref={detailsRef} className="title-library-select" aria-label="Моя библиотека">
-    <summary className="title-library-select-button">
-      <span className="title-library-select-icon" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span className="title-library-select-label">{status ? libraryStatusLabel(status) : 'Добавить в список'}</span>
-      <span className="title-library-select-arrow" aria-hidden="true">⌄</span>
-    </summary>
-    <div className="title-library-select-menu" role="group" aria-label="Статус тайтла в библиотеке">
+  return <div ref={wrapRef} className={`title-watchlist ${open ? 'is-open' : ''}`} aria-label="Моя библиотека">
+    <button
+      type="button"
+      className="title-watchlist-trigger"
+      aria-haspopup="menu"
+      aria-expanded={open}
+      onClick={() => setOpen(v => !v)}
+    >
+      <span className="title-watchlist-icon" aria-hidden="true">☰</span>
+      <span className="title-watchlist-label">{label}</span>
+      <span className="title-watchlist-caret" aria-hidden="true">⌄</span>
+    </button>
+
+    {open ? <div className="title-watchlist-menu" role="menu">
       {LIBRARY_STATUSES.map(option => <button
         type="button"
+        role="menuitemradio"
         key={option.value}
         className={status === option.value ? 'active' : ''}
-        aria-pressed={status === option.value}
+        aria-checked={status === option.value}
         onClick={() => choose(option.value)}
       >
-        <span className="title-library-option-dot" aria-hidden="true"></span>
         <span>{option.label}</span>
+        {status === option.value ? <b aria-hidden="true">✓</b> : null}
       </button>)}
-      {status ? <button type="button" className="muted" onClick={() => choose(status)}>
-        <span className="title-library-option-dot" aria-hidden="true"></span>
+      {status ? <button type="button" role="menuitem" className="muted" onClick={() => choose(status)}>
         <span>Убрать из списка</span>
       </button> : null}
-    </div>
-  </details>
+    </div> : null}
+  </div>
 }
