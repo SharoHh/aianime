@@ -6,6 +6,7 @@ const nextConfig = {
   turbopack: { root: __dirname },
   async redirects(){
     return [
+      { source: '/library', destination: '/profile', permanent: false },
       { source: '/collection', destination: '/collections', permanent: true },
       { source: '/collections-old', destination: '/collections', permanent: true },
       { source: '/podborki', destination: '/collections', permanent: true },
