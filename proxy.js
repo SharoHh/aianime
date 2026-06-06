@@ -209,59 +209,18 @@ function withPublicHtmlCache(response, pathname){
 export function proxy(req){
   const { pathname, searchParams } = req.nextUrl
 
-  if(pathname.startsWith('/admin') || pathname.startsWith('/api/admin')){
-    const auth = verifyAdmin(req)
-    if(!auth.ok) return adminDenied(req, auth.reason)
+  if(pathname.startsWith('/api/admin')){
+    return json({
+      ok:false,
+      error:'Direct admin API is disabled',
+      hint:'Используй /admin/api/* из защищённой админки.'
+    }, 404, { 'x-robots-tag':'noindex, nofollow' })
+  }
 
-    const hasQuerySecret = searchParams.has('admin_secret') || searchParams.has('adminToken')
-    if(hasQuerySecret && pathname.startsWith('/admin')){
-      const cleanUrl = req.nextUrl.clone()
-      cleanUrl.searchParams.delete('admin_secret')
-      cleanUrl.searchParams.delete('adminToken')
-      const response = NextResponse.redirect(cleanUrl)
-      if(adminConfigured()){
-        response.cookies.set('aianime_admin', process.env.ADMIN_SECRET, {
-          httpOnly:true,
-          sameSite:'strict',
-          secure:isProd(),
-          path:'/admin',
-          maxAge:60 * 60 * 12
-        })
-        response.cookies.set('aianime_admin_api', process.env.ADMIN_SECRET, {
-          httpOnly:true,
-          sameSite:'strict',
-          secure:isProd(),
-          path:'/api/admin',
-          maxAge:60 * 60 * 12
-        })
-      }
-      return withSecurityHeaders(response)
-    }
-
-    if(pathname.startsWith('/admin/api/') && !pathname.startsWith('/admin/api/cron')){
-      const apiUrl = req.nextUrl.clone()
-      apiUrl.pathname = pathname.replace(/^\/admin\/api/, '/api/admin')
-      return withSecurityHeaders(NextResponse.rewrite(apiUrl))
-    }
-
-    const response = NextResponse.next()
-    if(auth.setCookie && adminConfigured()){
-      response.cookies.set('aianime_admin', process.env.ADMIN_SECRET, {
-        httpOnly:true,
-        sameSite:'strict',
-        secure:isProd(),
-        path:'/admin',
-        maxAge:60 * 60 * 12
-      })
-      response.cookies.set('aianime_admin_api', process.env.ADMIN_SECRET, {
-        httpOnly:true,
-        sameSite:'strict',
-        secure:isProd(),
-        path:'/api/admin',
-        maxAge:60 * 60 * 12
-      })
-    }
-    return withSecurityHeaders(response)
+  if(pathname.startsWith('/admin')){
+    // Админку на VPS закрывает Nginx Basic Auth. Внутренний ADMIN_SECRET больше не нужен,
+    // чтобы не ловить вторую розовую заглушку поверх нормального входа.
+    return withSecurityHeaders(NextResponse.next())
   }
 
   if(pathname.startsWith('/api/cron')){
