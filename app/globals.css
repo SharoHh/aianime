@@ -23515,3 +23515,134 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   .title-watchlist.is-open .title-watchlist-trigger{border-radius:12px 12px 0 0!important}
   .title-watchlist-menu{border-radius:0 0 12px 12px!important;padding:5px!important}
 }
+
+/* AIanime v182: список под постером как на AnimeGO, но в светлом стиле сайта */
+.title-listbox{
+  width:100%;
+  margin-top:10px;
+  font-family:Manrope,system-ui,sans-serif;
+  color:#251f42;
+}
+.title-listbox-trigger{
+  width:100%;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 12px;
+  border:1px solid rgba(214,204,236,.95);
+  border-radius:10px;
+  background:#fff;
+  color:#251f42;
+  appearance:none;
+  text-decoration:none;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(42,34,80,.055);
+  transition:background .14s ease,border-color .14s ease,box-shadow .14s ease;
+}
+.title-listbox-trigger:hover{
+  border-color:rgba(132,111,189,.55);
+  background:#fbf9ff;
+  box-shadow:0 10px 22px rgba(42,34,80,.075);
+}
+.title-listbox-icon{
+  flex:0 0 22px;
+  width:22px;
+  height:22px;
+  display:grid;
+  align-content:center;
+  justify-items:center;
+  gap:3px;
+  border-radius:7px;
+  background:rgba(118,96,190,.10);
+}
+.title-listbox-icon i{
+  width:11px;
+  height:2px;
+  display:block;
+  border-radius:999px;
+  background:#6c58ae;
+}
+.title-listbox-label{
+  min-width:0;
+  flex:1 1 auto;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#251f42;
+  font-size:13px;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:-.01em;
+  text-align:left;
+}
+.title-listbox-arrow{
+  flex:0 0 auto;
+  color:#6c58ae;
+  font-size:13px;
+  font-weight:950;
+  line-height:1;
+  transition:transform .14s ease;
+}
+.title-listbox.is-open .title-listbox-trigger{
+  border-radius:10px 10px 0 0;
+  border-color:rgba(214,204,236,.95);
+  border-bottom-color:rgba(232,226,244,.95);
+  background:#fff;
+  box-shadow:none;
+}
+.title-listbox.is-open .title-listbox-arrow{transform:rotate(180deg)}
+.title-listbox-menu{
+  display:block;
+  margin:0;
+  padding:6px 0;
+  border:1px solid rgba(214,204,236,.95);
+  border-top:0;
+  border-radius:0 0 10px 10px;
+  background:#fff;
+  box-shadow:0 12px 22px rgba(42,34,80,.07);
+  overflow:hidden;
+}
+.title-listbox-menu button{
+  width:100%;
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:0 16px;
+  border:0;
+  border-radius:0;
+  appearance:none;
+  background:transparent;
+  color:#5b5271;
+  cursor:pointer;
+  text-align:left;
+  font:780 13px/1 Manrope,system-ui,sans-serif;
+  box-shadow:none;
+  transition:background .12s ease,color .12s ease;
+}
+.title-listbox-menu button:hover{
+  background:#f6f2ff;
+  color:#251f42;
+}
+.title-listbox-menu button.active{
+  background:#f1ebff;
+  color:#251f42;
+  box-shadow:inset 3px 0 0 #7d65d8;
+}
+.title-listbox-menu button b{
+  color:#725cc6;
+  font-size:13px;
+  line-height:1;
+}
+.title-listbox-menu button.muted{
+  margin-top:4px;
+  border-top:1px solid rgba(232,226,244,.95);
+  color:#8b819c;
+}
+@media(max-width:720px){
+  .title-listbox{margin-top:8px}
+  .title-listbox-trigger{min-height:38px;border-radius:10px}
+  .title-listbox-menu button{min-height:37px;padding:0 14px}
+}
