@@ -234,15 +234,17 @@ async function getExternalRatings(item){
 
 
 function getExternalRatingsSnapshot(item){
-  // AIanime v160: не блокируем открытие тайтла внешними MAL/Shikimori запросами.
-  // Ссылки оставляем, score берём только из уже сохранённого каталога, если он есть.
+  // AIanime v161: рейтинг в бейджах не должен превращаться в пустые «—».
+  // В v160 внешние fetch-запросы MAL/Shikimori убрали ради скорости, но из-за этого
+  // у части тайтлов без mal_id визуально пропали оценки. Берём быстрый cached score
+  // из каталога/Supabase: это не блокирует открытие страницы и сохраняет нормальный UI.
   const malId = Number(item?.malId || 0) || null
   const shikiId = Number(item?.shikimoriId || 0) || null
-  const sourceScore = scoreNumber(item?.sourceScore)
+  const cachedScore = scoreNumber(item?.sourceScore || item?.popularity || item?.score || item?.rating)
   return {
-    mal:malId && sourceScore ? sourceScore : null,
+    mal:cachedScore,
     malId,
-    shiki:null,
+    shiki:cachedScore,
     shikiId,
     malHref:malId ? `https://myanimelist.net/anime/${malId}` : externalSearchUrl('mal', item),
     shikiHref:shikiId ? `https://shikimori.one/animes/${shikiId}` : externalSearchUrl('shiki', item)
