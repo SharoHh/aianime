@@ -15,7 +15,10 @@ const nextConfig = {
       { source: '/recommend', destination: '/ai', permanent: true },
       { source: '/recommendations', destination: '/ai', permanent: true },
       { source: '/anime/catalog-title-:id', destination: '/catalog', permanent: true },
-      { source: '/year/:year(\\d{4})', destination: '/anime-:year', permanent: true },
+      { source: '/year/2026', destination: '/anime-2026', permanent: true },
+      { source: '/year/2025', destination: '/anime-2025', permanent: true },
+      { source: '/year/2024', destination: '/anime-2024', permanent: true },
+      { source: '/year/2023', destination: '/anime-2023', permanent: true },
     ]
   },
   async headers(){
@@ -40,7 +43,26 @@ const nextConfig = {
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=2592000, immutable' }
         ]
+      },
+      {
+        source: '/aianime-logo.png',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, immutable' }
+        ]
+      },
+      {
+        source: '/favicon.ico',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, immutable' }
+        ]
+      },
+      {
+        source: '/site.webmanifest',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400' }
+        ]
       }
+
     ]
   }
 }
