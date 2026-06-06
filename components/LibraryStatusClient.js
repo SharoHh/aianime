@@ -11,6 +11,10 @@ function loginHref(){
   return `/auth?next=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`
 }
 
+function ListIcon(){
+  return <span className="title-listbox-icon" aria-hidden="true"><i/><i/><i/></span>
+}
+
 export default function LibraryStatusClient({ item }){
   const { user } = useAuthState()
   const [status,setStatus] = useState('')
@@ -78,29 +82,29 @@ export default function LibraryStatusClient({ item }){
   const label = status ? libraryStatusLabel(status) : 'Добавить в список'
 
   if(!user){
-    return <div className="title-watchlist" aria-label="Моя библиотека">
-      <Link className="title-watchlist-trigger" href={loginHref()} prefetch={false}>
-        <span className="title-watchlist-icon" aria-hidden="true">☰</span>
-        <span className="title-watchlist-label">Войти и добавить</span>
-        <span className="title-watchlist-caret" aria-hidden="true">›</span>
+    return <div className="title-listbox" aria-label="Моя библиотека">
+      <Link className="title-listbox-trigger" href={loginHref()} prefetch={false}>
+        <ListIcon/>
+        <span className="title-listbox-label">Войти и добавить</span>
+        <span className="title-listbox-arrow" aria-hidden="true">›</span>
       </Link>
     </div>
   }
 
-  return <div ref={wrapRef} className={`title-watchlist ${open ? 'is-open' : ''}`} aria-label="Моя библиотека">
+  return <div ref={wrapRef} className={`title-listbox ${open ? 'is-open' : ''}`} aria-label="Моя библиотека">
     <button
       type="button"
-      className="title-watchlist-trigger"
+      className="title-listbox-trigger"
       aria-haspopup="menu"
       aria-expanded={open}
       onClick={() => setOpen(v => !v)}
     >
-      <span className="title-watchlist-icon" aria-hidden="true">☰</span>
-      <span className="title-watchlist-label">{label}</span>
-      <span className="title-watchlist-caret" aria-hidden="true">⌄</span>
+      <ListIcon/>
+      <span className="title-listbox-label">{label}</span>
+      <span className="title-listbox-arrow" aria-hidden="true">⌄</span>
     </button>
 
-    {open ? <div className="title-watchlist-menu" role="menu">
+    {open ? <div className="title-listbox-menu" role="menu" aria-label="Выбор статуса просмотра">
       {LIBRARY_STATUSES.map(option => <button
         type="button"
         role="menuitemradio"
