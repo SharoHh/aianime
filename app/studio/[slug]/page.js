@@ -4,37 +4,86 @@ import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { notFound } from 'next/navigation'
 import { getAnimeList } from '@/lib/animeRepository'
+import { slugifyRu } from '@/lib/routeSlugs'
 import { buildPageMetadata, collectionPageJsonLd, jsonLd } from '@/lib/seo'
+import { buildStudioSeoContent, faqJsonLd } from '@/lib/seoContent'
 
-function slugify(text){
-  return String(text || 'unknown').toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9]+/gi,'-').replace(/^-|-$/g,'') || 'unknown'
-}
 function studioName(item){
-  return item.studio && item.studio !== '—' ? item.studio : 'Неизвестная студия'
+  return item.studio && item.studio !== '—' ? String(item.studio).trim() : ''
+}
+
+function getStudioMatch(items, rawSlug){
+  const target = slugifyRu(rawSlug)
+  const studio = [...new Set(items.map(studioName).filter(Boolean))].find(s => slugifyRu(s) === target)
+  const filtered = studio ? items.filter(a => studioName(a) === studio).sort((a,b)=>Number(b.score)-Number(a.score)) : []
+  return { studio, filtered }
 }
 
 export async function generateMetadata({ params }){
   const { slug } = await params
   const anime = await getAnimeList({limit:1000})
-  const studio = [...new Set(anime.map(studioName))].find(s => slugify(s) === slug)
+  const { studio, filtered } = getStudioMatch(anime, slug)
+  const path = `/studio/${encodeURIComponent(slug).replace(/%2F/g, '/')}`
+
+  if(!studio || !filtered.length){
+    return buildPageMetadata({
+      title:'Студия не найдена — AIanime',
+      description:'В этой студии пока нет тайтлов в каталоге AIanime.',
+      path,
+      index:false
+    })
+  }
+
   return buildPageMetadata({
-    title: studio ? `${studio} — аниме студии смотреть онлайн | AIanime` : 'Студия аниме — AIanime',
-    description: studio ? `Аниме студии ${studio}: список тайтлов, рейтинги, жанры, постеры и онлайн-просмотр на AIanime.` : 'Страница студии аниме на AIanime.',
-    path:`/studio/${encodeURIComponent(slug).replace(/%2F/g, '/')}`
+    title: `${studio} — аниме студии смотреть онлайн | AIanime`,
+    description: `Аниме студии ${studio}: список тайтлов, рейтинги, жанры, постеры, FAQ и онлайн-просмотр на AIanime.`,
+    path
   })
 }
 
 export default async function StudioPage({ params }){
   const { slug } = await params
   const anime = await getAnimeList({limit:1000})
-  const studio = [...new Set(anime.map(studioName))].find(s => slugify(s) === slug)
-  if(!studio) notFound()
-  const items = anime.filter(a => studioName(a) === studio).sort((a,b)=>Number(b.score)-Number(a.score))
+  const { studio, filtered:items } = getStudioMatch(anime, slug)
+  if(!studio || !items.length) notFound()
 
-  return <main className="page seo-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:`Аниме студии ${studio}`, description:`Список аниме студии ${studio} на AIanime.`, path:`/studio/${encodeURIComponent(slug).replace(/%2F/g, '/')}`, items:items.slice(0, 24).map(item => ({ title:item.title, slug:item.slug })) }))}} />
-    <div className="page-head seo-head"><Link href="/studios">← Все студии</Link><h1>{studio}</h1><p>{items.length} тайтлов студии.</p></div>
+  const path = `/studio/${encodeURIComponent(slug).replace(/%2F/g, '/')}`
+  const seo = buildStudioSeoContent(studio, items)
+  const schemas = [
+    collectionPageJsonLd({
+      name:`Аниме студии ${studio}`,
+      description:seo.lead,
+      path,
+      items:items.slice(0, 24).map(item => ({ title:item.title, slug:item.slug }))
+    }),
+    faqJsonLd(seo.faq)
+  ].filter(Boolean)
+
+  return <main className="page seo-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(schemas)}} />
+    <div className="page-head seo-head"><Link href="/studios">← Все студии</Link><h1>{studio}</h1><p>{seo.lead}</p></div>
+
+    <section className="seo-copy-card" aria-labelledby="studio-seo-heading">
+      <div>
+        <h2 id="studio-seo-heading">Аниме студии {studio}</h2>
+        <p>{seo.intro}</p>
+      </div>
+      <ul>
+        {seo.points.map(point => <li key={point}>{point}</li>)}
+      </ul>
+    </section>
+
+    <section className="seo-faq-card" aria-labelledby="studio-faq-heading">
+      <h2 id="studio-faq-heading">Вопросы о студии {studio}</h2>
+      <div className="seo-faq-list">
+        {seo.faq.map(item => <details key={item.question}>
+          <summary>{item.question}</summary>
+          <p>{item.answer}</p>
+        </details>)}
+      </div>
+    </section>
+
     <div className="poster-row seo-poster-row">
-      {items.slice(0,20).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}><img loading="lazy" decoding="async" src={a.poster}/><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount}/><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div></Link>)}
+      {items.slice(0,20).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}><img loading="lazy" decoding="async" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount}/><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div></Link>)}
     </div>
   </main>
 }

@@ -18,7 +18,9 @@ import WatchTracker from '@/components/WatchTracker'
 import PopularityTrackerClient from '@/components/PopularityTrackerClient'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { encodeSlug } from '@/lib/routeSlugs'
+import { itemLastModified } from '@/lib/sitemapSeo'
 import { cleanPublicText, isPlaceholderText } from '@/lib/ruContent'
+import { buildAnimeSeoContent, faqJsonLd } from '@/lib/seoContent'
 
 export async function generateMetadata({ params }){
   const resolvedParams = await params
@@ -96,6 +98,29 @@ function buildAnimeJsonLd(item, title, description, siteRating){
       worstRating:1,
       ratingCount
     }
+  }
+
+  return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined && value !== null && value !== ''))
+}
+
+
+function buildVideoObjectJsonLd(item, title, description, currentEpisode, storedKodikLink, currentEpisodeNumber){
+  const url = absoluteSiteUrl(`/anime/${encodeURIComponent(item.slug).replace(/%2F/g, '/')}#player`)
+  const embedUrl = currentEpisode?.embedUrl || storedKodikLink || undefined
+  const name = Number(currentEpisodeNumber || 0) > 1 ? `${title} — серия ${currentEpisodeNumber} смотреть онлайн` : `${title} смотреть онлайн`
+  const data = {
+    '@context':'https://schema.org',
+    '@type':'VideoObject',
+    name,
+    description,
+    thumbnailUrl:item.poster ? [absoluteSiteUrl(item.poster)] : undefined,
+    uploadDate:itemLastModified(item).toISOString(),
+    url,
+    embedUrl,
+    inLanguage:'ru-RU',
+    isFamilyFriendly:true,
+    publisher:{ '@type':'Organization', name:'AIanime', url:absoluteSiteUrl('/') },
+    potentialAction:{ '@type':'WatchAction', target:url }
   }
 
   return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined && value !== null && value !== ''))
@@ -782,6 +807,7 @@ export default async function AnimePage({ params, searchParams }){
     return `/anime/${encodeURIComponent(item.slug)}?${params.toString()}#player`
   }
   const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
+  const seoContent = buildAnimeSeoContent(item, similar, playerOptions)
 
   const info = visibleInfoRows([
     ['Статус', statusLabel(item.status)],
@@ -796,7 +822,12 @@ export default async function AnimePage({ params, searchParams }){
     ['Озвучка', currentEpisode?.voice || item.translationTitle || 'Kodik'],
   ])
 
-  const animeJsonLd = [buildAnimeJsonLd(item, title, description, siteRating), buildTitleBreadcrumbJsonLd(item, title)]
+  const animeJsonLd = [
+    buildAnimeJsonLd(item, title, description, siteRating),
+    buildVideoObjectJsonLd(item, title, description, currentEpisode, storedKodikLink, currentEpisodeNumber),
+    buildTitleBreadcrumbJsonLd(item, title),
+    faqJsonLd(seoContent.faq)
+  ].filter(Boolean)
 
   return <main className="anime-compact-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(animeJsonLd)}} />
@@ -872,6 +903,30 @@ export default async function AnimePage({ params, searchParams }){
         <img loading="eager" decoding="async" src={item.poster} alt={title}/>
         <div className="poster-rank">AI рекомендация</div>
       </aside>
+    </section>
+
+    <section className="compact-seo-section" aria-labelledby="title-seo-heading">
+      <div className="compact-section-head"><h2 id="title-seo-heading">О тайтле простыми словами</h2><a href="#similar">Похожие ↓</a></div>
+      <p>{seoContent.lead}</p>
+      <div className="compact-seo-grid">
+        <article>
+          <h3>Кому подойдёт</h3>
+          <p>{seoContent.audience}</p>
+        </article>
+        <article>
+          <h3>Почему стоит открыть</h3>
+          <ul>{seoContent.why.map(point => <li key={point}>{point}</li>)}</ul>
+        </article>
+      </div>
+      <div className="compact-title-faq" aria-labelledby="title-faq-heading">
+        <h3 id="title-faq-heading">FAQ по «{title}»</h3>
+        <div>
+          {seoContent.faq.map(item => <details key={item.question}>
+            <summary>{item.question}</summary>
+            <p>{item.answer}</p>
+          </details>)}
+        </div>
+      </div>
     </section>
 
     <section className="compact-player-section compact-player-section-v65 compact-player-section-v66 compact-player-section-v67" id="player" data-player-layout="light-top-controls-v67">

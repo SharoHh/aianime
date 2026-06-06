@@ -94,7 +94,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     <div className="section-title"><h2><HomeSectionIcon type="ai"/>AI рекомендует</h2><Link href="/catalog">Каталог ›</Link></div>
     <div className="ai-results-grid">
       {results.slice(0,6).map(item=><Link className="ai-result-card" href={`/anime/${item.slug}`} key={item.slug}>
-        <img loading="lazy" decoding="async" src={item.poster} alt="Аниме"/>
+        <img loading="lazy" decoding="async" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
         <div>
           <span>AI {item.match || 80}%</span>
           <b>{item.title}</b>

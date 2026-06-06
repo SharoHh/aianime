@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
+import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
 
 export const metadata = {
   title: 'Популярные аниме сейчас — AIanime',
@@ -21,11 +22,17 @@ export default async function TopListPage(){
   }).slice(0,50)
 
   return <main className="page seo-page">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({
+      name:'Популярные аниме',
+      description:'Список тайтлов AIanime в разделе популярные аниме.',
+      path:'/top/popular',
+      items:items.slice(0, 24).map(item => ({ title:item.title, slug:item.slug }))
+    }))}} />
     <div className="page-head seo-head"><Link href="/top">← Все топы</Link><h1>Популярные аниме</h1><p>Самые популярные тайтлы каталога.</p></div>
     <section className="top-list">
       {items.map((a,index)=><Link className="top-list-item widget" href={`/anime/${a.slug}`} key={a.slug}>
         <strong>{index+1}</strong>
-        <img loading="lazy" decoding="async" src={a.poster}/>
+        <img loading="lazy" decoding="async" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/>
         <div><b>{a.title}</b><span>{a.year} · {a.meta} · {(a.genres || []).slice(0,3).join(' · ')}</span></div>
         <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="top-list-rating-badge"/>
       </Link>)}
