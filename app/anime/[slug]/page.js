@@ -233,6 +233,63 @@ async function getExternalRatings(item){
 }
 
 
+function getExternalRatingsSnapshot(item){
+  // AIanime v160: не блокируем открытие тайтла внешними MAL/Shikimori запросами.
+  // Ссылки оставляем, score берём только из уже сохранённого каталога, если он есть.
+  const malId = Number(item?.malId || 0) || null
+  const shikiId = Number(item?.shikimoriId || 0) || null
+  const sourceScore = scoreNumber(item?.sourceScore)
+  return {
+    mal:malId && sourceScore ? sourceScore : null,
+    malId,
+    shiki:null,
+    shikiId,
+    malHref:malId ? `https://myanimelist.net/anime/${malId}` : externalSearchUrl('mal', item),
+    shikiHref:shikiId ? `https://shikimori.one/animes/${shikiId}` : externalSearchUrl('shiki', item)
+  }
+}
+
+function compactTitleSearchItems(list = [], limit = 60){
+  return (Array.isArray(list) ? list : []).slice(0, limit).map(item => ({
+    slug:item?.slug,
+    title:item?.title,
+    originalTitle:item?.originalTitle,
+    englishTitle:item?.englishTitle,
+    poster:item?.poster,
+    year:item?.year,
+    meta:item?.meta,
+    rating:item?.rating,
+    genres:Array.isArray(item?.genres) ? item.genres.slice(0, 6) : [],
+    studio:item?.studio,
+    status:item?.status,
+    kind:item?.kind
+  })).filter(item => item.slug && item.title)
+}
+
+function compactPlayerOptionsForClient(options = []){
+  return (Array.isArray(options) ? options : []).map(option => ({
+    id:option?.id,
+    episodeNumber:Number(option?.episodeNumber || 1) || 1,
+    title:option?.title,
+    provider:option?.provider || 'kodik',
+    voice:option?.voice || 'Kodik',
+    embedUrl:option?.embedUrl,
+    status:option?.status || 'published',
+    source:option?.source || 'anime_episodes',
+    quality:option?.quality || null,
+    translationType:option?.translationType || null,
+    translationId:option?.translationId || null,
+    seasonNumber:option?.seasonNumber || null,
+    episodesCount:Number(option?.episodesCount || 0) || null,
+    groupedEpisodeCount:Number(option?.groupedEpisodeCount || 0) || null,
+    episodeNumbers:Array.isArray(option?.episodeNumbers) ? option.episodeNumbers.map(Number).filter(Number.isFinite) : [],
+    materialType:option?.materialType || null,
+    matchScore:Number(option?.matchScore || option?.raw?.match_score || 0) || null,
+    updatedAt:option?.updatedAt || null
+  })).filter(option => option.embedUrl)
+}
+
+
 function hasGlobalRating(item){
   return Number(item?.siteRatingCount || 0) > 0 && String(item?.rating || '') !== '—'
 }
@@ -858,12 +915,12 @@ export default async function AnimePage({ params, searchParams }){
   const originalTitle = cleanPublicText(item.originalTitle || item.englishTitle || item.title)
   const description = cleanPublicText(item.description) || 'Описание скоро появится.'
   const [allAnime, episodes, siteRating, externalRatings] = await Promise.all([
-    getAnimeList({limit:220}),
+    getAnimeList({limit:80}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12),
     getSiteRatingStats(item?.slug),
-    getExternalRatings(item)
+    getExternalRatingsSnapshot(item)
   ])
-  const playerOptions = buildNativePlayerOptions(episodes, item)
+  const playerOptions = compactPlayerOptionsForClient(buildNativePlayerOptions(episodes, item))
   const selectedEpisodeNumber = Math.max(1, Number(resolvedSearchParams?.episode || 1) || 1)
   const selectedVoice = String(resolvedSearchParams?.voice || '').trim()
   const exactCurrentEpisode = playerOptions.find(e => selectedVoice && e.voice === selectedVoice && Number(e.episodeNumber) === selectedEpisodeNumber)
@@ -925,7 +982,7 @@ export default async function AnimePage({ params, searchParams }){
         </nav>
 
         <div className="title-wide-header-v80__actions">
-          <GlobalSearchOverlay items={allAnime.slice(0,120)}/>
+          <GlobalSearchOverlay items={compactTitleSearchItems(allAnime, 60)}/>
           <TitleAuthActionClient/>
         </div>
       </div>
