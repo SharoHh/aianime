@@ -23240,3 +23240,163 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   border-radius:0 0 10px 10px!important;
 }
 .title-library-select-guest .title-library-select-arrow{transform:none!important;}
+
+/* AIanime v180: аккуратный светлый список под постером без кривой раскрывашки */
+.title-watchlist{
+  position:relative!important;
+  width:100%!important;
+  margin-top:10px!important;
+  font-family:Manrope,system-ui,sans-serif!important;
+  z-index:60!important;
+}
+.title-watchlist-trigger{
+  width:100%!important;
+  min-height:42px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:0 12px!important;
+  border:1px solid rgba(207,194,237,.78)!important;
+  border-radius:12px!important;
+  background:linear-gradient(180deg,#ffffff 0%,#fbf9ff 100%)!important;
+  color:#231b42!important;
+  text-decoration:none!important;
+  appearance:none!important;
+  cursor:pointer!important;
+  box-shadow:0 8px 20px rgba(56,45,94,.07)!important;
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease,background .16s ease!important;
+}
+.title-watchlist-trigger:hover,
+.title-watchlist.is-open .title-watchlist-trigger{
+  transform:translateY(-1px)!important;
+  border-color:rgba(132,103,198,.42)!important;
+  background:#fff!important;
+  box-shadow:0 12px 26px rgba(56,45,94,.10)!important;
+}
+.title-watchlist-icon{
+  flex:0 0 auto!important;
+  width:24px!important;
+  height:24px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:8px!important;
+  background:rgba(113,92,190,.10)!important;
+  color:#715cc0!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  line-height:1!important;
+}
+.title-watchlist-label{
+  min-width:0!important;
+  flex:1 1 auto!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#231b42!important;
+  font-size:13px!important;
+  line-height:1!important;
+  font-weight:850!important;
+  letter-spacing:-.01em!important;
+  text-align:left!important;
+}
+.title-watchlist-caret{
+  flex:0 0 auto!important;
+  color:#7663b4!important;
+  font-size:15px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  transition:transform .16s ease!important;
+}
+.title-watchlist.is-open .title-watchlist-caret{transform:rotate(180deg)!important;}
+.title-watchlist-menu{
+  position:absolute!important;
+  top:calc(100% + 8px)!important;
+  left:0!important;
+  right:0!important;
+  z-index:120!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  padding:7px!important;
+  border:1px solid rgba(207,194,237,.86)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:0 18px 38px rgba(47,38,82,.16)!important;
+}
+.title-watchlist-menu button{
+  width:100%!important;
+  min-height:34px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  appearance:none!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:#4d426c!important;
+  padding:0 10px!important;
+  text-align:left!important;
+  font:820 13px/1 Manrope,system-ui,sans-serif!important;
+  cursor:pointer!important;
+  transition:background .14s ease,color .14s ease,transform .14s ease!important;
+}
+.title-watchlist-menu button:hover{
+  background:#f5f1ff!important;
+  color:#231b42!important;
+  transform:translateX(1px)!important;
+}
+.title-watchlist-menu button.active{
+  background:#eee8ff!important;
+  color:#231b42!important;
+}
+.title-watchlist-menu button b{
+  color:#715cc0!important;
+  font-size:13px!important;
+  line-height:1!important;
+}
+.title-watchlist-menu button.muted{
+  margin-top:3px!important;
+  padding-top:2px!important;
+  color:#897e9f!important;
+  border-top:1px solid rgba(207,194,237,.70)!important;
+  border-radius:0 0 10px 10px!important;
+}
+@media(max-width:720px){
+  .title-watchlist{margin-top:8px!important;z-index:80!important}
+  .title-watchlist-trigger{min-height:40px!important;border-radius:11px!important}
+  .title-watchlist-menu{top:calc(100% + 6px)!important;border-radius:12px!important}
+}
+
+/* AIanime v180 hotfix: меню библиотеки раскрывается внутри карточки, не обрезается overflow у title-card */
+.title-watchlist-menu{
+  position:static!important;
+  left:auto!important;
+  right:auto!important;
+  top:auto!important;
+  margin-top:8px!important;
+  z-index:auto!important;
+  padding:8px!important;
+  border:1px solid rgba(207,194,237,.86)!important;
+  border-radius:14px!important;
+  background:linear-gradient(180deg,#fff 0%,#fbf9ff 100%)!important;
+  box-shadow:0 10px 24px rgba(47,38,82,.09)!important;
+}
+.title-watchlist.is-open{
+  padding:8px!important;
+  border:1px solid rgba(207,194,237,.72)!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.82)!important;
+  box-shadow:0 12px 28px rgba(56,45,94,.07)!important;
+}
+.title-watchlist.is-open .title-watchlist-trigger{
+  box-shadow:none!important;
+}
+.title-watchlist-menu button{
+  min-height:36px!important;
+  border-radius:10px!important;
+}
+@media(max-width:720px){
+  .title-watchlist.is-open{padding:7px!important;border-radius:14px!important}
+  .title-watchlist-menu{margin-top:7px!important;padding:7px!important}
+}
