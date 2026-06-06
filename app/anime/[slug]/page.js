@@ -16,6 +16,7 @@ import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import WatchTracker from '@/components/WatchTracker'
 import PopularityTrackerClient from '@/components/PopularityTrackerClient'
+import PlayerReportClient from '@/components/PlayerReportClient'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { encodeSlug } from '@/lib/routeSlugs'
 import { itemLastModified } from '@/lib/sitemapSeo'
@@ -1062,6 +1063,12 @@ export default async function AnimePage({ params, searchParams }){
       />
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>
       <PopularityTrackerClient slug={item.slug} type="view" delay={1200}/>
+      <PlayerReportClient
+        slug={item.slug}
+        title={title}
+        episode={currentEpisodeNumber}
+        voice={currentEpisode?.voice || item.translationTitle || 'Kodik'}
+      />
     </section>
 
 

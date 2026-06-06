@@ -50,6 +50,7 @@ const cards = {
     { title:'Проблемные данные', value:'badTitleCount', hint:'Мусор/латиница/поля для ручной чистки', href:'/admin/anime?filter=needsContent' },
     { title:'Расписание', value:'Cron', hint:'Реальные эфиры + автообновление', href:'/admin/sync' },
     { title:'Комментарии', value:'Модерация', hint:'Проверка пользовательских сообщений', href:'/admin/comments' },
+    { title:'Жалобы на плеер', value:'Проблемы', hint:'Серии, озвучки и видео, о которых сообщили пользователи', href:'/admin/reports' },
   ],
   content: [
     { title:'Тайтлы', value:'Редактировать', hint:'title_ru, описание, жанры, постер, статус', href:'/admin/anime' },
@@ -69,6 +70,7 @@ const cards = {
   ],
   community: [
     { title:'Комментарии', value:'Модерация', hint:'Удаление нежелательных комментариев', href:'/admin/comments' },
+    { title:'Жалобы на плеер', value:'Проверить', hint:'Проблемы с сериями и озвучками', href:'/admin/reports' },
     { title:'Профиль', value:'Проверить', hint:'Аватар, фон, имя, уровень', href:'/profile' },
     { title:'Избранное', value:'Проверить', hint:'Пользовательские списки', href:'/favorites' },
     { title:'История', value:'Проверить', hint:'Продолжить просмотр и история', href:'/history' },
@@ -125,6 +127,7 @@ export default function AdminHubClient({ animeCount = 0, qualityStats = {} }){
         <Link href="/admin/sync">Cron-панель</Link>
         <Link href="/admin/schedule">Расписание</Link>
         <Link href="/admin/comments">Комментарии</Link>
+        <Link href="/admin/reports">Жалобы на плеер</Link>
       </div>
     </aside>
 

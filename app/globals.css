@@ -21443,3 +21443,96 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   .seo-fold-copy summary em::before{font-size:12px;}
   .seo-fold-body{padding:12px;}
 }
+
+/* AIanime v162: compact player reports, no public layout redesign. */
+.player-report-box{
+  margin-top:14px;
+  border:1px solid rgba(200, 166, 255, .42);
+  border-radius:18px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 12px 34px rgba(125,91,255,.07);
+  overflow:hidden;
+}
+.player-report-box summary{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:12px 14px;
+  color:#2f2766;
+  font-weight:800;
+}
+.player-report-box summary::-webkit-details-marker{display:none}
+.player-report-box summary em{
+  font-style:normal;
+  color:#d86cff;
+  font-size:.86rem;
+  font-weight:900;
+}
+.player-report-form{
+  display:grid;
+  gap:12px;
+  padding:0 14px 14px;
+}
+.player-report-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.player-report-meta span{
+  border:1px solid rgba(139,119,196,.18);
+  border-radius:999px;
+  padding:6px 10px;
+  color:#766b9d;
+  background:#fff;
+  font-size:.82rem;
+  font-weight:800;
+}
+.player-report-form label{
+  display:grid;
+  gap:6px;
+  color:#4a3f78;
+  font-size:.88rem;
+  font-weight:800;
+}
+.player-report-form select,
+.player-report-form textarea{
+  width:100%;
+  border:1px solid rgba(139,119,196,.22);
+  border-radius:14px;
+  background:#fff;
+  color:#2b2357;
+  font:inherit;
+  padding:10px 12px;
+  outline:none;
+}
+.player-report-form textarea{
+  min-height:76px;
+  resize:vertical;
+}
+.player-report-form button{
+  justify-self:start;
+  border:0;
+  border-radius:999px;
+  padding:10px 16px;
+  background:linear-gradient(135deg,#9b6cff,#e07bff);
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 12px 26px rgba(155,108,255,.22);
+}
+.player-report-form button:disabled{
+  opacity:.65;
+  cursor:default;
+}
+.admin-player-report-list article p{
+  margin:.45rem 0 0;
+  color:#4f4677;
+  line-height:1.45;
+}
+.admin-player-reports-panel .admin-comment-status-v26.open{background:#fff4d9;color:#8a5c00}
+.admin-player-reports-panel .admin-comment-status-v26.checking{background:#eaf2ff;color:#285ba8}
+.admin-player-reports-panel .admin-comment-status-v26.fixed{background:#e9fff3;color:#13733d}
+.admin-player-reports-panel .admin-comment-status-v26.ignored{background:#f2f0f8;color:#625a77}
