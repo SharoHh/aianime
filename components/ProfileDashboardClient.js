@@ -3,6 +3,23 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { clearAnimeData, getFavorites, getHistory, getRatings } from '@/lib/userStorage'
+import { pushToast } from '@/components/ToastCenter'
+
+function posterSrc(value){
+  const text = String(value || '').trim()
+  if(!text) return '/posters/oshi.svg'
+  if(text.startsWith('/api/image') || text.startsWith('/posters/') || text.startsWith('/images/') || text.startsWith('/aianime-logo')) return text
+  if(/^https?:\/\//i.test(text)) return `/api/image?url=${encodeURIComponent(text)}&fallback=${encodeURIComponent('/posters/oshi.svg')}`
+  return text
+}
+
+function resumeHref(item){
+  if(!item?.slug) return '/catalog'
+  const episode = Math.max(1, Number(item.episode || 1) || 1)
+  const params = new URLSearchParams({ episode:String(episode), resume:'1' })
+  if(item.voice) params.set('voice', item.voice)
+  return `/anime/${item.slug}?${params.toString()}#player`
+}
 
 export default function ProfileDashboardClient(){
   const [favorites,setFavorites] = useState([])
@@ -25,7 +42,7 @@ export default function ProfileDashboardClient(){
     }
   }, [])
 
-  const ratingEntries = useMemo(() => Object.entries(ratings).filter(([,v]) => Number(v)), [ratings])
+  const ratingEntries = useMemo(() => Object.entries(ratings).filter(([,v]) => Number(v)).sort((a,b)=>Number(b[1])-Number(a[1])), [ratings])
   const avg = useMemo(()=>{
     const values = ratingEntries.map(([,v]) => Number(v)).filter(Boolean)
     if(!values.length) return '—'
@@ -33,52 +50,74 @@ export default function ProfileDashboardClient(){
   }, [ratingEntries])
 
   function clearAll(){
+    if(!window.confirm('Очистить избранное, историю и оценки?')) return
     clearAnimeData('all')
     load()
+    pushToast('Данные профиля очищены', 'success')
   }
 
   const last = history[0]
+  const completed = history.filter(item => Number(item.progress || 0) >= 90).length
   const stats = [
     ['Избранное', favorites.length, '/favorites'],
     ['История', history.length, '/history'],
     ['Оценок', ratingEntries.length, '/profile'],
     ['Средняя', avg, '/profile'],
+    ['Досмотрено', completed, '/history'],
   ]
 
   return <>
-    <section className="profile-dashboard widget">
+    <section className="profile-dashboard widget profile-dashboard-v168">
       <div className="profile-hero-card">
-        <img src="/posters/oshi.svg" alt="Haruno"/>
+        <img src="/posters/oshi.svg" alt="Профиль AIanime"/>
         <div>
           <span>профиль аккаунта</span>
           <h2>Твои данные</h2>
-          <p>Твои избранные тайтлы, история просмотра и оценки сохраняются в профиле. Если ты вошёл в аккаунт, данные синхронизируются через Supabase.</p>
+          <p>Избранное, история, оценки и продолжение просмотра собраны в одном месте. Если аккаунт подключён, данные синхронизируются через Supabase.</p>
           <div className="profile-actions">
             <Link className="primary" href="/catalog">Найти аниме</Link>
-            {last ? <Link className="secondary" href={`/anime/${last.slug}#player`} prefetch={false}>Продолжить</Link> : <Link className="secondary" href="/ai">AI-подбор</Link>}
+            {last ? <Link className="secondary" href={resumeHref(last)} prefetch={false}>Продолжить</Link> : <Link className="secondary" href="/ai">AI-подбор</Link>}
             <button className="secondary" onClick={clearAll}>Очистить</button>
           </div>
         </div>
       </div>
-      <div className="profile-stat-grid">
+      <div className="profile-stat-grid profile-stat-grid-v168">
         {stats.map(([label,value,href])=><Link href={href} className="profile-big-stat" key={label}><span>{label}</span><b>{value}</b></Link>)}
       </div>
     </section>
 
-    <div className="section-title"><h2><span>◷</span>Продолжить просмотр</h2><Link href="/history">История ›</Link></div>
-    {history.length ? <div className="continue-row">
-      {history.slice(0,4).map(a=><Link className="continue-card" href={`/anime/${a.slug}#player`} key={a.slug} prefetch={false}>
-        <img loading="lazy" decoding="async" src={a.banner || a.poster} alt={a.title ? `Обложка аниме ${a.title}` : 'Обложка аниме'}/>
-        <div className="play">▶</div>
-        <div className="continue-info"><b>{a.title}</b><span>Серия {a.episode || 1}</span><div className="bar"><i style={{width:(a.progress || 12)+'%'}}/></div></div>
-        <em>{a.progress || 12}%</em>
-      </Link>)}
-    </div> : <div className="empty-state">История пока пустая. Открой любой тайтл и нажми “Смотреть”.</div>}
+    <div className="profile-dashboard-columns-v168">
+      <section>
+        <div className="section-title"><h2><span>◷</span>Продолжить просмотр</h2><Link href="/history">История ›</Link></div>
+        {history.length ? <div className="continue-row profile-continue-row-v168">
+          {history.slice(0,4).map(item => {
+            const episode = Math.max(1, Number(item.episode || 1) || 1)
+            const progress = Math.max(Number(item.progress || 0) || 0, 8)
+            return <Link className="continue-card" href={resumeHref(item)} key={`${item.slug}-${episode}-${item.voice || ''}`} prefetch={false}>
+              <img loading="lazy" decoding="async" src={posterSrc(item.banner || item.poster)} alt={item.title ? `Обложка аниме ${item.title}` : 'Обложка аниме'}/>
+              <div className="play">▶</div>
+              <div className="continue-info"><b>{item.title}</b><span>Серия {episode}{item.voice ? ` · ${item.voice}` : ''}</span><div className="bar"><i style={{width:`${progress}%`}}/></div></div>
+              <em>{Math.round(progress)}%</em>
+            </Link>
+          })}
+        </div> : <div className="empty-state">История пока пустая. Открой любой тайтл и нажми “Смотреть”.</div>}
+      </section>
+
+      <section className="profile-mini-panel-v168">
+        <div className="section-title"><h2><span>★</span>Оценки</h2><span>{ratingEntries.length}</span></div>
+        {ratingEntries.length ? <div className="profile-rating-list-v168">
+          {ratingEntries.slice(0,6).map(([slug,value]) => <Link href={`/anime/${slug}`} key={slug} prefetch={false}>
+            <span>{slug.replace(/-/g, ' ').slice(0, 46)}</span>
+            <b>{value}/5</b>
+          </Link>)}
+        </div> : <div className="empty-state">Оценок пока нет.</div>}
+      </section>
+    </div>
 
     <div className="section-title"><h2><span>♡</span>Избранное</h2><Link href="/favorites">Все ›</Link></div>
     {favorites.length ? <div className="poster-row">
-      {favorites.slice(0,5).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug} prefetch={false}>
-        <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div className="rating">★ {a.rating || '—'}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
+      {favorites.slice(0,5).map(item=><Link className="poster" href={`/anime/${item.slug}`} key={item.slug} prefetch={false}>
+        <img loading="lazy" decoding="async" width="320" height="480" src={posterSrc(item.poster)} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/><div className="rating">★ {item.rating || '—'}</div><div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
       </Link>)}
     </div> : <div className="empty-state">Избранное пустое. Добавляй тайтлы со страницы аниме.</div>}
   </>

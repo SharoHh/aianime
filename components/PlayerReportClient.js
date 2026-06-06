@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { pushToast } from '@/components/ToastCenter'
 import { useAuthState } from '@/components/AuthStateClient'
 
@@ -34,6 +34,23 @@ export default function PlayerReportClient({ slug, title, episode = 1, voice = '
   const [message,setMessage] = useState('')
   const [saving,setSaving] = useState(false)
   const [sent,setSent] = useState(false)
+  const [playerState,setPlayerState] = useState({ episode, voice })
+
+  useEffect(() => {
+    const onState = (event) => {
+      const detail = event?.detail || {}
+      if(detail.slug && detail.slug !== slug) return
+      setPlayerState(current => ({
+        episode:detail.episode || current.episode || episode,
+        voice:detail.voice ?? current.voice ?? voice
+      }))
+    }
+    window.addEventListener('aianime:player-state', onState)
+    return () => window.removeEventListener('aianime:player-state', onState)
+  }, [slug, episode, voice])
+
+  const currentEpisode = Math.max(1, Number(playerState.episode || episode || 1) || 1)
+  const currentVoice = String(playerState.voice || voice || '').trim()
 
   const reasonLabel = useMemo(() => reasons.find(item => item[0] === reason)?.[1] || 'Проблема с плеером', [reason])
 
@@ -59,8 +76,8 @@ export default function PlayerReportClient({ slug, title, episode = 1, voice = '
         body: JSON.stringify({
           slug,
           title,
-          episode,
-          voice,
+          episode:currentEpisode,
+          voice:currentVoice,
           reason,
           reasonLabel,
           message,
@@ -87,8 +104,8 @@ export default function PlayerReportClient({ slug, title, episode = 1, voice = '
     </summary>
     <form onSubmit={submit} className="player-report-form">
       <div className="player-report-meta">
-        <span>Серия {Math.max(1, Number(episode || 1) || 1)}</span>
-        {voice ? <span>{voice}</span> : null}
+        <span>Серия {currentEpisode}</span>
+        {currentVoice ? <span>{currentVoice}</span> : null}
         {user ? <span>аккаунт привязан</span> : <span>можно без входа</span>}
       </div>
       <label>

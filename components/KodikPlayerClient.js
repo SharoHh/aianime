@@ -473,6 +473,15 @@ export default function KodikPlayerClient({
   }, [slug])
 
   useEffect(() => {
+    if(typeof window === 'undefined') return
+    try{
+      window.dispatchEvent(new CustomEvent('aianime:player-state', {
+        detail:{ slug, episode:activeEpisodeNumber, voice:activeVoice || 'Kodik', provider:'kodik' }
+      }))
+    }catch{}
+  }, [slug, activeEpisodeNumber, activeVoice])
+
+  useEffect(() => {
     if(!user?.id || !historyItem?.slug) return
     saveHistoryItem({ ...historyItem, voice:activeVoice, provider:'kodik' }, activeEpisodeNumber, 0)
   }, [user?.id, historyItem?.slug, activeEpisodeNumber, activeVoice])

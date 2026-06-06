@@ -26,7 +26,7 @@ function normalizeHistoryItem(item){
     title:item.title || item.title_ru || item.name || 'Аниме',
     voice:item.voice || null,
     provider:item.provider || null,
-    href:`/anime/${item.slug}?episode=${episode}${item.voice ? `&voice=${encodeURIComponent(item.voice)}` : ''}#player`
+    href:`/anime/${item.slug}?episode=${episode}${item.voice ? `&voice=${encodeURIComponent(item.voice)}` : ''}&resume=1#player`
   }
 }
 
