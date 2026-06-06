@@ -41,7 +41,7 @@ export default function TasteRecommendationsClient(){
   return <section className="widget taste-recs">
     <div className="widget-head"><h3>AI рекомендует по вкусу</h3><Link href="/ai">AI ›</Link></div>
     {loading ? <div className="taste-recs-loading">Анализируем историю...</div> : items.length ? <div className="taste-recs-grid">
-      {items.slice(0,4).map(item=><Link href={`/anime/${item.slug}`} className="taste-rec-card" key={item.slug}>
+      {items.slice(0,4).map(item=><Link href={`/anime/${item.slug}`} className="taste-rec-card" key={item.slug} prefetch={false}>
         <img loading="lazy" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
         <div><span>AI {item.match}%</span><b>{item.title}</b><p>{item.reason}</p></div>
       </Link>)}

@@ -38,7 +38,7 @@ export default function HomeNewOnSiteClient({ anime = [] }){
         className="home-new-card"
         key={item.slug}
         onClick={() => trackPopularityEvent(item.slug, 'click')}
-      >
+       prefetch={false}>
         <img loading="lazy" decoding="async" width="420" height="590" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
         <GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/>
         <div className="home-new-shade" />

@@ -55,7 +55,7 @@ export default function ProfileDashboardClient(){
           <p>Твои избранные тайтлы, история просмотра и оценки сохраняются в профиле. Если ты вошёл в аккаунт, данные синхронизируются через Supabase.</p>
           <div className="profile-actions">
             <Link className="primary" href="/catalog">Найти аниме</Link>
-            {last ? <Link className="secondary" href={`/anime/${last.slug}#player`}>Продолжить</Link> : <Link className="secondary" href="/ai">AI-подбор</Link>}
+            {last ? <Link className="secondary" href={`/anime/${last.slug}#player`} prefetch={false}>Продолжить</Link> : <Link className="secondary" href="/ai">AI-подбор</Link>}
             <button className="secondary" onClick={clearAll}>Очистить</button>
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function ProfileDashboardClient(){
 
     <div className="section-title"><h2><span>◷</span>Продолжить просмотр</h2><Link href="/history">История ›</Link></div>
     {history.length ? <div className="continue-row">
-      {history.slice(0,4).map(a=><Link className="continue-card" href={`/anime/${a.slug}#player`} key={a.slug}>
+      {history.slice(0,4).map(a=><Link className="continue-card" href={`/anime/${a.slug}#player`} key={a.slug} prefetch={false}>
         <img loading="lazy" decoding="async" src={a.banner || a.poster} alt={a.title ? `Обложка аниме ${a.title}` : 'Обложка аниме'}/>
         <div className="play">▶</div>
         <div className="continue-info"><b>{a.title}</b><span>Серия {a.episode || 1}</span><div className="bar"><i style={{width:(a.progress || 12)+'%'}}/></div></div>
@@ -77,7 +77,7 @@ export default function ProfileDashboardClient(){
 
     <div className="section-title"><h2><span>♡</span>Избранное</h2><Link href="/favorites">Все ›</Link></div>
     {favorites.length ? <div className="poster-row">
-      {favorites.slice(0,5).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}>
+      {favorites.slice(0,5).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug} prefetch={false}>
         <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div className="rating">★ {a.rating || '—'}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
       </Link>)}
     </div> : <div className="empty-state">Избранное пустое. Добавляй тайтлы со страницы аниме.</div>}

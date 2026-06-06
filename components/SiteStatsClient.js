@@ -10,6 +10,18 @@ function formatNumber(value){
   return new Intl.NumberFormat('ru-RU').format(number)
 }
 
+function hasRealStat(value){
+  return value !== null && value !== undefined && value !== '' && value !== '—'
+}
+
+function mergeRealStats(prev, entries){
+  const next = { ...prev }
+  for(const [key, value] of Object.entries(entries || {})){
+    if(hasRealStat(value)) next[key] = formatNumber(value)
+  }
+  return next
+}
+
 function getVisitorId(){
   if(typeof window === 'undefined') return 'server'
   try{
@@ -90,14 +102,13 @@ export default function SiteStatsClient({ initialStats = [] }){
       try{
         const data = await pingPresence(visitorId, tabId)
         if(cancelled) return
-        setLiveStats(prev => ({
-          ...prev,
-          online: formatNumber(data?.online),
-          openTabs: formatNumber(data?.openTabs),
+        setLiveStats(prev => mergeRealStats(prev, {
+          online: data?.online ?? 1,
+          openTabs: data?.openTabs ?? 1,
         }))
       }catch{
         if(!cancelled){
-          setLiveStats(prev => ({ ...prev, online: prev.online || '—', openTabs: prev.openTabs || '—' }))
+          setLiveStats(prev => ({ ...prev, online: prev.online || '1', openTabs: prev.openTabs || '1' }))
         }
       }
     }
@@ -106,12 +117,11 @@ export default function SiteStatsClient({ initialStats = [] }){
       try{
         const data = await fetchSiteStats()
         if(cancelled) return
-        setLiveStats(prev => ({
-          ...prev,
-          accounts: formatNumber(data?.accounts),
-          comments: formatNumber(data?.comments),
-          openTabs: formatNumber(data?.openTabs ?? prev.openTabs),
-          online: formatNumber(data?.online ?? prev.online),
+        setLiveStats(prev => mergeRealStats(prev, {
+          accounts: data?.accounts,
+          comments: data?.comments,
+          openTabs: data?.openTabs,
+          online: data?.online,
         }))
       }catch{
         // Если Supabase ещё не подключён, оставляем реальные локальные значения и прочерки.
