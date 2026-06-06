@@ -4,6 +4,20 @@ const nextConfig = {
   poweredByHeader: false,
   images: { unoptimized: true },
   turbopack: { root: __dirname },
+  async redirects(){
+    return [
+      { source: '/collection', destination: '/collections', permanent: true },
+      { source: '/collections-old', destination: '/collections', permanent: true },
+      { source: '/podborki', destination: '/collections', permanent: true },
+      { source: '/podbor', destination: '/ai', permanent: true },
+      { source: '/ai-podbor', destination: '/ai', permanent: true },
+      { source: '/ai-podborki', destination: '/ai', permanent: true },
+      { source: '/recommend', destination: '/ai', permanent: true },
+      { source: '/recommendations', destination: '/ai', permanent: true },
+      { source: '/anime/catalog-title-:id', destination: '/catalog', permanent: true },
+      { source: '/year/:year(\\d{4})', destination: '/anime-:year', permanent: true },
+    ]
+  },
   async headers(){
     return [
       {
