@@ -6,8 +6,8 @@ import AdminPlayerReportsClient from './AdminPlayerReportsClient'
 export const metadata = { title:'Жалобы на плеер — AIanime', robots:{ index:false, follow:false } }
 
 export default function AdminReportsPage(){
-  return <main className="admin-page">
-    <section className="admin-episodes">
+  return <main className="admin-page admin-reports-page-v172">
+    <section className="admin-episodes admin-reports-shell-v172">
       <div className="page-head">
         <Link href="/admin">← В админку</Link>
         <h1>Жалобы на плеер</h1>
