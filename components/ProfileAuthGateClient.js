@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getFavorites, getHistory, getRatings, getLibrary } from '@/lib/userStorage'
 import { getUserDisplayName, readStoredProfile, useAuthState } from '@/components/AuthStateClient'
 import ProfileEditorClient from '@/components/ProfileEditorClient'
+import ProfileLibraryClient from '@/components/ProfileLibraryClient'
 import UserSyncStatusClient from '@/components/UserSyncStatusClient'
 
 function readStats(){
@@ -18,7 +19,7 @@ function readStats(){
 
 export default function ProfileAuthGateClient(){
   const { loading, user, signOut } = useAuthState()
-  const [stats,setStats] = useState({ favorites:0, history:0, ratings:0 })
+  const [stats,setStats] = useState({ favorites:0, history:0, ratings:0, library:0 })
   const [profile,setProfile] = useState(null)
 
   useEffect(()=>{
@@ -75,16 +76,17 @@ export default function ProfileAuthGateClient(){
         <Link href="/favorites"><b>{stats.favorites}</b><span>Избранное</span></Link>
         <Link href="/history"><b>{stats.history}</b><span>История</span></Link>
         <Link href="/profile"><b>{stats.ratings}</b><span>Оценки</span></Link>
-        <Link href="/library"><b>{stats.library}</b><span>Библиотека</span></Link>
+        <a href="#profile-library"><b>{stats.library}</b><span>Библиотека</span></a>
       </div>
       <div className="profile-account-actions-v7">
-        <Link className="secondary" href="/library">Библиотека</Link>
+        <a className="secondary" href="#profile-library">Библиотека</a>
         <Link className="secondary" href="/catalog">Каталог</Link>
         <button className="secondary" onClick={signOut}>Выйти</button>
       </div>
     </section>
 
     <UserSyncStatusClient/>
+    <ProfileLibraryClient/>
     <ProfileEditorClient user={user}/>
   </>
 }

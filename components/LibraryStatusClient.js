@@ -57,24 +57,18 @@ export default function LibraryStatusClient({ item }){
   if(!safeItem.slug) return null
 
   if(!user){
-    return <section className="title-library-status title-library-status-guest" aria-label="Моя библиотека">
-      <div>
-        <b>Моя библиотека</b>
-        <span>Сохраняй статус просмотра после входа.</span>
-      </div>
+    return <div className="title-library-dropdown title-library-dropdown-guest" aria-label="Моя библиотека">
+      <span>Моя библиотека</span>
       <Link href={loginHref()} prefetch={false}>Войти</Link>
-    </section>
+    </div>
   }
 
-  return <section className="title-library-status" aria-label="Моя библиотека">
-    <div className="title-library-status-head">
-      <div>
-        <b>Моя библиотека</b>
-        <span>{status ? `Сейчас: ${libraryStatusLabel(status)}` : 'Отметь, что делаешь с этим тайтлом'}</span>
-      </div>
-      <Link href="/library" prefetch={false}>Открыть ›</Link>
-    </div>
-    <div className="title-library-status-buttons" role="group" aria-label="Статус тайтла в библиотеке">
+  return <details className="title-library-dropdown" aria-label="Моя библиотека">
+    <summary>
+      <span>Моя библиотека</span>
+      <b>{status ? libraryStatusLabel(status) : 'Выбрать статус'}</b>
+    </summary>
+    <div className="title-library-dropdown-menu" role="group" aria-label="Статус тайтла в библиотеке">
       {LIBRARY_STATUSES.map(option => <button
         type="button"
         key={option.value}
@@ -82,6 +76,7 @@ export default function LibraryStatusClient({ item }){
         aria-pressed={status === option.value}
         onClick={() => choose(option.value)}
       >{option.label}</button>)}
+      {status ? <button type="button" className="muted" onClick={() => choose(status)}>Убрать</button> : null}
     </div>
-  </section>
+  </details>
 }
