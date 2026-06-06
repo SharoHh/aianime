@@ -48,7 +48,7 @@ function adminDenied(req, reason = 'Admin access denied'){
     return json({
       ok:false,
       error: reason,
-      hint:'Добавь ADMIN_SECRET в Vercel env и открывай /admin/diagnostics?admin_secret=ADMIN_SECRET. Для API можно использовать header x-admin-secret.'
+      hint:'Админские API теперь доступны из админки через /admin/api/*. Открой админку через защищённый /admin.'
     }, 401)
   }
 
@@ -69,8 +69,8 @@ function adminDenied(req, reason = 'Admin access denied'){
   <body>
     <main>
       <h1>Админка защищена</h1>
-      <p>Открой админку с параметром <code>?admin_secret=ADMIN_SECRET</code> или добавь header <code>x-admin-secret</code>.</p>
-      <p>На Vercel добавь переменную окружения <code>ADMIN_SECRET</code>. На localhost без production админка может открываться без секрета.</p>
+      <p>Открой раздел через обычный вход в админку. На VPS доступ должен закрывать Nginx Basic Auth.</p>
+      <p>Если включён внутренний пароль, задай <code>ADMIN_SECRET</code> или <code>ADMIN_PASSWORD</code> в окружении. Параметр <code>?admin_secret=...</code> больше не нужен для обычной работы.</p>
     </main>
   </body>
 </html>`, {
@@ -85,14 +85,21 @@ function adminConfigured(){
 
 function verifyAdmin(req){
   const local = isLocalRequest(req)
-  const secret = process.env.ADMIN_SECRET || ''
+  const secret = process.env.ADMIN_SECRET || process.env.ADMIN_PASSWORD || ''
+  const pathname = req.nextUrl?.pathname || ''
 
   if(local && !isProd()){
     return { ok:true, mode:'local-bypass', setCookie:false }
   }
 
   if(!secret){
-    return { ok:false, reason:'ADMIN_SECRET is not configured' }
+    // Timeweb/Nginx already protects /admin with Basic Auth on production.
+    // When ADMIN_SECRET is missing, do not show the old query-token lock screen.
+    // Admin UI/API must live under /admin/* so it stays behind the same Nginx gate.
+    if(pathname.startsWith('/api/admin')){
+      return { ok:false, reason:'Admin API moved under /admin/api. Open the admin panel through /admin.' }
+    }
+    return { ok:true, mode:'external-admin-auth', setCookie:false }
   }
 
   const token = getAdminToken(req)
@@ -100,7 +107,7 @@ function verifyAdmin(req){
     return { ok:true, mode:'secret', setCookie:true }
   }
 
-  return { ok:false, reason:'Invalid admin secret' }
+  return { ok:false, reason:'Invalid admin password' }
 }
 
 function verifyCron(req){
@@ -229,6 +236,12 @@ export function proxy(req){
         })
       }
       return withSecurityHeaders(response)
+    }
+
+    if(pathname.startsWith('/admin/api/') && !pathname.startsWith('/admin/api/cron')){
+      const apiUrl = req.nextUrl.clone()
+      apiUrl.pathname = pathname.replace(/^\/admin\/api/, '/api/admin')
+      return withSecurityHeaders(NextResponse.rewrite(apiUrl))
     }
 
     const response = NextResponse.next()
