@@ -39,7 +39,7 @@ export default function HomeNewOnSiteClient({ anime = [] }){
         key={item.slug}
         onClick={() => trackPopularityEvent(item.slug, 'click')}
       >
-        <img loading={index < 2 ? 'eager' : 'lazy'} decoding="async" src={item.poster} alt={item.title}/>
+        <img loading={index < 2 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : undefined} decoding="async" width="420" height="590" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
         <GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/>
         <div className="home-new-shade" />
         <div className="home-new-copy">

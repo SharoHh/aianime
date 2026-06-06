@@ -78,7 +78,7 @@ export default function ProfileDashboardClient(){
     <div className="section-title"><h2><span>♡</span>Избранное</h2><Link href="/favorites">Все ›</Link></div>
     {favorites.length ? <div className="poster-row">
       {favorites.slice(0,5).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}>
-        <img loading="lazy" decoding="async" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div className="rating">★ {a.rating || '—'}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
+        <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div className="rating">★ {a.rating || '—'}</div><div className="poster-info"><b>{a.title}</b><span>{a.meta}</span></div>
       </Link>)}
     </div> : <div className="empty-state">Избранное пустое. Добавляй тайтлы со страницы аниме.</div>}
   </>

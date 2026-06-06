@@ -96,7 +96,7 @@ export default function ContinueWatchingClient(){
         onClick={() => rememberResumeClick(item)}
         aria-label={`Продолжить смотреть ${item.title}, серия ${item.episode}`}
       >
-        <img loading="lazy" decoding="async" src={item.poster} alt={item.title}/>
+        <img loading="lazy" decoding="async" width="180" height="260" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
         <div className="play" aria-hidden="true">▶</div>
         <div className="continue-play-badge">Продолжить</div>
         <div className="continue-info">

@@ -52,7 +52,7 @@ export async function generateYearMetadata(yearValue){
 
 function Poster({item}){
   return <Link className="poster" href={`/anime/${item.slug}`}>
-    <img loading="lazy" decoding="async" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
+    <img loading="lazy" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
     <GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/>
     <div className="poster-info"><b>{item.title}</b><span>{item.meta}</span></div>
   </Link>

@@ -130,7 +130,7 @@ export default function HomeScheduleWidgetClient({ schedule = [], scheduleDays =
             const active = Boolean(actualNotify[key])
             return <Link className="sch schedule-reference-item" href={item.href || `/anime/${item.slug}`} key={`${key}-${index}`}>
               <time>{item.time}</time>
-              <img loading="lazy" decoding="async" src={item.poster || '/posters/magic2.svg'} alt={item.title || 'Аниме'} />
+              <img loading="lazy" decoding="async" width="72" height="102" src={item.poster || '/posters/magic2.svg'} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'} />
               <div>
                 <b>{item.title}</b>
                 <span>{item.meta}</span>

@@ -41,7 +41,7 @@ export default function HomePopularNowClient({ anime = [] }){
         onClick={() => trackPopularityEvent(item.slug, 'click')}
         style={{'--card-delay': `${index * 35}ms`}}
       >
-        <img loading={index < 2 ? 'eager' : 'lazy'} decoding="async" src={item.poster} alt={item.title}/>
+        <img loading={index < 2 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : undefined} decoding="async" width="420" height="590" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
         <GlobalRatingBadge slug={item.slug} score={item.rating} count={item.siteRatingCount}/>
         <div className="popular-live-shade" />
         <div className="popular-live-copy">
