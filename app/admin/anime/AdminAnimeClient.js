@@ -203,7 +203,7 @@ export default function AdminAnimeClient({ items = [] }){
     if(!form.slug) return false
     setSaving(true)
     try{
-      const res = await fetch('/api/admin/anime', {
+      const res = await fetch('/admin/api/anime', {
         method:'PATCH',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify(form)
@@ -340,7 +340,7 @@ export default function AdminAnimeClient({ items = [] }){
           descriptionRu: cleanDescription(item.descriptionRu || item.description),
           description: cleanDescription(item.description),
         }
-        const res = await fetch('/api/admin/anime', {
+        const res = await fetch('/admin/api/anime', {
           method:'PATCH',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(payload)
@@ -389,7 +389,7 @@ export default function AdminAnimeClient({ items = [] }){
           }) : cleanDescription(currentDescription),
           description: cleanDescription(item.description),
         }
-        const res = await fetch('/api/admin/anime', {
+        const res = await fetch('/admin/api/anime', {
           method:'PATCH',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(payload)

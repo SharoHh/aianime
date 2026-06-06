@@ -44,7 +44,7 @@ export default function AdminCommentsClient(){
     setLoading(true)
     setError('')
     try{
-      const res = await fetch(`/api/admin/comments?status=${encodeURIComponent(status)}`, { cache:'no-store' })
+      const res = await fetch(`/admin/api/comments?status=${encodeURIComponent(status)}`, { cache:'no-store' })
       const data = await res.json().catch(()=>null)
       if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось загрузить комментарии')
       setItems(data.comments || [])
@@ -67,7 +67,7 @@ export default function AdminCommentsClient(){
 
   async function updateStatus(item, nextStatus){
     try{
-      const res = await fetch('/api/admin/comments', {
+      const res = await fetch('/admin/api/comments', {
         method:'PATCH',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({ id:item.id, status:nextStatus })
@@ -84,7 +84,7 @@ export default function AdminCommentsClient(){
   async function removeCloud(item){
     if(!window.confirm('Удалить комментарий без возможности восстановления?')) return
     try{
-      const res = await fetch(`/api/admin/comments?id=${encodeURIComponent(item.id)}`, { method:'DELETE' })
+      const res = await fetch(`/admin/api/comments?id=${encodeURIComponent(item.id)}`, { method:'DELETE' })
       const data = await res.json().catch(()=>null)
       if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось удалить комментарий')
       setItems(prev => prev.filter(current => current.id !== item.id))

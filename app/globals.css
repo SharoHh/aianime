@@ -22288,3 +22288,89 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   .local-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .profile-continue-row-v168{grid-template-columns:1fr}
 }
+
+
+/* AIanime v169: calmer standalone title SEO block position and button tone. */
+.compact-title-seo-standalone{
+  margin-top:12px!important;
+  border-color:rgba(226,218,244,.92)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(251,249,255,.9))!important;
+  box-shadow:0 8px 24px rgba(69,54,118,.045)!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary{
+  min-height:50px!important;
+  padding:10px 13px!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary b{
+  color:#25213d!important;
+  font-family:var(--font-main)!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  letter-spacing:-.035em!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary small{
+  color:#7f7693!important;
+  font-family:var(--font-main)!important;
+  font-size:12px!important;
+  font-weight:700!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary em,
+.compact-player-section .player-report-box summary em,
+.compact-player-section .player-report-form button{
+  border:1px solid rgba(103,86,184,.18)!important;
+  background:#7565d8!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(103,86,184,.16)!important;
+  text-shadow:none!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary em{
+  min-width:92px!important;
+  height:34px!important;
+  padding:0 14px!important;
+  border-radius:13px!important;
+  font-family:var(--font-main)!important;
+  font-size:0!important;
+  font-weight:900!important;
+  letter-spacing:-.015em!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary em::before{
+  content:'Раскрыть'!important;
+  color:inherit!important;
+  font-size:12.5px!important;
+  font-weight:900!important;
+}
+.compact-title-seo-standalone[open] .compact-title-seo-summary em::before{
+  content:'Скрыть'!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary em::after,
+.compact-player-section .player-report-box summary em::after{
+  color:inherit!important;
+  opacity:.82!important;
+}
+.compact-title-seo-standalone .compact-title-seo-summary:hover em,
+.compact-player-section .player-report-box summary:hover em,
+.compact-player-section .player-report-form button:hover{
+  background:#6c5dca!important;
+  box-shadow:0 10px 22px rgba(103,86,184,.2)!important;
+  transform:translateY(-1px)!important;
+}
+.compact-title-seo-standalone[open] .compact-title-seo-summary{
+  border-bottom:1px solid rgba(232,224,247,.95)!important;
+  background:rgba(255,255,255,.82)!important;
+}
+.compact-title-seo-standalone .compact-title-seo-body{
+  background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(250,247,255,.74))!important;
+}
+@media(max-width:760px){
+  .compact-title-seo-standalone{
+    margin-top:10px!important;
+  }
+  .compact-title-seo-standalone .compact-title-seo-summary em{
+    min-width:84px!important;
+    height:32px!important;
+    padding:0 11px!important;
+  }
+  .compact-title-seo-standalone .compact-title-seo-summary em::before{
+    font-size:12px!important;
+  }
+}

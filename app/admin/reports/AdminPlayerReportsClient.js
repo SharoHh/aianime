@@ -37,7 +37,7 @@ export default function AdminPlayerReportsClient(){
     setLoading(true)
     setError('')
     try{
-      const res = await fetch('/api/admin/player-reports?status=all', { cache:'no-store' })
+      const res = await fetch('/admin/api/player-reports?status=all', { cache:'no-store' })
       const data = await res.json().catch(() => null)
       if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось загрузить жалобы')
       const reports = data.reports || []
@@ -85,7 +85,7 @@ export default function AdminPlayerReportsClient(){
   async function update(item, nextStatus = item.status){
     try{
       const adminNote = notes[item.id] ?? item.adminNote ?? ''
-      const res = await fetch('/api/admin/player-reports', {
+      const res = await fetch('/admin/api/player-reports', {
         method:'PATCH',
         headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify({ id:item.id, status:nextStatus, adminNote })
@@ -102,7 +102,7 @@ export default function AdminPlayerReportsClient(){
   async function remove(item){
     if(!window.confirm('Удалить жалобу?')) return
     try{
-      const res = await fetch(`/api/admin/player-reports?id=${encodeURIComponent(item.id)}`, { method:'DELETE' })
+      const res = await fetch(`/admin/api/player-reports?id=${encodeURIComponent(item.id)}`, { method:'DELETE' })
       const data = await res.json().catch(() => null)
       if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось удалить жалобу')
       setItems(prev => prev.filter(current => current.id !== item.id))

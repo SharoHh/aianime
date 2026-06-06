@@ -12,7 +12,7 @@ export default function EpisodesAdminClient(){
   const [form, setForm] = useState({ episode_number: 1, title: '', provider: 'manual', voice: 'default', embed_url: '', hls_url: '', status: 'published' })
 
   useEffect(() => {
-    fetch('/api/admin/episodes')
+    fetch('/admin/api/episodes')
       .then(r => r.json())
       .then(data => {
         const list = data.anime || []
@@ -25,7 +25,7 @@ export default function EpisodesAdminClient(){
   useEffect(() => {
     if(!selected) return
     setMessage('')
-    fetch(`/api/admin/episodes?slug=${encodeURIComponent(selected)}`)
+    fetch(`/admin/api/episodes?slug=${encodeURIComponent(selected)}`)
       .then(r => r.json())
       .then(data => {
         const list = data.episodes || []
@@ -52,11 +52,11 @@ export default function EpisodesAdminClient(){
       source: 'admin',
     }
     try{
-      const res = await fetch('/api/admin/episodes', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
+      const res = await fetch('/admin/api/episodes', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
       const data = await res.json()
       if(!data.ok) throw new Error(data.error || 'Не удалось сохранить')
       setMessage('Серия сохранена')
-      const refreshed = await fetch(`/api/admin/episodes?slug=${encodeURIComponent(selected)}`).then(r => r.json())
+      const refreshed = await fetch(`/admin/api/episodes?slug=${encodeURIComponent(selected)}`).then(r => r.json())
       setEpisodes(refreshed.episodes || [])
     }catch(error){
       setMessage(error?.message || 'Ошибка сохранения')
@@ -74,7 +74,7 @@ export default function EpisodesAdminClient(){
       if(!data.ok) throw new Error(data.error || 'Не удалось создать серии')
       setMessage(`Создано/обновлено серий: ${data.saved || data.generated || 0}`)
       if(selected){
-        const refreshed = await fetch(`/api/admin/episodes?slug=${encodeURIComponent(selected)}`).then(r => r.json())
+        const refreshed = await fetch(`/admin/api/episodes?slug=${encodeURIComponent(selected)}`).then(r => r.json())
         setEpisodes(refreshed.episodes || [])
       }
     }catch(error){
