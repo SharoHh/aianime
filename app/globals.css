@@ -21536,3 +21536,220 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
 .admin-player-reports-panel .admin-comment-status-v26.checking{background:#eaf2ff;color:#285ba8}
 .admin-player-reports-panel .admin-comment-status-v26.fixed{background:#e9fff3;color:#13733d}
 .admin-player-reports-panel .admin-comment-status-v26.ignored{background:#f2f0f8;color:#625a77}
+
+/* AIanime v163: make title utility blocks match the site style — slimmer, softer, less noisy. */
+.compact-player-section .player-report-box{
+  margin:10px 0 0!important;
+  border:1px solid #efe7fb!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.64)!important;
+  box-shadow:0 8px 22px rgba(91,72,139,.035)!important;
+  overflow:hidden!important;
+}
+.compact-player-section .player-report-box summary{
+  min-height:46px!important;
+  padding:9px 13px!important;
+  gap:12px!important;
+  color:#2b2850!important;
+  font-family:inherit!important;
+  font-size:14px!important;
+  line-height:1.15!important;
+  font-weight:850!important;
+  letter-spacing:-.025em!important;
+}
+.compact-player-section .player-report-box summary span{
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.compact-player-section .player-report-box summary em{
+  flex:0 0 auto!important;
+  min-width:76px!important;
+  height:30px!important;
+  padding:0 12px!important;
+  border-radius:999px!important;
+  background:#fbf3ff!important;
+  color:#be67ee!important;
+  font-family:inherit!important;
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:850!important;
+  letter-spacing:-.01em!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.compact-player-section .player-report-box[open] summary{
+  border-bottom:1px solid #f1e9fb!important;
+}
+.compact-player-section .player-report-form{
+  gap:10px!important;
+  padding:12px 13px 13px!important;
+  background:rgba(252,249,255,.72)!important;
+}
+.compact-player-section .player-report-meta{
+  gap:6px!important;
+}
+.compact-player-section .player-report-meta span{
+  padding:5px 9px!important;
+  border-color:#eee6f8!important;
+  background:#fff!important;
+  color:#817493!important;
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:760!important;
+}
+.compact-player-section .player-report-form label{
+  gap:5px!important;
+  color:#554b6c!important;
+  font-size:13px!important;
+  line-height:1.25!important;
+  font-weight:780!important;
+}
+.compact-player-section .player-report-form select,
+.compact-player-section .player-report-form textarea{
+  border-color:#eee6f8!important;
+  border-radius:12px!important;
+  color:#2b2850!important;
+  font-family:inherit!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+  padding:9px 10px!important;
+}
+.compact-player-section .player-report-form textarea{
+  min-height:68px!important;
+}
+.compact-player-section .player-report-form button{
+  height:34px!important;
+  padding:0 14px!important;
+  border-radius:999px!important;
+  background:#2b2850!important;
+  color:#fff!important;
+  font-family:inherit!important;
+  font-size:12px!important;
+  font-weight:850!important;
+  box-shadow:0 10px 20px rgba(43,40,80,.12)!important;
+}
+
+.compact-title-seo{
+  margin:12px auto 0!important;
+  border:1px solid #efe7fb!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.66)!important;
+  box-shadow:0 8px 22px rgba(91,72,139,.035)!important;
+}
+.compact-title-seo-summary{
+  min-height:48px!important;
+  padding:10px 13px!important;
+  gap:12px!important;
+  color:#2b2850!important;
+  font-family:inherit!important;
+}
+.compact-title-seo-summary span{
+  gap:2px!important;
+}
+.compact-title-seo-summary b{
+  color:#2b2850!important;
+  font-family:inherit!important;
+  font-size:15px!important;
+  line-height:1.15!important;
+  font-weight:850!important;
+  letter-spacing:-.025em!important;
+}
+.compact-title-seo-summary small{
+  color:#8a7f9d!important;
+  font-family:inherit!important;
+  font-size:12px!important;
+  line-height:1.3!important;
+  font-weight:680!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:1!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+}
+.compact-title-seo-summary em{
+  min-width:76px!important;
+  height:30px!important;
+  padding:0 12px!important;
+  border-radius:999px!important;
+  background:#fbf3ff!important;
+  color:#be67ee!important;
+  font-family:inherit!important;
+  font-weight:850!important;
+}
+.compact-title-seo-summary em::before{
+  font-size:12px!important;
+  letter-spacing:-.01em!important;
+}
+.compact-title-seo[open] .compact-title-seo-summary{
+  border-bottom:1px solid #f1e9fb!important;
+}
+.compact-title-seo-body{
+  border-top:0!important;
+  padding:12px 13px 13px!important;
+  background:rgba(252,249,255,.72)!important;
+}
+.compact-title-seo-grid{
+  gap:8px!important;
+}
+.compact-title-seo article,
+.compact-title-faq details{
+  border-color:#eee6f8!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  padding:10px!important;
+}
+.compact-title-seo h3{
+  margin:0 0 5px!important;
+  color:#2b2850!important;
+  font-family:inherit!important;
+  font-size:13px!important;
+  line-height:1.22!important;
+  font-weight:850!important;
+  letter-spacing:-.015em!important;
+}
+.compact-title-seo p{
+  color:#645a78!important;
+  font-family:inherit!important;
+  font-size:12.5px!important;
+  line-height:1.5!important;
+  font-weight:620!important;
+}
+.compact-title-faq{
+  gap:7px!important;
+  margin-top:8px!important;
+}
+.compact-title-faq summary{
+  color:#2b2850!important;
+  font-family:inherit!important;
+  font-size:12.5px!important;
+  line-height:1.3!important;
+  font-weight:820!important;
+}
+
+@media(max-width:760px){
+  .compact-player-section .player-report-box,
+  .compact-title-seo{
+    border-radius:14px!important;
+  }
+  .compact-player-section .player-report-box summary,
+  .compact-title-seo-summary{
+    min-height:44px!important;
+    padding:9px 11px!important;
+  }
+  .compact-title-seo-summary b{font-size:14px!important;}
+  .compact-title-seo-summary small{font-size:11.5px!important;}
+  .compact-player-section .player-report-box summary em,
+  .compact-title-seo-summary em{
+    min-width:70px!important;
+    height:28px!important;
+    padding:0 10px!important;
+    font-size:11.5px!important;
+  }
+  .compact-title-seo-summary em::before{font-size:11.5px!important;}
+  .compact-player-section .player-report-form,
+  .compact-title-seo-body{
+    padding:10px 11px 11px!important;
+  }
+}
