@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getFavorites, getHistory, getRatings } from '@/lib/userStorage'
 import { getUserDisplayName, readStoredProfile, useAuthState } from '@/components/AuthStateClient'
 import ProfileEditorClient from '@/components/ProfileEditorClient'
+import ProfileDashboardClient from '@/components/ProfileDashboardClient'
 import UserSyncStatusClient from '@/components/UserSyncStatusClient'
 
 function readStats(){
@@ -60,7 +61,7 @@ export default function ProfileAuthGateClient(){
   const safeProfile = profile || readStoredProfile(user)
 
   return <>
-    <section className="profile-account-hero widget profile-account-hero-v7">
+    <section className="profile-account-hero widget profile-account-hero-v7 profile-account-hero-v173">
       <img className="profile-account-cover-v7" src={safeProfile.cover} alt="" aria-hidden="true"/>
       <div className="profile-account-main">
         <img src={safeProfile.avatar} alt="Аватар"/>
@@ -82,6 +83,7 @@ export default function ProfileAuthGateClient(){
     </section>
 
     <UserSyncStatusClient/>
+    <ProfileDashboardClient/>
     <ProfileEditorClient user={user}/>
   </>
 }

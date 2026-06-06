@@ -13,6 +13,21 @@ function imageSrc(value){
   return src
 }
 
+
+function itemTime(item){
+  const raw = item?.watchedAt || item?.savedAt || item?.updatedAt || 0
+  const time = new Date(raw).getTime()
+  return Number.isFinite(time) ? time : 0
+}
+
+function dedupeRecent(items){
+  const map = new Map()
+  ;[...(items || [])].sort((a,b) => itemTime(b) - itemTime(a)).forEach(item => {
+    if(item?.slug && !map.has(item.slug)) map.set(item.slug, item)
+  })
+  return Array.from(map.values())
+}
+
 function normalizeHistoryItem(item){
   if(!item?.slug) return null
   const episode = Math.max(1, Number(item.episode || 1))
@@ -39,7 +54,7 @@ export default function RightContinueWatchingClient(){
       setItem(null)
       return undefined
     }
-    const refresh = () => setItem(getHistory().map(normalizeHistoryItem).filter(Boolean)[0] || null)
+    const refresh = () => setItem(dedupeRecent(getHistory()).map(normalizeHistoryItem).filter(Boolean)[0] || null)
     refresh()
     window.addEventListener('anime:user-updated', refresh)
     window.addEventListener('storage', refresh)
