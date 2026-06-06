@@ -72,7 +72,14 @@ export async function GET(request){
       if(tableMissingError(text)) return json({ ok:false, error:'Таблица player_reports не найдена. Выполни supabase/player_reports_migration.sql' }, 500)
       return json({ ok:false, error:text || `Supabase error ${res.status}` }, 500)
     }
-    return json({ ok:true, reports:Array.isArray(data) ? data.map(mapReport) : [] })
+    const reports = Array.isArray(data) ? data.map(mapReport) : []
+    const summary = reports.reduce((acc, report) => {
+      const key = report.status || 'open'
+      acc[key] = (acc[key] || 0) + 1
+      acc.all = (acc.all || 0) + 1
+      return acc
+    }, { all:0, open:0, checking:0, fixed:0, ignored:0 })
+    return json({ ok:true, reports, summary })
   }catch(error){
     return json({ ok:false, error:error?.message || 'Unknown error' }, 500)
   }

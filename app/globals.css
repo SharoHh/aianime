@@ -22045,3 +22045,246 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   .compact-player-section .compact-title-seo-summary em::before{font-size:12px!important;}
   .compact-player-section .compact-title-seo-summary small{display:none!important;}
 }
+
+/* AIanime v167: title SEO block is a separate block below the player/report area. */
+.compact-title-seo-standalone{
+  margin-top:22px!important;
+}
+@media(max-width:760px){
+  .compact-title-seo-standalone{
+    margin-top:16px!important;
+  }
+}
+
+/* AIanime v168: functional polish for reports, history and profile without public redesign */
+.admin-report-status-grid-v168{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin:14px 0 14px;
+}
+.admin-report-status-grid-v168 button{
+  min-height:68px;
+  border:1px solid #eee6fb;
+  border-radius:18px;
+  background:rgba(255,255,255,.82);
+  color:#2b2546;
+  box-shadow:0 12px 28px rgba(79,61,127,.045);
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:5px;
+  padding:12px 14px;
+  cursor:pointer;
+  font-family:inherit;
+}
+.admin-report-status-grid-v168 button span{font-size:12px;font-weight:850;color:#8b82a0}
+.admin-report-status-grid-v168 button b{font-size:24px;line-height:1;font-weight:950;color:#2b2546}
+.admin-report-status-grid-v168 button.active{
+  border-color:#cdb6ff;
+  background:linear-gradient(135deg,#fff,#f8f2ff);
+  box-shadow:0 16px 34px rgba(141,85,238,.09);
+}
+.admin-player-report-list-v168 article{
+  align-items:stretch;
+}
+.admin-report-note-v168{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  margin-top:12px;
+}
+.admin-report-note-v168 span{
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:#8b82a0;
+}
+.admin-report-note-v168 textarea{
+  min-height:70px;
+  resize:vertical;
+  border:1px solid #eee6fb;
+  border-radius:14px;
+  padding:11px 12px;
+  font:inherit;
+  font-size:13px;
+  color:#2b2546;
+  background:#fff;
+  outline:none;
+}
+.admin-report-note-v168 textarea:focus{
+  border-color:#cdb6ff;
+  box-shadow:0 0 0 4px rgba(141,85,238,.08);
+}
+.local-library-page{max-width:1240px!important}
+.local-library-empty{
+  max-width:720px;
+  padding:24px!important;
+  border-radius:24px!important;
+}
+.local-library-empty h2{margin:0 0 8px;font-size:24px;letter-spacing:-.5px}
+.local-library-empty p{margin:0 0 18px;color:#766c8c;font-weight:650;line-height:1.55}
+.local-library-shell{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.local-library-summary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:14px;
+  padding:16px 18px;
+  border:1px solid #eee6fb;
+  border-radius:24px;
+  background:rgba(255,255,255,.88);
+  box-shadow:0 16px 42px rgba(79,61,127,.055);
+}
+.local-library-summary span{
+  display:block;
+  color:#9a91ab;
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.local-library-summary b{
+  display:block;
+  margin-top:4px;
+  font-size:20px;
+  color:#241f3b;
+  letter-spacing:-.45px;
+}
+.local-library-metrics{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+.local-library-metrics em{
+  height:30px;
+  padding:0 10px;
+  border-radius:999px;
+  background:#f8f3ff;
+  color:#7566a0;
+  display:inline-flex;
+  align-items:center;
+  font-style:normal;
+  font-size:12px;
+  font-weight:850;
+}
+.local-library-summary button,
+.local-library-actions button,
+.local-library-actions a{
+  height:34px;
+  border:1px solid #dfd3f7;
+  border-radius:999px;
+  background:#fff;
+  color:#6f4cc8;
+  font:inherit;
+  font-size:12px;
+  font-weight:900;
+  padding:0 13px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.local-library-card{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.local-library-card .poster{
+  width:100%;
+}
+.local-library-progress{
+  height:6px;
+  border-radius:999px;
+  background:#eee7fb;
+  overflow:hidden;
+}
+.local-library-progress i{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#8d55ee,#c56bd6);
+}
+.local-library-actions{
+  display:flex;
+  gap:8px;
+}
+.local-library-actions a{background:#f8f3ff}
+.local-library-actions button{color:#8c819e;background:#fff}
+.profile-dashboard-v168 .profile-hero-card p{max-width:760px}
+.profile-stat-grid-v168{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.profile-dashboard-columns-v168{
+  display:grid;
+  grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);
+  gap:18px;
+  align-items:start;
+}
+.profile-mini-panel-v168{
+  border:1px solid #eee6fb;
+  border-radius:24px;
+  background:rgba(255,255,255,.82);
+  box-shadow:0 16px 42px rgba(79,61,127,.05);
+  padding:16px;
+}
+.profile-mini-panel-v168 .section-title{
+  margin:0 0 12px!important;
+}
+.profile-mini-panel-v168 .section-title>span{
+  color:#8b82a0;
+  font-size:12px;
+  font-weight:900;
+}
+.profile-rating-list-v168{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.profile-rating-list-v168 a{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:42px;
+  border:1px solid #eee6fb;
+  border-radius:15px;
+  background:#fff;
+  padding:0 12px;
+  color:#312a4d;
+}
+.profile-rating-list-v168 span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  font-weight:800;
+}
+.profile-rating-list-v168 b{
+  color:#8d55ee;
+  font-size:13px;
+  font-weight:950;
+}
+.profile-continue-row-v168{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+@media(max-width:980px){
+  .admin-report-status-grid-v168{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .local-library-summary{grid-template-columns:1fr}
+  .local-library-metrics{justify-content:flex-start}
+  .profile-dashboard-columns-v168{grid-template-columns:1fr}
+  .profile-stat-grid-v168{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:720px){
+  .admin-report-status-grid-v168{grid-template-columns:1fr}
+  .local-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .profile-continue-row-v168{grid-template-columns:1fr}
+}

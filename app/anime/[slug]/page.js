@@ -1072,8 +1072,9 @@ export default async function AnimePage({ params, searchParams }){
         voice={currentEpisode?.voice || item.translationTitle || 'Kodik'}
       />
 
+    </section>
 
-    <details className="compact-title-seo" aria-labelledby="title-seo-heading">
+    <details className="compact-title-seo compact-title-seo-standalone" aria-labelledby="title-seo-heading">
       <summary className="compact-title-seo-summary">
         <span>
           <b id="title-seo-heading">О тайтле простыми словами</b>
@@ -1100,7 +1101,6 @@ export default async function AnimePage({ params, searchParams }){
         </div>
       </div>
     </details>
-    </section>
 
     <section className="compact-similar compact-ai-recs" id="similar">
       <div className="compact-section-head"><h2>Похожие тайтлы</h2><Link href={`/ai?similar=${item.slug}`}>Ещё через AI ›</Link></div>
