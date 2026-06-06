@@ -32,7 +32,7 @@ export default async function TopListPage(){
     <section className="top-list">
       {items.map((a,index)=><Link className="top-list-item widget" href={`/anime/${a.slug}`} key={a.slug}>
         <strong>{index+1}</strong>
-        <img loading="lazy" decoding="async" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/>
+        <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/>
         <div><b>{a.title}</b><span>{a.year} · {a.meta} · {(a.genres || []).slice(0,3).join(' · ')}</span></div>
         <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="top-list-rating-badge"/>
       </Link>)}

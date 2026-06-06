@@ -46,7 +46,7 @@ export default function AiQuizClient({ items = [] }){
 
     <div className="section-title"><h2><HomeSectionIcon type="ai"/>Результат</h2><Link href="/ai">Обычный AI ›</Link></div>
     {results.length ? <div className="ai-results-grid">{results.map(item=><Link className="ai-result-card" href={`/anime/${item.slug}`} key={item.slug}>
-      <img loading="lazy" decoding="async" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
+      <img loading="lazy" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'}/>
       <div><span>AI {Math.min(99, Math.round(item.quizScore))}%</span><b>{item.title}</b><p>{item.description}</p><em>{(item.genres || []).slice(0,2).join(' · ')}</em></div>
     </Link>)}</div> : <div className="empty-state">Ответь минимум на 2 вопроса.</div>}
   </>

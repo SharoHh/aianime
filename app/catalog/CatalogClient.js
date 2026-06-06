@@ -67,7 +67,7 @@ export default function CatalogClient({ items }){
       <div className="catalog-results">
         {!filtered.length ? <div className="catalog-empty widget"><b>Ничего не нашли</b><p>Попробуй другое название, жанр, настроение или сбрось фильтры. Поиск понимает русские и английские названия, описание, студию и год.</p><button className="secondary" onClick={reset}>Сбросить фильтры</button></div> : null}
         {filtered.slice(0, visible).map(a=><Link className="catalog-card catalog-card-live" href={`/anime/${a.slug}`} key={a.slug}>
-          <div className="catalog-cover"><img loading="lazy" decoding="async" src={a.poster} alt={a.title || "Аниме"}/><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount}/></div>
+          <div className="catalog-cover"><img loading="lazy" decoding="async" width="240" height="340" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : "Постер аниме"}/><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount}/></div>
           <div className="catalog-body"><b>{a.title}</b><em>{a.originalTitle}</em><p>{a.description}</p><div>{a.genres.slice(0,3).map(g=><i key={g}>{g}</i>)}</div><small>{a.year} · {a.meta} · {statusLabels[a.status] || a.status}</small></div>
           <div className="catalog-hover-preview">
             <strong>{a.title}</strong>

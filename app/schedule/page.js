@@ -47,7 +47,7 @@ export default async function Page() {
             <div className="schedule-day-list">
               {day.items.length ? day.items.map((item) => (
                 <Link className="schedule-release" href={item.href || `/anime/${item.slug}`} key={item.notifyKey || `${day.key}-${item.slug}-${item.time}`}>
-                  <img loading="lazy" decoding="async" src={item.poster || '/posters/magic2.svg'} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'} />
+                  <img loading="lazy" decoding="async" width="180" height="260" src={item.poster || '/posters/magic2.svg'} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'} />
                   <div>
                     <time>{item.time}</time>
                     <strong>{item.title}</strong>

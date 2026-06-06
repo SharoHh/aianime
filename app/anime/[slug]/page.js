@@ -911,7 +911,7 @@ export default async function AnimePage({ params, searchParams }){
     <header className="title-wide-header-v80" data-aianime-title-nav="v138" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
-          <img src="/aianime-logo.png" alt="" aria-hidden="true" />
+          <img src="/aianime-logo.png" alt="" aria-hidden="true" width="44" height="44" decoding="async" />
           <b>Aianime</b>
         </Link>
 
@@ -933,7 +933,7 @@ export default async function AnimePage({ params, searchParams }){
       {/* AIanime v81: title-specific context removed from the global menu.
           The title details stay in the main title card below, not inside the header. */}
     </header>
-    <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" src={item.poster} alt=""/>
+    <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" width="420" height="600" src={item.poster} alt=""/>
       <div className="anime-compact-left">
         <nav className="compact-breadcrumb"><Link href="/">← На главную</Link><span>/</span><Link href="/catalog">Каталог</Link></nav>
 
@@ -977,7 +977,7 @@ export default async function AnimePage({ params, searchParams }){
       </div>
 
       <aside className="anime-compact-poster">
-        <img loading="eager" decoding="async" src={item.poster} alt={title}/>
+        <img loading="eager" decoding="async" fetchPriority="high" width="420" height="600" src={item.poster} alt={title ? `Постер аниме ${title}` : 'Постер аниме'}/>
         <div className="poster-rank">AI рекомендация</div>
       </aside>
     </section>
@@ -1038,7 +1038,7 @@ export default async function AnimePage({ params, searchParams }){
       <div className="compact-section-head"><h2>Похожие тайтлы</h2><Link href={`/ai?similar=${item.slug}`}>Ещё через AI ›</Link></div>
       <div>
         {similar.map(a=><Link href={`/anime/${a.slug}`} key={a.slug}>
-          <img loading="lazy" decoding="async" src={a.poster} alt={a.title}/>
+          <img loading="lazy" decoding="async" width="320" height="480" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/>
           <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="compact-similar-rating"/>
           <b>{a.title}</b>
           <span>{a.meta}</span>

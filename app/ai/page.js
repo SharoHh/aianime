@@ -10,9 +10,10 @@ export const metadata = {
 import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 import AiClient from './AiClient'
+import { compactAnimeItems } from '@/lib/clientAnimePayload'
 
 export default async function Page({ searchParams }){
-  const anime = await getAnimeList({ limit: 1000 })
+  const anime = compactAnimeItems(await getAnimeList({ limit: 1000 }), 1000, { descriptionLimit: 320, genresLimit: 10 })
   const resolvedSearchParams = await searchParams
   const similarSlug = resolvedSearchParams?.similar || null
   const initialQuery = resolvedSearchParams?.q || null
