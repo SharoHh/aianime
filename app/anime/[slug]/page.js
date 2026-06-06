@@ -1039,7 +1039,6 @@ export default async function AnimePage({ params, searchParams }){
 
       <aside className="anime-compact-poster">
         <img loading="eager" decoding="async" fetchPriority="high" width="420" height="600" src={item.poster} alt={title ? `Постер аниме ${title}` : 'Постер аниме'}/>
-        <div className="poster-rank">AI рекомендация</div>
         <LibraryStatusClient item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, episode:currentEpisodeNumber, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }}/>
       </aside>
     </section>
