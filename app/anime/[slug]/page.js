@@ -1063,13 +1063,14 @@ export default async function AnimePage({ params, searchParams }){
       />
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>
       <PopularityTrackerClient slug={item.slug} type="view" delay={1200}/>
+
+
       <PlayerReportClient
         slug={item.slug}
         title={title}
         episode={currentEpisodeNumber}
         voice={currentEpisode?.voice || item.translationTitle || 'Kodik'}
       />
-    </section>
 
 
     <details className="compact-title-seo" aria-labelledby="title-seo-heading">
@@ -1078,7 +1079,7 @@ export default async function AnimePage({ params, searchParams }){
           <b id="title-seo-heading">О тайтле простыми словами</b>
           <small>Кому подойдёт, почему стоит смотреть и короткие ответы</small>
         </span>
-        <em>Раскрыть</em>
+        <em aria-hidden="true"></em>
       </summary>
       <div className="compact-title-seo-body">
         <div className="compact-title-seo-grid">
@@ -1099,6 +1100,7 @@ export default async function AnimePage({ params, searchParams }){
         </div>
       </div>
     </details>
+    </section>
 
     <section className="compact-similar compact-ai-recs" id="similar">
       <div className="compact-section-head"><h2>Похожие тайтлы</h2><Link href={`/ai?similar=${item.slug}`}>Ещё через AI ›</Link></div>

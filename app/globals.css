@@ -21899,3 +21899,149 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   .compact-title-seo-summary em::before{font-size:12px!important;}
   .compact-title-seo-summary small{display:none!important;}
 }
+
+/* AIanime v165: calmer title/report helper blocks; keep public layout intact. */
+.compact-player-section .compact-title-seo{
+  margin:10px 0 8px!important;
+  border:1px solid rgba(222,211,243,.95)!important;
+  border-radius:18px!important;
+  background:rgba(255,255,255,.92)!important;
+  box-shadow:0 10px 28px rgba(81,62,130,.045)!important;
+  overflow:hidden!important;
+}
+.compact-player-section .player-report-box{
+  margin:8px 0 0!important;
+  border:1px solid rgba(222,211,243,.86)!important;
+  border-radius:18px!important;
+  background:rgba(255,255,255,.78)!important;
+  box-shadow:0 8px 22px rgba(81,62,130,.035)!important;
+  overflow:hidden!important;
+}
+.compact-player-section .compact-title-seo-summary,
+.compact-player-section .player-report-box summary{
+  min-height:50px!important;
+  padding:10px 14px!important;
+  gap:14px!important;
+  color:#25213d!important;
+  font-family:var(--font-main)!important;
+}
+.compact-player-section .compact-title-seo-summary b,
+.compact-player-section .player-report-box summary span{
+  color:#25213d!important;
+  font-size:15px!important;
+  line-height:1.15!important;
+  font-weight:900!important;
+  letter-spacing:-.035em!important;
+}
+.compact-player-section .compact-title-seo-summary small{
+  margin-top:3px!important;
+  color:#7e7691!important;
+  font-size:12px!important;
+  line-height:1.25!important;
+  font-weight:700!important;
+}
+.compact-player-section .compact-title-seo-summary em,
+.compact-player-section .player-report-box summary em,
+.compact-player-section .player-report-form button{
+  border:1px solid rgba(126,94,214,.14)!important;
+  background:linear-gradient(135deg,#8d55ee 0%,#765ee3 100%)!important;
+  color:#fff!important;
+  box-shadow:0 10px 22px rgba(126,94,214,.18)!important;
+  text-shadow:none!important;
+  font-family:var(--font-main)!important;
+  font-weight:900!important;
+  letter-spacing:-.015em!important;
+}
+.compact-player-section .compact-title-seo-summary em,
+.compact-player-section .player-report-box summary em{
+  min-width:96px!important;
+  height:34px!important;
+  padding:0 14px!important;
+  border-radius:13px!important;
+  font-size:12.5px!important;
+  line-height:1!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+}
+.compact-player-section .compact-title-seo-summary em{
+  font-size:0!important;
+}
+.compact-player-section .compact-title-seo-summary em::before{
+  content:'Раскрыть'!important;
+  color:inherit!important;
+  font-size:12.5px!important;
+  font-weight:900!important;
+  line-height:1!important;
+}
+.compact-player-section .compact-title-seo[open] .compact-title-seo-summary em::before{
+  content:'Скрыть'!important;
+}
+.compact-player-section .compact-title-seo-summary em::after,
+.compact-player-section .player-report-box summary em::after{
+  content:'›'!important;
+  color:inherit!important;
+  font-size:15px!important;
+  line-height:1!important;
+  opacity:.9!important;
+  transform:translateY(-1px)!important;
+}
+.compact-player-section .compact-title-seo[open] .compact-title-seo-summary em::after,
+.compact-player-section .player-report-box[open] summary em::after{
+  transform:rotate(90deg) translateX(-1px)!important;
+}
+.compact-player-section .compact-title-seo-summary:hover em,
+.compact-player-section .player-report-box summary:hover em,
+.compact-player-section .player-report-form button:hover{
+  background:linear-gradient(135deg,#8350df 0%,#6f57d4 100%)!important;
+  box-shadow:0 12px 25px rgba(126,94,214,.22)!important;
+  transform:translateY(-1px)!important;
+}
+.compact-player-section .compact-title-seo[open] .compact-title-seo-summary,
+.compact-player-section .player-report-box[open] summary{
+  border-bottom:1px solid rgba(232,224,247,.95)!important;
+  background:rgba(255,255,255,.84)!important;
+}
+.compact-player-section .compact-title-seo-body,
+.compact-player-section .player-report-form{
+  padding:13px 14px 14px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(250,247,255,.78))!important;
+}
+.compact-player-section .compact-title-seo article,
+.compact-player-section .compact-title-faq details,
+.compact-player-section .player-report-meta span,
+.compact-player-section .player-report-form select,
+.compact-player-section .player-report-form textarea{
+  border-color:rgba(232,224,247,.95)!important;
+  background:rgba(255,255,255,.96)!important;
+  box-shadow:none!important;
+}
+.compact-player-section .player-report-form button{
+  min-width:132px!important;
+  height:36px!important;
+  padding:0 16px!important;
+  border-radius:13px!important;
+  font-size:12.5px!important;
+  cursor:pointer!important;
+}
+@media(max-width:760px){
+  .compact-player-section .compact-title-seo,
+  .compact-player-section .player-report-box{
+    border-radius:15px!important;
+  }
+  .compact-player-section .compact-title-seo-summary,
+  .compact-player-section .player-report-box summary{
+    min-height:48px!important;
+    padding:9px 11px!important;
+  }
+  .compact-player-section .compact-title-seo-summary em,
+  .compact-player-section .player-report-box summary em{
+    min-width:84px!important;
+    height:32px!important;
+    padding:0 11px!important;
+    font-size:12px!important;
+  }
+  .compact-player-section .compact-title-seo-summary em::before{font-size:12px!important;}
+  .compact-player-section .compact-title-seo-summary small{display:none!important;}
+}
