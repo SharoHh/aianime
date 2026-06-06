@@ -6,6 +6,7 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { getAnimeList } from '@/lib/animeRepository'
 import { decodeRouteSlug, slugifyRu, titleFromSlug } from '@/lib/routeSlugs'
 import { buildPageMetadata, collectionPageJsonLd, jsonLd } from '@/lib/seo'
+import { buildGenreSeoContent, faqJsonLd, webPageJsonLd } from '@/lib/seoContent'
 
 function uniqueGenres(items){
   const map = new Map()
@@ -59,12 +60,29 @@ export default async function GenrePage({ params }){
   const { title, filtered, exists } = getGenreMatch(anime, resolvedParams.slug)
   if(!exists || !filtered.length) notFound()
 
-  return <main className="page seo-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:`${title} аниме`, description:`Подборка аниме в жанре ${title} на AIanime.`, path:`/genre/${encodeURIComponent(resolvedParams.slug).replace(/%2F/g, '/')}`, items:filtered.slice(0, 24).map(item => ({ title:item.title, slug:item.slug })) }))}} />
+  const path = `/genre/${encodeURIComponent(resolvedParams.slug).replace(/%2F/g, '/')}`
+  const seo = buildGenreSeoContent(title, filtered)
+  const schemas = [
+    collectionPageJsonLd({ name:`${title} аниме`, description:`Подборка аниме в жанре ${title} на AIanime.`, path, items:filtered.slice(0, 24).map(item => ({ title:item.title, slug:item.slug })) }),
+    webPageJsonLd({ name:`${title} аниме`, description:seo.lead, path }),
+    faqJsonLd(seo.faq)
+  ].filter(Boolean)
+
+  return <main className="page seo-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(schemas)}} />
     <div className="page-head seo-head">
       <Link href="/genres">← Все жанры</Link>
       <h1>{title}</h1>
       <p>{filtered.length} тайтлов в этом жанре. Отсортировано по рейтингу и популярности.</p>
     </div>
+
+    <details className="seo-fold-copy">
+      <summary><span><b>{seo.summary}</b><small>{seo.lead}</small></span><em></em></summary>
+      <div className="seo-fold-body">
+        <p>{seo.intro}</p>
+        <ul>{seo.points.map(point => <li key={point}>{point}</li>)}</ul>
+        <div className="seo-fold-faq">{seo.faq.map(item => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</div>
+      </div>
+    </details>
 
     <div className="poster-row seo-poster-row">
       {filtered.slice(0,40).map(a=><Link className="poster" href={`/anime/${a.slug}`} key={a.slug}>

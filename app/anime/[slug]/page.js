@@ -982,30 +982,6 @@ export default async function AnimePage({ params, searchParams }){
       </aside>
     </section>
 
-    <section className="compact-title-seo" aria-labelledby="title-seo-heading">
-      <div className="compact-section-head">
-        <h2 id="title-seo-heading">О тайтле простыми словами</h2>
-        <a href="#player">К просмотру ↑</a>
-      </div>
-      <div className="compact-title-seo-grid">
-        <article>
-          <h3>Кому подойдёт</h3>
-          <p>{titleAudienceText(item, title)}</p>
-        </article>
-        <article>
-          <h3>Почему стоит открыть</h3>
-          <p>{titleWatchReasonText(item, title)}</p>
-        </article>
-      </div>
-      <div className="compact-title-faq" aria-label="Короткие ответы по тайтлу">
-        {titleFaqEntries.map((entry, index)=><details key={entry.question} open={index === 0}>
-          <summary>{entry.question}</summary>
-          <p>{entry.answer}</p>
-        </details>)}
-      </div>
-    </section>
-
-
     <section className="compact-player-section compact-player-section-v65 compact-player-section-v66 compact-player-section-v67" id="player" data-player-layout="light-top-controls-v67">
       <div className="compact-section-head"><h2>Плеер</h2><span className="compact-player-hint">Плеер · серии</span></div>
       <KodikPlayerClient
@@ -1028,6 +1004,35 @@ export default async function AnimePage({ params, searchParams }){
       <WatchTracker item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }} episode={currentEpisodeNumber}/>
       <PopularityTrackerClient slug={item.slug} type="view" delay={1200}/>
     </section>
+
+
+    <details className="compact-title-seo" aria-labelledby="title-seo-heading">
+      <summary className="compact-title-seo-summary">
+        <span>
+          <b id="title-seo-heading">О тайтле простыми словами</b>
+          <small>Кому подойдёт, почему стоит смотреть и короткие ответы</small>
+        </span>
+        <em>Раскрыть</em>
+      </summary>
+      <div className="compact-title-seo-body">
+        <div className="compact-title-seo-grid">
+          <article>
+            <h3>Кому подойдёт</h3>
+            <p>{titleAudienceText(item, title)}</p>
+          </article>
+          <article>
+            <h3>Почему стоит открыть</h3>
+            <p>{titleWatchReasonText(item, title)}</p>
+          </article>
+        </div>
+        <div className="compact-title-faq" aria-label="Короткие ответы по тайтлу">
+          {titleFaqEntries.map((entry)=><details key={entry.question}>
+            <summary>{entry.question}</summary>
+            <p>{entry.answer}</p>
+          </details>)}
+        </div>
+      </div>
+    </details>
 
     <section className="compact-similar compact-ai-recs" id="similar">
       <div className="compact-section-head"><h2>Похожие тайтлы</h2><Link href={`/ai?similar=${item.slug}`}>Ещё через AI ›</Link></div>

@@ -12,14 +12,7 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { collections } from '@/lib/data'
 import { getAnimeList } from '@/lib/animeRepository'
 import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
-
-const collectionRules = [
-  { q:'эмоциональное тёплое аниме', filter:a => (a.genres || []).some(g => ['Драма','Романтика','Повседневность'].includes(g)) },
-  { q:'приключения и экшен', filter:a => (a.genres || []).some(g => ['Приключения','Экшен','Фэнтези'].includes(g)) },
-  { q:'лёгкое аниме на вечер', filter:a => (a.genres || []).some(g => ['Комедия','Повседневность','Романтика'].includes(g)) || Number(a.episodes || 0) <= 13 },
-  { q:'популярные новинки', filter:a => Number(a.year || 0) >= 2024 },
-  { q:'лучшие аниме по рейтингу', filter:a => Number(a.rating || a.score || 0) >= 8.6 },
-]
+import { COLLECTION_SEO, collectionFaq, faqJsonLd, webPageJsonLd } from '@/lib/seoContent'
 
 function Poster({item}){
   return <Link href={`/anime/${item.slug}`} className="poster">
@@ -29,21 +22,46 @@ function Poster({item}){
 
 export default async function CollectionsPage(){
   const anime = await getAnimeList({ limit: 1000 })
-  const schemaItems = collections.map((c, i) => ({ name:c[0], url:`/ai?q=${encodeURIComponent((collectionRules[i] || collectionRules[0]).q)}` }))
-
-  return <main className="page">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({
+  const faq = collectionFaq()
+  const schemaItems = collections.map((c, i) => ({ name:c[0], url:`/ai?q=${encodeURIComponent((COLLECTION_SEO[i] || COLLECTION_SEO[0]).q)}` }))
+  const schemas = [
+    collectionPageJsonLd({
       name:'Подборки аниме AIanime',
       description:'Готовые подборки аниме по настроению, жанрам и AI-запросам.',
       path:'/collections',
       items:schemaItems
-    }))}} />
+    }),
+    webPageJsonLd({
+      name:'Подборки аниме по настроению и жанрам',
+      description:'Страница с готовыми подборками аниме на русском: уютные тайтлы, приключения, новинки, рейтинговые шедевры и AI-подбор под настроение.',
+      path:'/collections'
+    }),
+    faqJsonLd(faq)
+  ].filter(Boolean)
+
+  return <main className="page">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(schemas)}} />
     <div className="page-head"><Link href="/">← На главную</Link><h1>Подборки</h1><p>Живые подборки связаны с каталогом и AI-запросами. Открой подборку или сразу запусти AI-подбор.</p></div>
+
+    <details className="seo-fold-copy collections-seo-fold">
+      <summary><span><b>Как устроены подборки AIanime</b><small>Коротко о подборках по настроению, жанрам и рейтингу</small></span><em></em></summary>
+      <div className="seo-fold-body">
+        <p>Подборки помогают выбрать аниме без долгого поиска по всему каталогу: можно начать с настроения, жанра, свежих тайтлов или проверенных работ с высоким рейтингом.</p>
+        <ul>
+          <li>Для быстрого выбора открой подходящий блок и сравни карточки по жанрам, году и рейтингу.</li>
+          <li>Для точного подбора нажми “AI-подбор” — можно описать настроение или любимые тайтлы.</li>
+          <li>Состав подборок связан с каталогом и может обновляться после синхронизации данных.</li>
+        </ul>
+        <div className="seo-fold-faq">{faq.map(item => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</div>
+      </div>
+    </details>
+
     {collections.map((c, i) => {
-      const rule = collectionRules[i] || collectionRules[0]
+      const rule = COLLECTION_SEO[i] || COLLECTION_SEO[0]
       const items = anime.filter(rule.filter).slice(0,5)
       return <section key={c[0]}>
         <div className="section-title"><h2><span>{c[2]}</span>{c[0]}</h2><Link href={`/ai?q=${encodeURIComponent(rule.q)}`}>AI-подбор ›</Link></div>
+        <p className="collection-seo-description">{rule.description}</p>
         <div className="poster-row">{items.map(a => <Poster item={a} key={a.slug}/>)}</div>
       </section>
     })}
