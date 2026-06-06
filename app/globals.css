@@ -21753,3 +21753,149 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
     padding:10px 11px 11px!important;
   }
 }
+
+/* AIanime v164: title helper blocks polished to match main UI buttons and cards. */
+.compact-player-section .player-report-box,
+.compact-title-seo{
+  width:100%!important;
+  margin-top:12px!important;
+  border:1px solid rgba(232,220,247,.92)!important;
+  border-radius:18px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(251,248,255,.92))!important;
+  box-shadow:0 12px 34px rgba(81,62,130,.06)!important;
+  overflow:hidden!important;
+}
+.compact-player-section .player-report-box summary,
+.compact-title-seo-summary{
+  min-height:54px!important;
+  padding:11px 13px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:14px!important;
+  color:#2e294b!important;
+  font-family:var(--font-manrope, Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)!important;
+}
+.compact-player-section .player-report-box summary span,
+.compact-title-seo-summary span{
+  min-width:0!important;
+}
+.compact-player-section .player-report-box summary span,
+.compact-title-seo-summary b{
+  color:#2e294b!important;
+  font-size:15px!important;
+  line-height:1.15!important;
+  font-weight:900!important;
+  letter-spacing:-.035em!important;
+}
+.compact-title-seo-summary small{
+  margin-top:4px!important;
+  color:#817896!important;
+  font-size:12px!important;
+  line-height:1.25!important;
+  font-weight:760!important;
+}
+.compact-player-section .player-report-box summary em,
+.compact-title-seo-summary em{
+  flex:0 0 auto!important;
+  min-width:104px!important;
+  height:36px!important;
+  padding:0 16px!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:linear-gradient(135deg,#9d5cff 0%,#eb6dbc 100%)!important;
+  color:#fff!important;
+  box-shadow:0 12px 24px rgba(141,85,238,.22)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  font-family:var(--font-manrope, Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)!important;
+  font-size:12.5px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:-.015em!important;
+  opacity:1!important;
+}
+.compact-player-section .player-report-box summary em::after,
+.compact-title-seo-summary em::after{
+  content:'›';
+  display:inline-block;
+  font-size:16px;
+  line-height:1;
+  transform:translateY(-1px);
+  opacity:.9;
+}
+.compact-title-seo-summary em::before{
+  color:inherit!important;
+  font-size:12.5px!important;
+  font-weight:900!important;
+}
+.compact-title-seo[open] .compact-title-seo-summary em::before{content:'Скрыть'!important;}
+.compact-title-seo[open] .compact-title-seo-summary em::after,
+.compact-player-section .player-report-box[open] summary em::after{
+  transform:rotate(90deg) translateX(-1px);
+}
+.compact-player-section .player-report-box summary:hover em,
+.compact-title-seo-summary:hover em{
+  transform:translateY(-1px);
+  box-shadow:0 15px 30px rgba(141,85,238,.28)!important;
+}
+.compact-player-section .player-report-box[open] summary,
+.compact-title-seo[open] .compact-title-seo-summary{
+  border-bottom:1px solid rgba(232,220,247,.9)!important;
+  background:rgba(255,255,255,.72)!important;
+}
+.compact-player-section .player-report-form,
+.compact-title-seo-body{
+  padding:14px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(250,247,255,.88))!important;
+}
+.compact-title-seo-grid{
+  gap:10px!important;
+}
+.compact-title-seo article,
+.compact-title-faq details,
+.compact-player-section .player-report-meta span,
+.compact-player-section .player-report-form select,
+.compact-player-section .player-report-form textarea{
+  border-color:rgba(232,220,247,.96)!important;
+  background:#fff!important;
+  box-shadow:0 8px 20px rgba(81,62,130,.035)!important;
+}
+.compact-player-section .player-report-form button{
+  min-width:136px!important;
+  height:38px!important;
+  padding:0 18px!important;
+  border-radius:14px!important;
+  background:linear-gradient(135deg,#9d5cff 0%,#eb6dbc 100%)!important;
+  color:#fff!important;
+  box-shadow:0 12px 24px rgba(141,85,238,.22)!important;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+.compact-player-section .player-report-form button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 15px 30px rgba(141,85,238,.28)!important;
+}
+@media(max-width:760px){
+  .compact-player-section .player-report-box,
+  .compact-title-seo{
+    border-radius:16px!important;
+  }
+  .compact-player-section .player-report-box summary,
+  .compact-title-seo-summary{
+    min-height:52px!important;
+    padding:10px 11px!important;
+  }
+  .compact-player-section .player-report-box summary em,
+  .compact-title-seo-summary em{
+    min-width:88px!important;
+    height:34px!important;
+    padding:0 12px!important;
+    border-radius:13px!important;
+    font-size:12px!important;
+  }
+  .compact-title-seo-summary em::before{font-size:12px!important;}
+  .compact-title-seo-summary small{display:none!important;}
+}
