@@ -8,6 +8,7 @@ import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/a
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { recommendAnime } from '@/lib/aiAnime'
 import TitleActions from '@/components/TitleActions'
+import LibraryStatusClient from '@/components/LibraryStatusClient'
 import RatingControl from '@/components/RatingControl'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
@@ -1034,6 +1035,8 @@ export default async function AnimePage({ params, searchParams }){
           <Link className="compact-ai" href={`/ai?similar=${item.slug}`}><HomeSectionIcon type="ai"/>Похожие через AI</Link>
           <TitleActions item={item}/>
         </div>
+
+        <LibraryStatusClient item={{ slug:item.slug, title, poster:item.poster, banner:item.banner || item.poster, rating:item.rating || item.score, meta:item.meta, episode:currentEpisodeNumber, voice:currentEpisode?.voice || item.translationTitle || 'Kodik' }}/>
       </div>
 
       <aside className="anime-compact-poster">
