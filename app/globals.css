@@ -24506,3 +24506,85 @@ a.ai-result-card-v204{
   .ai-result-card-v204 img{width:105px!important;height:166px!important;}
   .ai-result-card-v204 b{font-size:16px!important;}
 }
+
+/* v214: AI page status and no-dead-click feedback */
+.ai-status-panel{
+  max-width:1180px!important;
+  width:100%!important;
+  margin:0 auto 14px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:14px!important;
+  padding:14px 16px!important;
+  border-radius:20px!important;
+  border:1px solid #eee5fb!important;
+  background:#fff!important;
+  box-shadow:0 12px 30px rgba(79,61,127,.055)!important;
+}
+.ai-status-panel b{
+  display:block!important;
+  color:#2d294d!important;
+  font-size:14px!important;
+  line-height:1.2!important;
+  font-weight:950!important;
+}
+.ai-status-panel p{
+  margin:4px 0 0!important;
+  color:#746d84!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+}
+.ai-status-panel>span{
+  flex:0 0 auto!important;
+  height:30px!important;
+  border-radius:999px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  padding:0 11px!important;
+  font-size:12px!important;
+  font-weight:950!important;
+  background:#f2ecff!important;
+  color:#6c45bf!important;
+}
+.ai-status-loading{
+  background:linear-gradient(180deg,#fff,#fff9fd)!important;
+}
+.ai-status-loading>span::after{
+  content:'';
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  margin-left:7px;
+  background:currentColor;
+  animation:aiPulseDot 1s infinite ease-in-out;
+}
+.ai-status-ready{
+  border-color:#e8ddff!important;
+}
+.ai-status-local{
+  background:linear-gradient(180deg,#fff,#fbf8ff)!important;
+}
+.ai-empty-results{
+  grid-column:1/-1;
+  min-height:120px;
+  border-radius:24px;
+  border:1px dashed #e9ddfb;
+  background:#fffaff;
+  color:#746d84;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  text-align:center;
+  font-size:14px;
+  font-weight:850;
+}
+@keyframes aiPulseDot{
+  0%,100%{opacity:.35;transform:scale(.85)}
+  50%{opacity:1;transform:scale(1.15)}
+}
+@media(max-width:560px){
+  .ai-status-panel{align-items:flex-start!important;flex-direction:column!important;padding:13px 14px!important;}
+}

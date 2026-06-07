@@ -16,6 +16,8 @@ const QUICK_PRESETS = [
   { label: 'Романтика', query: 'аниме романтика про отношения' },
   { label: 'Лёгкое', query: 'лёгкое уютное аниме без тяжёлой драмы' },
   { label: 'Экшен', query: 'аниме экшен с боями и динамикой' },
+  { label: 'Как Ванпис', query: 'хочу как ванпис приключения команда' },
+  { label: 'ГГ имба', query: 'аниме где гг имба и быстро становится сильным' },
   { label: 'Короткое', query: 'короткое аниме до 13 серий на вечер' },
   { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
@@ -318,7 +320,11 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [useLibrary, setUseLibrary] = useState(false)
   const [refinedResults, setRefinedResults] = useState([])
   const [refinedFor, setRefinedFor] = useState('')
+  const [refineState, setRefineState] = useState('idle')
+  const [refineSummary, setRefineSummary] = useState('')
+  const [refineSource, setRefineSource] = useState('instant')
   const refineAbortRef = useRef(null)
+  const refineSeqRef = useRef(0)
   const refineTimerRef = useRef(null)
 
   const preparedItems = useMemo(() => prepareItems(items), [items])
@@ -333,6 +339,9 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setIsDirty(false)
     setRefinedResults([])
     setRefinedFor('')
+    setRefineState('idle')
+    setRefineSummary('')
+    setRefineSource('instant')
   }, [initialQuery])
 
   useEffect(() => {
@@ -360,10 +369,22 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     [preparedItems, submitted, useLibrary, libraryContext]
   )
 
-  const results = (refinedFor === submitted && refinedResults.length) ? refinedResults : instantResults
+  const hasRefinedResults = refinedFor === submitted && refinedResults.length
+  const results = hasRefinedResults ? refinedResults : instantResults
 
-  async function refineWithExternalAi(clean){
-    if(!clean || clean.length < 3) return
+  const statusInfo = useMemo(() => {
+    if(refineState === 'loading') return { tone:'loading', title:'AI уточняет подбор', text:'Быстрые результаты уже показаны ниже. Gemini сейчас только улучшает выдачу.' }
+    if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор готов', text: refineSummary || 'Gemini уточнил рекомендации по смыслу запроса.' }
+    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Показаны варианты из каталога. Если внешний AI не ответил, страница всё равно ищет и не зависает.' }
+    if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл или настроение.' }
+    return { tone:'idle', title:'Готов к подбору', text:'Напиши запрос и нажми кнопку — результат появится сразу.' }
+  }, [refineState, refineSummary])
+
+  async function refineWithExternalAi(clean, requestId){
+    if(!clean || clean.length < 3){
+      setRefineState('empty')
+      return
+    }
     if(refineAbortRef.current) refineAbortRef.current.abort()
     if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
 
@@ -386,17 +407,26 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         })
       })
       const data = await response.json().catch(() => null)
-      if(!response.ok || !data?.ok || !Array.isArray(data.results) || !data.results.length) return
+      if(requestId !== refineSeqRef.current) return
+      if(!response.ok || !data?.ok || !Array.isArray(data.results) || !data.results.length){
+        setRefineState(instantResults.length ? 'local-ready' : 'empty')
+        return
+      }
+      const source = String(data.source || '').toLowerCase()
+      const fromAi = source.includes('gemini') || source.includes('openai') || source.includes('external')
       setRefinedFor(clean)
       setRefinedResults(data.results.map(item => ({
         ...item,
         title: getPrimaryTitle(item),
         genres: safeArray(item.genres),
-        match: item.match || 82,
+        match: item.match || (fromAi ? 86 : 78),
         reason: item.reason || 'подходит по смыслу запроса'
       })))
+      setRefineSource(source || (fromAi ? 'ai' : 'local'))
+      setRefineSummary(fromAi ? (data.summary || 'AI уточнил подбор по смыслу запроса.') : '')
+      setRefineState(fromAi ? 'ai-ready' : 'local-ready')
     }catch(error){
-      // Ничего не показываем пользователю: локальный моментальный подбор уже на экране.
+      if(requestId === refineSeqRef.current) setRefineState(instantResults.length ? 'local-ready' : 'empty')
     }finally{
       if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
       refineTimerRef.current = null
@@ -407,13 +437,17 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   function runSearch(nextQuery = query){
     const clean = String(nextQuery || '').trim() || initialQuery
     if(refineAbortRef.current) refineAbortRef.current.abort()
+    const requestId = refineSeqRef.current + 1
+    refineSeqRef.current = requestId
     setQuery(clean)
     setSubmitted(clean)
     setRefinedResults([])
     setRefinedFor('')
+    setRefineSummary('')
+    setRefineSource('instant')
+    setRefineState('loading')
     setIsDirty(false)
-    // Сначала мгновенный локальный список, затем тихое GPT-уточнение по кнопке.
-    refineWithExternalAi(clean)
+    refineWithExternalAi(clean, requestId)
   }
 
   function applyPreset(text){
@@ -457,8 +491,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-actions ai-actions-v186">
-        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{isDirty ? 'Показать подбор ✨' : 'Подобрать ✨'}</button>
-        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setRefinedFor(''); setIsDirty(false) }}>Очистить</button>
+        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{refineState === 'loading' && !isDirty ? 'Уточняю AI…' : (isDirty ? 'Показать подбор ✨' : 'Подобрать ✨')}</button>
+        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setRefinedFor(''); setRefineState('idle'); setRefineSummary(''); setRefineSource('instant'); setIsDirty(false) }}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
           <span>Учитывать мою библиотеку</span>
@@ -468,7 +502,16 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
 
     <div className="section-title section-title-clean-icons"><h2><HomeSectionIcon type="ai"/>AI рекомендует</h2><Link href="/catalog">Каталог ›</Link></div>
 
+    <div className={`ai-status-panel ai-status-${statusInfo.tone}`} aria-live="polite">
+      <div>
+        <b>{statusInfo.title}</b>
+        <p>{statusInfo.text}</p>
+      </div>
+      <span>{hasRefinedResults ? (refineSource.includes('local') ? 'Каталог' : 'Gemini') : 'Быстро'}</span>
+    </div>
+
     <div className="ai-results-grid ai-results-grid-v186 ai-results-grid-v204">
+      {!results.length ? <div className="ai-empty-results">Ничего не нашлось. Попробуй написать проще: жанр, похожий тайтл или настроение.</div> : null}
       {results.slice(0,8).map(item => <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
         <img loading="eager" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'}/>
         <div>

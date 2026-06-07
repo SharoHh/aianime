@@ -25,7 +25,7 @@ function getCached(key){
 }
 
 function setCached(key, payload){
-  if(!payload || payload.source !== 'external-openai') return
+  if(!payload || !['external-openai', 'external-gemini', 'openai', 'gemini'].includes(payload.source)) return
   AI_RESPONSE_CACHE.set(key, { time: Date.now(), payload })
   if(AI_RESPONSE_CACHE.size > 80){
     const first = AI_RESPONSE_CACHE.keys().next().value
