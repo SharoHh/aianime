@@ -1,9 +1,7 @@
-import 'dotenv/config'
 import express from 'express'
 
 const PORT = Number(process.env.PORT || 8787)
-const DEFAULT_OPENAI_MODEL = 'gpt-4.1-mini'
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite'
+const DEFAULT_MODEL = 'gpt-4.1-mini'
 
 const app = express()
 app.disable('x-powered-by')
@@ -24,7 +22,7 @@ function sendJson(res, status, payload){
     'Cache-Control': 'no-store, max-age=0',
     ...corsHeaders()
   })
-  return status === 204 ? res.end() : res.json(payload)
+  return res.json(payload)
 }
 
 function truncateText(value = '', limit = 260){
@@ -40,16 +38,6 @@ function parseOpenAiText(data){
     for(const content of item?.content || []){
       if(content?.type === 'output_text' && content?.text) parts.push(content.text)
       if(typeof content?.text === 'string') parts.push(content.text)
-    }
-  }
-  return parts.join('\n').trim()
-}
-
-function parseGeminiText(data){
-  const parts = []
-  for(const candidate of data?.candidates || []){
-    for(const part of candidate?.content?.parts || []){
-      if(typeof part?.text === 'string') parts.push(part.text)
     }
   }
   return parts.join('\n').trim()
@@ -73,26 +61,6 @@ function checkSecret(req){
   return Boolean(got && got === expected)
 }
 
-function configuredProvider(body = {}){
-  const raw = String(body?.provider || process.env.AI_PROVIDER || process.env.AI_RECOMMEND_PROVIDER || '').trim().toLowerCase()
-  if(['local','none','off','disabled','0'].includes(raw)) return 'local'
-  if(['openai','gpt','chatgpt'].includes(raw)) return 'openai'
-  if(['gemini','google','google-gemini','google_ai'].includes(raw)) return 'gemini'
-  if(String(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '').trim()) return 'gemini'
-  if(String(process.env.OPENAI_API_KEY || '').trim()) return 'openai'
-  return 'local'
-}
-
-function modelFor(provider, body = {}){
-  if(provider === 'gemini') return String(process.env.GEMINI_MODEL || process.env.GOOGLE_AI_MODEL || body?.model || DEFAULT_GEMINI_MODEL).trim()
-  if(provider === 'openai') return String(process.env.OPENAI_MODEL || body?.model || DEFAULT_OPENAI_MODEL).trim()
-  return null
-}
-
-function geminiModelPath(model){
-  return String(model || DEFAULT_GEMINI_MODEL).trim().replace(/^models\//, '')
-}
-
 function buildPromptPayload(body){
   const candidates = Array.isArray(body?.candidates) ? body.candidates.slice(0, Number(process.env.AI_BACKEND_CANDIDATE_LIMIT || 220)) : []
   return {
@@ -110,99 +78,33 @@ function buildPromptPayload(body){
       genres: Array.isArray(item?.genres) ? item.genres.slice(0, 8) : [],
       studio: item?.studio || null,
       rating: item?.rating || null,
-      localScore: Number(item?.localScore || 0) || 0,
+      localScore: item?.localScore || null,
       localReason: item?.localReason || '',
       description: item?.description || ''
     })).filter(item => item.slug)
   }
 }
 
-function localResults(promptPayload, limit = 12){
-  return promptPayload.candidates
-    .slice()
-    .sort((a,b) => Number(b.localScore || 0) - Number(a.localScore || 0))
-    .slice(0, Math.min(Math.max(Number(limit || 12), 1), 12))
-    .map(item => ({
-      slug: item.slug,
-      match: Math.min(96, Math.max(62, Math.round(68 + Number(item.localScore || 0) / 20))),
-      reason: truncateText(item.localReason || 'подходит по локальному смысловому подбору', 160)
-    }))
-}
-
-function localPayload(promptPayload, body, reason, meta = {}){
-  return {
-    status: 200,
-    payload: {
-      ok:true,
-      source:'external-local',
-      model:null,
-      summary: reason,
-      results: localResults(promptPayload, body?.limit || 12),
-      meta: { provider:'local', ...meta }
-    }
-  }
-}
-
-function systemPrompt(){
-  return 'Ты умный рекомендатель аниме для AIanime. Верни строго JSON вида {"summary":"...","results":[{"slug":"...","match":90,"reason":"..."}]}. Выбирай только из candidates. Нужно 8-12 тайтлов, если кандидатов достаточно. Разбирай естественные русские фразы, кривой ввод, вайб, отрицания, похожесть на другой тайтл, сеттинг, характер героя. Не придумывай slug. reason пиши коротко по-русски.'
-}
-
-async function recommendGemini(promptPayload, body, model){
-  const apiKey = String(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '').trim()
-  if(!apiKey) return localPayload(promptPayload, body, 'Gemini API key не задан на AI-backend, показан локальный запасной подбор.', { reason:'missing_gemini_api_key' })
-
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), Number(process.env.GEMINI_TIMEOUT_MS || process.env.AI_BACKEND_TIMEOUT_MS || 12000))
-
-  try{
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModelPath(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt() }] },
-        contents: [{ role:'user', parts:[{ text: JSON.stringify(promptPayload) }] }],
-        generationConfig: {
-          temperature: 0.25,
-          maxOutputTokens: 1400,
-          responseMimeType: 'application/json'
-        }
-      })
-    })
-
-    clearTimeout(timeout)
-
-    if(!response.ok){
-      const errorText = await response.text().catch(() => '')
-      return localPayload(promptPayload, body, 'Gemini сейчас не ответил, показан локальный запасной подбор.', { provider:'gemini', ok:false, status:response.status, error:truncateText(errorText || response.statusText, 420) })
-    }
-
-    const data = await response.json().catch(() => null)
-    const parsed = parseJsonPayload(parseGeminiText(data)) || { summary:'', results:[] }
-
-    return {
-      status: 200,
-      payload: {
-        ok:true,
-        source:'external-gemini',
-        model: data?.modelVersion || model,
-        summary: truncateText(parsed.summary || 'Gemini подобрал тайтлы по смыслу запроса.', 220),
-        results: Array.isArray(parsed.results) ? parsed.results.slice(0, 12) : [],
-        meta: { provider:'gemini', ok:true, usage:data?.usageMetadata || null }
-      }
-    }
-  }catch(error){
-    clearTimeout(timeout)
-    return localPayload(promptPayload, body, 'Gemini не ответил по таймауту/ошибке, показан локальный запасной подбор.', { provider:'gemini', ok:false, error:truncateText(error?.message || error, 420) })
-  }
-}
-
-async function recommendOpenAI(promptPayload, body, model){
+async function recommend(body){
   const apiKey = String(process.env.OPENAI_API_KEY || '').trim()
-  if(!apiKey) return localPayload(promptPayload, body, 'OpenAI API key не задан на AI-backend, показан локальный запасной подбор.', { reason:'missing_openai_api_key' })
+  const model = String(process.env.OPENAI_MODEL || body?.model || DEFAULT_MODEL).trim()
+  if(!apiKey){
+    return {
+      status: 500,
+      payload: { ok:false, source:'external-openai', model, error:'missing_openai_api_key' }
+    }
+  }
+
+  const promptPayload = buildPromptPayload(body)
+  if(!promptPayload.user_query || !promptPayload.candidates.length){
+    return {
+      status: 400,
+      payload: { ok:false, source:'external-openai', model, error:'empty_query_or_candidates' }
+    }
+  }
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), Number(process.env.OPENAI_TIMEOUT_MS || process.env.AI_BACKEND_TIMEOUT_MS || 12000))
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.OPENAI_TIMEOUT_MS || 30000))
 
   try{
     const response = await fetch('https://api.openai.com/v1/responses', {
@@ -215,10 +117,19 @@ async function recommendOpenAI(promptPayload, body, model){
       body: JSON.stringify({
         model,
         store: false,
-        max_output_tokens: 1600,
+        max_output_tokens: 1700,
         input: [
-          { role: 'developer', content: [{ type: 'input_text', text: systemPrompt() }] },
-          { role: 'user', content: [{ type:'input_text', text: JSON.stringify(promptPayload) }] }
+          {
+            role: 'developer',
+            content: [{
+              type: 'input_text',
+              text: 'Ты умный рекомендатель аниме для AIanime. Верни строго JSON. Выбирай только из candidates. Нужно 8-12 тайтлов, если кандидатов достаточно. Особенно внимательно разбирай естественные фразы пользователя: характер героя, профессия, сеттинг, вайб, похожесть на другой тайтл, даже если запрос написан криво. Учитывай смысл, жанры, вайб, отрицания и библиотеку пользователя. Не придумывай slug. reason пиши коротко по-русски.'
+            }]
+          },
+          {
+            role: 'user',
+            content: [{ type:'input_text', text: JSON.stringify(promptPayload) }]
+          }
         ],
         text: {
           format: {
@@ -257,7 +168,10 @@ async function recommendOpenAI(promptPayload, body, model){
 
     if(!response.ok){
       const errorText = await response.text().catch(() => '')
-      return localPayload(promptPayload, body, 'OpenAI сейчас не ответил, показан локальный запасной подбор.', { provider:'openai', ok:false, status:response.status, error:truncateText(errorText || response.statusText, 420) })
+      return {
+        status: response.status,
+        payload: { ok:false, source:'external-openai', model, error: truncateText(errorText || response.statusText, 520) }
+      }
     }
 
     const data = await response.json().catch(() => null)
@@ -269,41 +183,24 @@ async function recommendOpenAI(promptPayload, body, model){
         ok:true,
         source:'external-openai',
         model: data?.model || model,
-        summary: truncateText(parsed.summary || 'OpenAI подобрал тайтлы по смыслу запроса.', 220),
+        summary: truncateText(parsed.summary || 'AI подобрал тайтлы по смыслу запроса.', 220),
         results: Array.isArray(parsed.results) ? parsed.results.slice(0, 12) : [],
-        meta: { provider:'openai', ok:true, usage:data?.usage || null }
+        openai: { ok:true, usage:data?.usage || null }
       }
     }
   }catch(error){
     clearTimeout(timeout)
-    return localPayload(promptPayload, body, 'OpenAI не ответил по таймауту/ошибке, показан локальный запасной подбор.', { provider:'openai', ok:false, error:truncateText(error?.message || error, 420) })
+    return {
+      status: 500,
+      payload: { ok:false, source:'external-openai', model, error: truncateText(error?.message || error, 420) }
+    }
   }
-}
-
-async function recommend(body){
-  const promptPayload = buildPromptPayload(body)
-  if(!promptPayload.user_query || !promptPayload.candidates.length){
-    return { status: 400, payload: { ok:false, source:'external-local', model:null, error:'empty_query_or_candidates' } }
-  }
-
-  const provider = configuredProvider(body)
-  const model = modelFor(provider, body)
-
-  if(provider === 'gemini') return recommendGemini(promptPayload, body, model)
-  if(provider === 'openai') return recommendOpenAI(promptPayload, body, model)
-  return localPayload(promptPayload, body, 'AI-провайдер отключён, показан локальный запасной подбор.', { reason:'provider_local' })
 }
 
 app.options('*any', (req, res) => sendJson(res, 204, {}))
 
 app.get('/', (req, res) => sendJson(res, 200, { ok:true, service:'aianime-ai-backend', routes:['/health','/recommend'] }))
-app.get(['/health','/api/health'], (req, res) => sendJson(res, 200, {
-  ok:true,
-  service:'aianime-ai-backend',
-  runtime: process.env.VERCEL ? 'vercel' : 'node',
-  provider: configuredProvider({}),
-  model: modelFor(configuredProvider({}), {})
-}))
+app.get(['/health','/api/health'], (req, res) => sendJson(res, 200, { ok:true, service:'aianime-ai-backend', runtime: process.env.VERCEL ? 'vercel' : 'node' }))
 
 app.post(['/recommend','/api/recommend'], async (req, res) => {
   if(!checkSecret(req)) return sendJson(res, 401, { ok:false, error:'bad_ai_secret' })
