@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { readJson } from '@/lib/userStorage'
 import { scoreAiItem, explainAiMatch, isAiItemRelevant, getQueryIntent } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
@@ -58,8 +58,6 @@ const AI_TUNING_ACTIONS = [
 ]
 
 const AI_TUNING_BY_ID = new Map(AI_TUNING_ACTIONS.map(action => [action.id, action]))
-const AI_REFINEMENT_TIMEOUT_MS = 4500
-
 function normalizeTuningIds(ids){
   return Array.isArray(ids) ? ids.filter(id => AI_TUNING_BY_ID.has(id)) : []
 }
@@ -232,7 +230,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [query, setQuery] = useState(initialQuery)
   const [submitted, setSubmitted] = useState(initialQuery)
   const [remoteResults, setRemoteResults] = useState(null)
-  const searchSeq = useRef(0)
   const [activeTuning, setActiveTuning] = useState([])
   const [library, setLibrary] = useState({})
   const [favorites, setFavorites] = useState([])
@@ -263,52 +260,24 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     }
   }, [])
 
-  async function runSearch(nextQuery = query, options = {}){
+  function runSearch(nextQuery = query, options = {}){
     const clean = String(nextQuery || '').trim()
     if(!clean) return
 
     const tuningIds = normalizeTuningIds(options.tuningIds ?? activeTuning)
     const effectiveQuery = buildTunedQuery(clean, tuningIds)
-    const seq = searchSeq.current + 1
-    searchSeq.current = seq
 
     if(options.setInput !== false) setQuery(clean)
     setSubmitted(effectiveQuery || clean)
-    // Мгновенно показываем сильный локальный подбор из уже загруженного каталога.
-    // GPT-уточнение работает тихо в фоне и не превращает поле ввода в кашу из модификаторов.
+
+    // Важно: страница /ai больше не запускает фоновые GPT-запросы при каждом подборе.
+    // Подбор строится мгновенно на уже загруженном компактном каталоге, чтобы переходы
+    // на главную/каталог не висели из-за незавершённых OpenAI/fetch запросов.
     setRemoteResults({
       ok: true,
       source: 'instant-local',
       summary: ''
     })
-
-    const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), AI_REFINEMENT_TIMEOUT_MS)
-
-    try{
-      const libraryRows = Object.values(normalizeLibrary(library)).filter(item => item?.slug).map(item => ({ slug:item.slug, status:item.status }))
-      const favoriteSlugs = normalizeFavorites(favorites).map(item => item.slug)
-      const res = await fetch('/api/ai/recommend', {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: effectiveQuery || clean,
-          baseSlug: similarSlug || null,
-          limit: 12,
-          context: useLibrary ? { library: libraryRows, favorites: favoriteSlugs } : null
-        })
-      })
-      const payload = await res.json()
-      if(seq !== searchSeq.current) return
-      if(payload?.ok && payload?.source === 'external-openai' && Array.isArray(payload.results) && payload.results.length){
-        setRemoteResults(payload)
-      }
-    }catch(error){
-      // Ничего не ломаем: мгновенный локальный результат уже показан.
-    }finally{
-      window.clearTimeout(timer)
-    }
   }
 
   function applyPreset(text){
