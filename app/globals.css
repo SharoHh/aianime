@@ -24610,3 +24610,25 @@ a.ai-result-card-v204{
   font-size:11px;
   font-weight:950;
 }
+
+/* v219: AI refinement is optional when Gemini answers late */
+.ai-apply-refinement{
+  flex:0 0 auto!important;
+  height:34px!important;
+  border:0!important;
+  border-radius:999px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 14px!important;
+  background:linear-gradient(135deg,#8b5cf6,#ec5cc8)!important;
+  color:#fff!important;
+  font-size:12px!important;
+  font-weight:950!important;
+  cursor:pointer!important;
+  box-shadow:0 12px 24px rgba(139,92,246,.18)!important;
+}
+.ai-apply-refinement:hover{transform:translateY(-1px)!important;}
+@media(max-width:560px){
+  .ai-apply-refinement{width:100%!important;}
+}

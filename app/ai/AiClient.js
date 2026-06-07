@@ -23,6 +23,7 @@ const QUICK_PRESETS = [
 ]
 
 const AI_REFINE_TIMEOUT_MS = 5200
+const AI_AUTO_APPLY_WINDOW_MS = 2200
 
 const TITLE_ALIASES = [
   ['ванпис', ['one piece', 'onepiece', 'ван пис']],
@@ -319,6 +320,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [favorites, setFavorites] = useState([])
   const [useLibrary, setUseLibrary] = useState(false)
   const [refinedResults, setRefinedResults] = useState([])
+  const [pendingAiResults, setPendingAiResults] = useState([])
+  const [displayResults, setDisplayResults] = useState([])
   const [refinedFor, setRefinedFor] = useState('')
   const [refineState, setRefineState] = useState('idle')
   const [refineSummary, setRefineSummary] = useState('')
@@ -326,6 +329,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const refineAbortRef = useRef(null)
   const refineSeqRef = useRef(0)
   const refineTimerRef = useRef(null)
+  const refineStartedAtRef = useRef(0)
 
   const preparedItems = useMemo(() => prepareItems(items), [items])
   const libraryContext = useMemo(() => buildLibraryContext(preparedItems, library, favorites), [preparedItems, library, favorites])
@@ -338,6 +342,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setSubmitted(initialQuery)
     setIsDirty(false)
     setRefinedResults([])
+    setDisplayResults([])
+    setPendingAiResults([])
     setRefinedFor('')
     setRefineState('idle')
     setRefineSummary('')
@@ -369,8 +375,15 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     [preparedItems, submitted, useLibrary, libraryContext]
   )
 
-  const hasRefinedResults = refinedFor === submitted && refinedResults.length
-  const results = hasRefinedResults ? refinedResults : instantResults
+  const hasAiRefinement = refinedFor === submitted && refineState === 'ai-ready'
+  const hasPendingAiRefinement = refinedFor === submitted && refineState === 'ai-pending' && pendingAiResults.length
+  const results = displayResults.length ? displayResults : instantResults
+
+  useEffect(() => {
+    if(!displayResults.length && instantResults.length && refineState === 'idle'){
+      setDisplayResults(instantResults)
+    }
+  }, [displayResults.length, instantResults, refineState])
 
   useEffect(() => {
     const urls = results
@@ -387,9 +400,10 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   }, [results])
 
   const statusInfo = useMemo(() => {
-    if(refineState === 'loading') return { tone:'loading', title:'Подбор уже показан', text:'Результаты появились мгновенно. Gemini обновит их, только если успеет быстро.' }
-    if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор готов', text: refineSummary || 'Gemini уточнил рекомендации по смыслу запроса.' }
-    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Мгновенный результат сохранён. Если Gemini не успел ответить быстро, карточки не сбрасываются назад.' }
+    if(refineState === 'loading') return { tone:'loading', title:'Подбор уже показан', text:'Мгновенный результат готов. Gemini уточняет смысл запроса в фоне, без подвисания страницы.' }
+    if(refineState === 'ai-pending') return { tone:'ready', title:'Gemini нашёл AI-версию', text: refineSummary || 'AI-уточнение готово. Нажми кнопку, чтобы заменить быстрый список без внезапного сброса карточек.' }
+    if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор применён', text: refineSummary || 'Gemini уточнил выдачу по смыслу запроса.' }
+    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Gemini не успел ответить быстро — результат оставлен без сброса.' }
     if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл или настроение.' }
     return { tone:'idle', title:'Готов к подбору', text:'Напиши запрос — быстрый результат появится сразу, без ожидания AI.' }
   }, [refineState, refineSummary])
@@ -404,6 +418,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
 
     const controller = new AbortController()
     refineAbortRef.current = controller
+    refineStartedAtRef.current = Date.now()
     refineTimerRef.current = setTimeout(() => controller.abort(), AI_REFINE_TIMEOUT_MS)
 
     try{
@@ -437,21 +452,32 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         setRefinedResults([])
         setRefineSource('instant')
         setRefineSummary('')
-        setRefineState(instantResults.length ? 'local-ready' : 'empty')
+        setRefineState(results.length || instantResults.length ? 'local-ready' : 'empty')
         return
       }
 
-      setRefinedFor(clean)
-      setRefinedResults(data.results.map(item => ({
+      const aiResults = data.results.map(item => ({
         ...item,
         title: getPrimaryTitle(item),
         genres: safeArray(item.genres),
         match: item.match || 86,
         reason: item.reason || 'подходит по смыслу запроса'
-      })))
+      }))
+
+      setRefinedFor(clean)
+      setRefinedResults(aiResults)
       setRefineSource(source || 'ai')
       setRefineSummary(data.summary || 'AI уточнил подбор по смыслу запроса.')
-      setRefineState('ai-ready')
+
+      const elapsed = Date.now() - (refineStartedAtRef.current || Date.now())
+      if(elapsed <= AI_AUTO_APPLY_WINDOW_MS){
+        setDisplayResults(aiResults)
+        setPendingAiResults([])
+        setRefineState('ai-ready')
+      }else{
+        setPendingAiResults(aiResults)
+        setRefineState('ai-pending')
+      }
     }catch(error){
       if(requestId === refineSeqRef.current) setRefineState(instantResults.length ? 'local-ready' : 'empty')
     }finally{
@@ -464,21 +490,33 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   function runSearch(nextQuery = query){
     const clean = String(nextQuery || '').trim() || initialQuery
     if(refineAbortRef.current) refineAbortRef.current.abort()
+    if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
     const requestId = refineSeqRef.current + 1
     refineSeqRef.current = requestId
+    const nextInstant = buildInstantResults(preparedItems, clean, { useLibrary, libraryContext })
     setQuery(clean)
     setSubmitted(clean)
+    setDisplayResults(nextInstant)
     setRefinedResults([])
+    setPendingAiResults([])
     setRefinedFor('')
     setRefineSummary('')
     setRefineSource('instant')
-    setRefineState('loading')
+    setRefineState(nextInstant.length ? 'loading' : 'empty')
     setIsDirty(false)
     refineWithExternalAi(clean, requestId)
   }
 
   function applyPreset(text){
     runSearch(text)
+  }
+
+  function applyAiRefinement(){
+    if(!pendingAiResults.length) return
+    setDisplayResults(pendingAiResults)
+    setRefinedResults(pendingAiResults)
+    setPendingAiResults([])
+    setRefineState('ai-ready')
   }
 
   function addToQuery(text){
@@ -519,7 +557,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
 
       <div className="ai-actions ai-actions-v186">
         <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{refineState === 'loading' && !isDirty ? 'Подбор показан' : (isDirty ? 'Показать подбор ✨' : 'Подобрать ✨')}</button>
-        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setRefinedFor(''); setRefineState('idle'); setRefineSummary(''); setRefineSource('instant'); setIsDirty(false) }}>Очистить</button>
+        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setPendingAiResults([]); setDisplayResults([]); setRefinedFor(''); setRefineState('idle'); setRefineSummary(''); setRefineSource('instant'); setIsDirty(false) }}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
           <span>Учитывать мою библиотеку</span>
@@ -534,7 +572,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         <b>{statusInfo.title}</b>
         <p>{statusInfo.text}</p>
       </div>
-      <span>{hasRefinedResults ? (refineSource.includes('local') ? 'Каталог' : 'Gemini') : 'Быстро'}</span>
+      {hasPendingAiRefinement ? <button className="ai-apply-refinement" type="button" onClick={applyAiRefinement}>Показать AI-версию</button> : <span>{hasAiRefinement ? 'Gemini' : 'Быстро'}</span>}
     </div>
 
     <div className="ai-results-grid ai-results-grid-v186 ai-results-grid-v204">
