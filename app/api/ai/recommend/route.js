@@ -1,23 +1,48 @@
 import { getAnimeList } from '@/lib/animeRepository'
 import { recommendWithOpenAI } from '@/lib/openAiAnimeRecommend'
 
-export async function POST(req){
-  const body = await req.json().catch(() => ({}))
-  const query = String(body.query || '')
-  const baseSlug = body.baseSlug ? String(body.baseSlug) : null
-  const limit = Math.min(Math.max(Number(body.limit || 10), 1), 24)
-  const context = body.context && typeof body.context === 'object' ? body.context : null
-  const list = await getAnimeList({ limit: 720 })
-  const payload = await recommendWithOpenAI(list, query, { baseSlug, limit, context })
-  const results = Array.isArray(payload.results) ? payload.results : []
+const AI_CACHE_TTL_MS = Number(process.env.AI_RECOMMEND_CACHE_TTL_MS || 20 * 60 * 1000)
+const AI_RESPONSE_CACHE = globalThis.__aianimeAiResponseCache || new Map()
+globalThis.__aianimeAiResponseCache = AI_RESPONSE_CACHE
 
-  return Response.json({
+function makeCacheKey({ query, baseSlug, limit, context }){
+  return JSON.stringify({
+    query: String(query || '').trim().toLowerCase(),
+    baseSlug: baseSlug || null,
+    limit,
+    context: context || null
+  })
+}
+
+function getCached(key){
+  const row = AI_RESPONSE_CACHE.get(key)
+  if(!row) return null
+  if(Date.now() - row.time > AI_CACHE_TTL_MS){
+    AI_RESPONSE_CACHE.delete(key)
+    return null
+  }
+  return row.payload
+}
+
+function setCached(key, payload){
+  if(!payload || payload.source !== 'external-openai') return
+  AI_RESPONSE_CACHE.set(key, { time: Date.now(), payload })
+  if(AI_RESPONSE_CACHE.size > 80){
+    const first = AI_RESPONSE_CACHE.keys().next().value
+    if(first) AI_RESPONSE_CACHE.delete(first)
+  }
+}
+
+function responsePayload({ query, baseSlug, payload, cached = false }){
+  const results = Array.isArray(payload.results) ? payload.results : []
+  return {
     ok: true,
     query,
     baseSlug,
     source: payload.source,
     model: payload.model,
-    summary: payload.summary,
+    summary: cached ? `${payload.summary || 'AI подобрал тайтлы по смыслу запроса.'}` : payload.summary,
+    cached,
     openai: payload.openai,
     count: results.length,
     results: results.map(item => ({
@@ -34,5 +59,24 @@ export async function POST(req){
       match: item.match,
       reason: item.reason
     }))
-  })
+  }
+}
+
+export async function POST(req){
+  const body = await req.json().catch(() => ({}))
+  const query = String(body.query || '')
+  const baseSlug = body.baseSlug ? String(body.baseSlug) : null
+  const limit = Math.min(Math.max(Number(body.limit || 10), 1), 24)
+  const context = body.context && typeof body.context === 'object' ? body.context : null
+  const cacheKey = makeCacheKey({ query, baseSlug, limit, context })
+  const cached = getCached(cacheKey)
+  if(cached){
+    return Response.json(responsePayload({ query, baseSlug, payload: cached, cached: true }))
+  }
+
+  const list = await getAnimeList({ limit: 1200 })
+  const payload = await recommendWithOpenAI(list, query, { baseSlug, limit, context })
+  setCached(cacheKey, payload)
+
+  return Response.json(responsePayload({ query, baseSlug, payload }))
 }

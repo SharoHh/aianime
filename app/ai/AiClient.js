@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { readJson, saveAiQuery } from '@/lib/userStorage'
 import { scoreAiItem, explainAiMatch, getCatalogHint, isAiItemRelevant, getQueryIntent } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
@@ -45,6 +45,8 @@ const QUICK_PRESETS = [
   { label: 'Короткое', query: 'короткое аниме до 13 серий на вечер' },
   { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
+
+const AI_REFINEMENT_TIMEOUT_MS = 12000
 
 function localScore(item, query, context){
   return scoreAiItem(item, query, context)
@@ -155,7 +157,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [query, setQuery] = useState(initialQuery)
   const [submitted, setSubmitted] = useState(initialQuery)
   const [remoteResults, setRemoteResults] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [refining, setRefining] = useState(false)
+  const searchSeq = useRef(0)
   const [history, setHistory] = useState([])
   const [library, setLibrary] = useState({})
   const [favorites, setFavorites] = useState([])
@@ -190,15 +193,32 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   async function runSearch(nextQuery = query){
     const clean = String(nextQuery || '').trim()
     if(!clean) return
+
+    const seq = searchSeq.current + 1
+    searchSeq.current = seq
+
     setQuery(clean)
     setSubmitted(clean)
-    setLoading(true)
+    setHistory(saveAiQuery(clean))
+
+    // Мгновенно показываем сильный локальный подбор из уже загруженного каталога.
+    // OpenAI уточняет результат в фоне, но пользователь больше не ждёт пустую кнопку 20–30 секунд.
+    setRemoteResults({
+      ok: true,
+      source: 'instant-local',
+      summary: 'Мгновенный подбор готов. GPT уточняет варианты в фоне.'
+    })
+    setRefining(true)
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => controller.abort(), AI_REFINEMENT_TIMEOUT_MS)
 
     try{
       const libraryRows = Object.values(normalizeLibrary(library)).filter(item => item?.slug).map(item => ({ slug:item.slug, status:item.status }))
       const favoriteSlugs = normalizeFavorites(favorites).map(item => item.slug)
       const res = await fetch('/api/ai/recommend', {
         method: 'POST',
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: clean,
@@ -208,14 +228,16 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         })
       })
       const payload = await res.json()
-      setRemoteResults(payload)
+      if(seq !== searchSeq.current) return
+      if(payload?.ok && payload?.source === 'external-openai' && Array.isArray(payload.results) && payload.results.length){
+        setRemoteResults(payload)
+      }
     }catch(error){
-      setRemoteResults(null)
+      // Ничего не ломаем: мгновенный локальный результат уже показан.
     }finally{
-      setLoading(false)
+      window.clearTimeout(timer)
+      if(seq === searchSeq.current) setRefining(false)
     }
-
-    setHistory(saveAiQuery(clean))
   }
 
   function applyPreset(text){
@@ -257,7 +279,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-actions ai-actions-v186">
-        <button className="primary" onClick={()=>runSearch(query)} disabled={loading}>{loading ? 'Подбираю…' : 'Подобрать ✨'}</button>
+        <button className="primary" onClick={()=>runSearch(query)}>{refining ? 'Уточнить ещё ✨' : 'Подобрать ✨'}</button>
         <button className="secondary" onClick={()=>setQuery('')}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
@@ -266,7 +288,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-search-status">
-        <p>{['openai', 'external-openai'].includes(remoteResults?.source) ? `AI понял запрос: ${remoteResults.summary || 'подбираем по смыслу и вайбу.'}` : getCatalogHint(submitted)}</p>
+        <p>{['openai', 'external-openai'].includes(remoteResults?.source) ? `AI понял запрос: ${remoteResults.summary || 'подбираем по смыслу и вайбу.'}` : remoteResults?.source === 'instant-local' ? 'Мгновенный подбор уже показан — без ожидания пустого экрана.' : getCatalogHint(submitted)}</p>
+        {refining ? <p>GPT-5.5 уточняет выдачу в фоне. Можно уже открывать тайтлы, страница не зависает.</p> : null}
         {remoteResults?.source === 'local' && remoteResults?.openai?.reason === 'missing_api_key' ? <p>Сейчас работает запасной локальный режим. Добавь OPENAI_API_KEY или AI_RECOMMEND_ENDPOINT на VPS, чтобы включить настоящий умный подбор.</p> : null}
         {remoteResults?.source === 'local' && remoteResults?.openai?.enabled && remoteResults?.openai?.reason !== 'missing_api_key' ? <p>AI-backend/OpenAI не ответил, поэтому показан запасной локальный подбор.</p> : null}
         {hasPersonalData ? <p>{useLibrary ? 'Просмотренное и брошенное скрываем, любимые жанры поднимаем выше.' : 'Можно включить библиотеку, чтобы убрать уже просмотренное.'}</p> : <p>Добавь тайтлы в библиотеку или избранное — подбор станет персональнее.</p>}
