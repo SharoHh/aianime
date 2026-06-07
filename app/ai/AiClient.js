@@ -23,7 +23,6 @@ const QUICK_PRESETS = [
 ]
 
 const AI_REFINE_TIMEOUT_MS = 5200
-const AI_AUTO_APPLY_WINDOW_MS = 2200
 
 const TITLE_ALIASES = [
   ['ванпис', ['one piece', 'onepiece', 'ван пис']],
@@ -251,6 +250,37 @@ function makeReason(item, query){
   return `жанры: ${genres.slice(0, 3).join(', ') || 'подходит по смыслу запроса'}`
 }
 
+function getPosterSrc(item){
+  const raw = String(item?.poster || item?.posterUrl || item?.image || item?.imageUrl || '').trim()
+  if(raw) return raw
+  return '/posters/name.svg'
+}
+
+function prewarmPosterUrls(items, limit = 8){
+  if(typeof window === 'undefined' || typeof document === 'undefined') return
+  const urls = (items || []).slice(0, limit).map(getPosterSrc).filter(Boolean)
+  for(const src of urls){
+    try{
+      const id = `ai-preload-${btoa(unescape(encodeURIComponent(src))).replace(/=+$/,'').slice(0,60)}`
+      if(!document.getElementById(id)){
+        const link = document.createElement('link')
+        link.id = id
+        link.rel = 'preload'
+        link.as = 'image'
+        link.href = src
+        link.fetchPriority = 'high'
+        document.head.appendChild(link)
+      }
+      const img = new window.Image()
+      img.decoding = 'async'
+      img.fetchPriority = 'high'
+      img.src = src
+    }catch(error){
+      // preload is only a speed hint
+    }
+  }
+}
+
 function buildLibraryContext(items, library, favorites){
   const bySlug = new Map((items || []).map(item => [item.slug, item]))
   const favoriteSlugs = new Set(normalizeFavorites(favorites).map(item => item.slug))
@@ -376,7 +406,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   )
 
   const hasAiRefinement = refinedFor === submitted && refineState === 'ai-ready'
-  const hasPendingAiRefinement = refinedFor === submitted && refineState === 'ai-pending' && pendingAiResults.length
+  const hasPendingAiRefinement = false
   const results = displayResults.length ? displayResults : instantResults
 
   useEffect(() => {
@@ -386,24 +416,13 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   }, [displayResults.length, instantResults, refineState])
 
   useEffect(() => {
-    const urls = results
-      .slice(0, 6)
-      .map(item => String(item?.poster || '').trim())
-      .filter(Boolean)
-    const preloaders = urls.map(src => {
-      const img = new window.Image()
-      img.decoding = 'async'
-      img.src = src
-      return img
-    })
-    return () => { preloaders.length = 0 }
+    prewarmPosterUrls(results, 8)
   }, [results])
 
   const statusInfo = useMemo(() => {
     if(refineState === 'loading') return { tone:'loading', title:'Подбор уже показан', text:'Мгновенный результат готов. Gemini уточняет смысл запроса в фоне, без подвисания страницы.' }
-    if(refineState === 'ai-pending') return { tone:'ready', title:'Gemini нашёл AI-версию', text: refineSummary || 'AI-уточнение готово. Нажми кнопку, чтобы заменить быстрый список без внезапного сброса карточек.' }
-    if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор применён', text: refineSummary || 'Gemini уточнил выдачу по смыслу запроса.' }
-    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Gemini не успел ответить быстро — результат оставлен без сброса.' }
+        if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор применён', text: refineSummary || 'Gemini уточнил выдачу по смыслу запроса.' }
+    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Gemini сейчас не ответил или упёрся в лимит — показан быстрый результат без ожидания.' }
     if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл или настроение.' }
     return { tone:'idle', title:'Готов к подбору', text:'Напиши запрос — быстрый результат появится сразу, без ожидания AI.' }
   }, [refineState, refineSummary])
@@ -442,14 +461,16 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         return
       }
       const source = String(data.source || '').toLowerCase()
-      const fromAi = source.includes('gemini') || source.includes('openai') || source.includes('external')
+      const fromAi = (source.includes('gemini') || source.includes('openai')) && !source.includes('local') && !source.includes('fallback')
 
-      // Важно: локальный fallback от API не должен заменять уже показанный мгновенный подбор.
-      // Иначе пользователь видит нормальные карточки, а через пару секунд их "отбрасывает назад"
-      // на другой набор. Меняем карточки только когда реально пришёл внешний AI.
+      // Не считаем external-local настоящей AI-версией: это запасной локальный подбор,
+      // который приходит от backend, когда Gemini не ответил или словил лимит.
+      // Такой ответ не должен затирать уже показанные карточки и не должен писать,
+      // что "Gemini нашёл AI-версию".
       if(!fromAi){
         setRefinedFor('')
         setRefinedResults([])
+        setPendingAiResults([])
         setRefineSource('instant')
         setRefineSummary('')
         setRefineState(results.length || instantResults.length ? 'local-ready' : 'empty')
@@ -469,15 +490,12 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       setRefineSource(source || 'ai')
       setRefineSummary(data.summary || 'AI уточнил подбор по смыслу запроса.')
 
-      const elapsed = Date.now() - (refineStartedAtRef.current || Date.now())
-      if(elapsed <= AI_AUTO_APPLY_WINDOW_MS){
-        setDisplayResults(aiResults)
-        setPendingAiResults([])
-        setRefineState('ai-ready')
-      }else{
-        setPendingAiResults(aiResults)
-        setRefineState('ai-pending')
-      }
+      // Настоящий ответ Gemini применяем автоматически всегда.
+      // Пользователь хочет мгновенный старт, но без ручной кнопки "Показать AI-версию":
+      // сначала виден быстрый подбор, затем он сам заменяется на AI-результат, когда Gemini успел.
+      setDisplayResults(aiResults)
+      setPendingAiResults([])
+      setRefineState('ai-ready')
     }catch(error){
       if(requestId === refineSeqRef.current) setRefineState(instantResults.length ? 'local-ready' : 'empty')
     }finally{
@@ -494,6 +512,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     const requestId = refineSeqRef.current + 1
     refineSeqRef.current = requestId
     const nextInstant = buildInstantResults(preparedItems, clean, { useLibrary, libraryContext })
+    prewarmPosterUrls(nextInstant, 8)
     setQuery(clean)
     setSubmitted(clean)
     setDisplayResults(nextInstant)
@@ -572,13 +591,13 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         <b>{statusInfo.title}</b>
         <p>{statusInfo.text}</p>
       </div>
-      {hasPendingAiRefinement ? <button className="ai-apply-refinement" type="button" onClick={applyAiRefinement}>Показать AI-версию</button> : <span>{hasAiRefinement ? 'Gemini' : 'Быстро'}</span>}
+      <span>{hasAiRefinement ? 'Gemini' : 'Быстро'}</span>
     </div>
 
     <div className="ai-results-grid ai-results-grid-v186 ai-results-grid-v204">
       {!results.length ? <div className="ai-empty-results">Ничего не нашлось. Попробуй написать проще: жанр, похожий тайтл или настроение.</div> : null}
       {results.slice(0,8).map((item, index) => <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
-        <img loading={index < 4 ? 'eager' : 'lazy'} fetchPriority={index < 4 ? 'high' : 'auto'} decoding={index < 4 ? 'sync' : 'async'} width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'}/>
+        <img className="ai-card-poster-img" loading="eager" fetchPriority="high" decoding="async" width="320" height="480" src={getPosterSrc(item)} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'} onError={event => { event.currentTarget.src = '/posters/name.svg' }}/>
         <div>
           <span>AI {item.match || 80}%</span>
           <b>{getPrimaryTitle(item)}</b>
