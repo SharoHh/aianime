@@ -11,6 +11,10 @@
 
 Если Gemini/OpenAI не отвечает или ключ не задан, backend не валит сайт: он возвращает `external-local` — локальный запасной подбор по уже переданным кандидатам.
 
+## Важно про `.env`
+
+В этой версии backend сам читает файл `.env` через `dotenv`, поэтому можно спокойно создать `/var/www/aianime-ai-backend/.env` и запускать через PM2.
+
 ## Environment variables на AI-VPS
 
 ```env
