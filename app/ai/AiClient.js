@@ -17,12 +17,21 @@ const QUICK_PRESETS = [
   { label: 'Лёгкое', query: 'лёгкое уютное аниме без тяжёлой драмы' },
   { label: 'Экшен', query: 'аниме экшен с боями и динамикой' },
   { label: 'Как Ванпис', query: 'хочу как ванпис приключения команда' },
+  { label: 'Канеки', query: 'канеки токийский гуль мрачное' },
+  { label: 'Отаку', query: 'главный герой настоящий отаку' },
   { label: 'ГГ имба', query: 'аниме где гг имба и быстро становится сильным' },
+  { label: 'Попаданец', query: 'исекай попаданец в другой мир' },
   { label: 'Короткое', query: 'короткое аниме до 13 серий на вечер' },
   { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
 
 const AI_REFINE_TIMEOUT_MS = 5200
+
+function formatAiTime(ms){
+  if(!ms || ms < 100) return ''
+  const seconds = ms / 1000
+  return seconds < 10 ? `${seconds.toFixed(1)} сек` : `${Math.round(seconds)} сек`
+}
 
 const TITLE_ALIASES = [
   ['ванпис', ['one piece', 'onepiece', 'ван пис']],
@@ -356,6 +365,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [refineState, setRefineState] = useState('idle')
   const [refineSummary, setRefineSummary] = useState('')
   const [refineSource, setRefineSource] = useState('instant')
+  const [lastAiMs, setLastAiMs] = useState(0)
   const refineAbortRef = useRef(null)
   const refineSeqRef = useRef(0)
   const refineTimerRef = useRef(null)
@@ -378,6 +388,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setRefineState('idle')
     setRefineSummary('')
     setRefineSource('instant')
+    setLastAiMs(0)
   }, [initialQuery])
 
   useEffect(() => {
@@ -420,11 +431,11 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   }, [results])
 
   const statusInfo = useMemo(() => {
-    if(refineState === 'loading') return { tone:'loading', title:'Подбор уже показан', text:'Мгновенный результат готов. Gemini уточняет смысл запроса в фоне, без подвисания страницы.' }
-        if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор применён', text: refineSummary || 'Gemini уточнил выдачу по смыслу запроса.' }
-    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Gemini сейчас не ответил или упёрся в лимит — показан быстрый результат без ожидания.' }
-    if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл или настроение.' }
-    return { tone:'idle', title:'Готов к подбору', text:'Напиши запрос — быстрый результат появится сразу, без ожидания AI.' }
+    if(refineState === 'loading') return { tone:'loading', title:'Мгновенный подбор уже на экране', text:'Gemini уточняет выдачу в фоне. Если ответ придёт быстро — AI-версия применится сама, без кнопок.' }
+    if(refineState === 'ai-ready') return { tone:'ready', title:'Gemini применил AI-подбор', text: refineSummary || 'AI уточнил выдачу по смыслу запроса и оставил самые близкие варианты.' }
+    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор готов', text:'Gemini не ответил быстро или был на лимите. Результат не сброшен — можно смотреть сразу.' }
+    if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл, персонажа или настроение.' }
+    return { tone:'idle', title:'Готов к AI-подбору', text:'Пиши как человек: персонаж, вайб, жанр, похожий тайтл или даже кривой запрос — быстрый результат появится сразу.' }
   }, [refineState, refineSummary])
 
   async function refineWithExternalAi(clean, requestId){
@@ -473,6 +484,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         setPendingAiResults([])
         setRefineSource('instant')
         setRefineSummary('')
+        setLastAiMs(0)
         setRefineState(results.length || instantResults.length ? 'local-ready' : 'empty')
         return
       }
@@ -489,6 +501,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       setRefinedResults(aiResults)
       setRefineSource(source || 'ai')
       setRefineSummary(data.summary || 'AI уточнил подбор по смыслу запроса.')
+      setLastAiMs(Date.now() - refineStartedAtRef.current)
 
       // Настоящий ответ Gemini применяем автоматически всегда.
       // Пользователь хочет мгновенный старт, но без ручной кнопки "Показать AI-версию":
@@ -497,7 +510,10 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       setPendingAiResults([])
       setRefineState('ai-ready')
     }catch(error){
-      if(requestId === refineSeqRef.current) setRefineState(instantResults.length ? 'local-ready' : 'empty')
+      if(requestId === refineSeqRef.current){
+        setLastAiMs(0)
+        setRefineState(instantResults.length ? 'local-ready' : 'empty')
+      }
     }finally{
       if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
       refineTimerRef.current = null
@@ -521,6 +537,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setRefinedFor('')
     setRefineSummary('')
     setRefineSource('instant')
+    setLastAiMs(0)
     setRefineState(nextInstant.length ? 'loading' : 'empty')
     setIsDirty(false)
     refineWithExternalAi(clean, requestId)
@@ -555,15 +572,15 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     <section className="ai-search-panel ai-search-panel-v186 ai-search-panel-v204 widget">
       <div className="ai-search-copy">
         <span>AI anime finder</span>
-        <h2>Опиши конкретно, что хочется</h2>
-        <p>Опиши настроение, жанры, похожий тайтл или ситуацию — AI сразу покажет варианты из каталога.</p>
+        <h2>Пиши как человек — AI разберёт</h2>
+        <p>Персонаж, вайб, жанр, похожий тайтл или совсем кривой запрос. Сначала показываем быстрый результат, затем Gemini сам уточняет выдачу.</p>
       </div>
 
       <div className="ai-preset-row" aria-label="Быстрые сценарии AI-подбора">
         {QUICK_PRESETS.map(item => <button key={item.label} type="button" onClick={() => applyPreset(item.query)}>{item.label}</button>)}
       </div>
 
-      <textarea value={query} onChange={e=>handleQueryInput(e.target.value)} onKeyDown={e=>{ if((e.ctrlKey || e.metaKey) && e.key === 'Enter') runSearch(query) }} placeholder="Например: Ванпис, романтика до 13 серий, мрачный триллер"/>
+      <textarea value={query} onChange={e=>handleQueryInput(e.target.value)} onKeyDown={e=>{ if((e.ctrlKey || e.metaKey) && e.key === 'Enter') runSearch(query) }} placeholder="Например: канеки, главный герой отаку, как Ванпис, грустное на вечер, имба в другом мире"/>
 
       <div className="ai-smart-builder" aria-label="Уточнить AI-запрос">
         {PROMPT_GROUPS.map(group => <div className="ai-smart-row" key={group.title}>
@@ -575,8 +592,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-actions ai-actions-v186">
-        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{refineState === 'loading' && !isDirty ? 'Подбор показан' : (isDirty ? 'Показать подбор ✨' : 'Подобрать ✨')}</button>
-        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setPendingAiResults([]); setDisplayResults([]); setRefinedFor(''); setRefineState('idle'); setRefineSummary(''); setRefineSource('instant'); setIsDirty(false) }}>Очистить</button>
+        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{refineState === 'loading' && !isDirty ? 'Gemini уточняет…' : (isDirty ? 'Показать сразу ✨' : 'Подобрать ✨')}</button>
+        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setPendingAiResults([]); setDisplayResults([]); setRefinedFor(''); setRefineState('idle'); setRefineSummary(''); setRefineSource('instant'); setLastAiMs(0); setIsDirty(false) }}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
           <span>Учитывать мою библиотеку</span>
@@ -591,24 +608,41 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         <b>{statusInfo.title}</b>
         <p>{statusInfo.text}</p>
       </div>
-      <span>{hasAiRefinement ? 'Gemini' : 'Быстро'}</span>
+      <div className="ai-status-badges">
+        <span>{hasAiRefinement ? 'Gemini' : 'Быстро'}</span>
+        <span>{refineState === 'loading' ? 'без ожидания' : (refineState === 'ai-ready' ? 'AI готов' : 'каталог')}</span>
+        {lastAiMs ? <span>{formatAiTime(lastAiMs)}</span> : null}
+      </div>
     </div>
 
-    <div className="ai-results-grid ai-results-grid-v186 ai-results-grid-v204">
-      {!results.length ? <div className="ai-empty-results">Ничего не нашлось. Попробуй написать проще: жанр, похожий тайтл или настроение.</div> : null}
-      {results.slice(0,8).map((item, index) => <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
-        <img className="ai-card-poster-img" loading="eager" fetchPriority="high" decoding="async" width="320" height="480" src={getPosterSrc(item)} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'} onError={event => { event.currentTarget.src = '/posters/name.svg' }}/>
-        <div>
-          <span>AI {item.match || 80}%</span>
-          <b>{getPrimaryTitle(item)}</b>
-          <p>{item.reason || 'подходит по смыслу запроса'}</p>
-          <div className="ai-result-meta">
-            {item.year ? <em>{item.year}</em> : null}
-            {item.episodes ? <em>{item.episodes} сер.</em> : null}
-            {safeArray(item.genres).slice(0,2).map(genre => <em key={genre}>{genre}</em>)}
+    <div className="ai-results-grid ai-results-grid-v186 ai-results-grid-v204 ai-results-grid-v225">
+      {!results.length ? <div className="ai-empty-results">Ничего не нашлось. Попробуй написать проще: жанр, похожий тайтл, персонажа или настроение.</div> : null}
+      {results.slice(0,8).map((item, index) => {
+        const title = getPrimaryTitle(item)
+        const original = String(item.originalTitle || item.englishTitle || '').trim()
+        const showOriginal = original && normalizeSearchText(original) !== normalizeSearchText(title)
+        const poster = getPosterSrc(item)
+        const sourceLabel = hasAiRefinement ? 'Gemini' : 'AI быстрый'
+        return <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204 ai-result-card-v225" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
+          <div className="ai-poster-shell" data-rank={index + 1}>
+            <img className="ai-card-poster-img" loading="eager" fetchPriority="high" decoding="async" width="320" height="480" src={poster} alt={title ? `Постер аниме ${title}` : 'Постер аниме'} onError={event => { event.currentTarget.src = '/posters/name.svg' }}/>
           </div>
-        </div>
-      </Link>)}
+          <div className="ai-card-info">
+            <div className="ai-card-topline">
+              <span>{sourceLabel} {item.match || 80}%</span>
+              {index < 3 ? <i>топ {index + 1}</i> : null}
+            </div>
+            <b>{title}</b>
+            {showOriginal ? <small>{original}</small> : null}
+            <p>{item.reason || 'подходит по смыслу запроса'}</p>
+            <div className="ai-result-meta">
+              {item.year ? <em>{item.year}</em> : null}
+              {item.episodes ? <em>{item.episodes} сер.</em> : null}
+              {safeArray(item.genres).slice(0,3).map(genre => <em key={genre}>{genre}</em>)}
+            </div>
+          </div>
+        </Link>
+      })}
     </div>
   </>
 }
