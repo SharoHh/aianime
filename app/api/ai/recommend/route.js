@@ -1,7 +1,7 @@
 import { getAnimeList } from '@/lib/animeRepository'
 import { recommendWithOpenAI } from '@/lib/openAiAnimeRecommend'
 
-const AI_CACHE_TTL_MS = Number(process.env.AI_RECOMMEND_CACHE_TTL_MS || process.env.AI_CACHE_TTL_MS || 6 * 60 * 60 * 1000)
+const AI_CACHE_TTL_MS = Number(process.env.AI_RECOMMEND_CACHE_TTL_MS || 20 * 60 * 1000)
 const AI_RESPONSE_CACHE = globalThis.__aianimeAiResponseCache || new Map()
 globalThis.__aianimeAiResponseCache = AI_RESPONSE_CACHE
 
@@ -25,7 +25,7 @@ function getCached(key){
 }
 
 function setCached(key, payload){
-  if(!payload || payload.source === 'local') return
+  if(!payload || payload.source !== 'external-openai') return
   AI_RESPONSE_CACHE.set(key, { time: Date.now(), payload })
   if(AI_RESPONSE_CACHE.size > 80){
     const first = AI_RESPONSE_CACHE.keys().next().value

@@ -20,7 +20,7 @@ const QUICK_PRESETS = [
   { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
 
-const AI_REFINE_TIMEOUT_MS = 8500
+const AI_REFINE_TIMEOUT_MS = 12000
 
 const TITLE_ALIASES = [
   ['ванпис', ['one piece', 'onepiece', 'ван пис']],
@@ -318,8 +318,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [useLibrary, setUseLibrary] = useState(false)
   const [refinedResults, setRefinedResults] = useState([])
   const [refinedFor, setRefinedFor] = useState('')
-  const [isRefining, setIsRefining] = useState(false)
-  const [aiNotice, setAiNotice] = useState('Локальный подбор готов сразу. AI тихо уточняет результат после нажатия.')
   const refineAbortRef = useRef(null)
   const refineTimerRef = useRef(null)
 
@@ -335,8 +333,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setIsDirty(false)
     setRefinedResults([])
     setRefinedFor('')
-    setIsRefining(false)
-    setAiNotice('Локальный подбор готов сразу. AI тихо уточняет результат после нажатия.')
   }, [initialQuery])
 
   useEffect(() => {
@@ -373,8 +369,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
 
     const controller = new AbortController()
     refineAbortRef.current = controller
-    setIsRefining(true)
-    setAiNotice('Мгновенный локальный список уже на экране, дешёвый AI уточняет подбор…')
     refineTimerRef.current = setTimeout(() => controller.abort(), AI_REFINE_TIMEOUT_MS)
 
     try{
@@ -391,15 +385,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
           } : null
         })
       })
-      if(refineAbortRef.current !== controller) return
       const data = await response.json().catch(() => null)
-      if(refineAbortRef.current !== controller) return
-      if(!response.ok || !data?.ok || !Array.isArray(data.results) || !data.results.length){
-        setAiNotice('AI не дал нормальный ответ — оставил быстрый локальный подбор.')
-        return
-      }
-      const usedLocalFallback = data.source === 'local' || data.source === 'external-local'
-      setAiNotice(usedLocalFallback ? 'AI недоступен — показан локальный запасной подбор без зависания.' : 'Дешёвый AI уточнил подбор по смыслу запроса.')
+      if(!response.ok || !data?.ok || !Array.isArray(data.results) || !data.results.length) return
       setRefinedFor(clean)
       setRefinedResults(data.results.map(item => ({
         ...item,
@@ -409,14 +396,11 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         reason: item.reason || 'подходит по смыслу запроса'
       })))
     }catch(error){
-      if(refineAbortRef.current === controller) setAiNotice('AI не ответил по таймауту — локальный подбор уже работает.')
+      // Ничего не показываем пользователю: локальный моментальный подбор уже на экране.
     }finally{
-      if(refineAbortRef.current === controller){
-        setIsRefining(false)
-        if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
-        refineTimerRef.current = null
-        refineAbortRef.current = null
-      }
+      if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
+      refineTimerRef.current = null
+      if(refineAbortRef.current === controller) refineAbortRef.current = null
     }
   }
 
@@ -428,8 +412,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setRefinedResults([])
     setRefinedFor('')
     setIsDirty(false)
-    setAiNotice('Показал быстрый локальный подбор. Сейчас дешёвый AI попробует уточнить результат.')
-    // Сначала мгновенный локальный список, затем тихое AI-уточнение по кнопке.
+    // Сначала мгновенный локальный список, затем тихое GPT-уточнение по кнопке.
     refineWithExternalAi(clean)
   }
 
@@ -474,15 +457,13 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-actions ai-actions-v186">
-        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{isRefining ? 'Уточняю…' : (isDirty ? 'Показать подбор ✨' : 'Подобрать ✨')}</button>
-        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setRefinedFor(''); setIsRefining(false); setAiNotice('Сбросил запрос. Локальный подбор готов сразу.'); setIsDirty(false) }}>Очистить</button>
+        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{isDirty ? 'Показать подбор ✨' : 'Подобрать ✨'}</button>
+        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setRefinedFor(''); setIsDirty(false) }}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
           <span>Учитывать мою библиотеку</span>
         </label>
       </div>
-
-      <p className={`ai-status-line ${isRefining ? 'loading' : ''}`}>{aiNotice}</p>
     </section>
 
     <div className="section-title section-title-clean-icons"><h2><HomeSectionIcon type="ai"/>AI рекомендует</h2><Link href="/catalog">Каталог ›</Link></div>

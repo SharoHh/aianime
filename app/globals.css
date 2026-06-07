@@ -24506,19 +24506,3 @@ a.ai-result-card-v204{
   .ai-result-card-v204 img{width:105px!important;height:166px!important;}
   .ai-result-card-v204 b{font-size:16px!important;}
 }
-
-.ai-status-line{
-  margin:12px 0 0!important;
-  padding:10px 12px!important;
-  border-radius:16px!important;
-  border:1px solid #efe5ff!important;
-  background:#fffaff!important;
-  color:#6d607f!important;
-  font-size:13px!important;
-  font-weight:800!important;
-  line-height:1.35!important;
-}
-.ai-status-line.loading{
-  background:#f8f2ff!important;
-  color:#5d43a4!important;
-}
