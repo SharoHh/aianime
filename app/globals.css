@@ -24588,3 +24588,25 @@ a.ai-result-card-v204{
 @media(max-width:560px){
   .ai-status-panel{align-items:flex-start!important;flex-direction:column!important;padding:13px 14px!important;}
 }
+
+/* v216: AI page speed polish - instant perceived results + faster poster paint */
+.ai-results-grid-v204{
+  content-visibility:auto;
+  contain-intrinsic-size:720px;
+}
+.ai-result-card-v204{
+  transform:translateZ(0);
+  content-visibility:auto;
+  contain-intrinsic-size:198px;
+}
+.ai-result-card-v204 img{
+  background:linear-gradient(135deg,#f2ecff,#fff7fb);
+  object-fit:cover;
+  will-change:contents;
+}
+.ai-status-loading b::after{
+  content:' • быстрый режим';
+  color:#8f61dc;
+  font-size:11px;
+  font-weight:950;
+}

@@ -22,7 +22,7 @@ const QUICK_PRESETS = [
   { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
 
-const AI_REFINE_TIMEOUT_MS = 12000
+const AI_REFINE_TIMEOUT_MS = 5200
 
 const TITLE_ALIASES = [
   ['ванпис', ['one piece', 'onepiece', 'ван пис']],
@@ -372,12 +372,26 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const hasRefinedResults = refinedFor === submitted && refinedResults.length
   const results = hasRefinedResults ? refinedResults : instantResults
 
+  useEffect(() => {
+    const urls = results
+      .slice(0, 6)
+      .map(item => String(item?.poster || '').trim())
+      .filter(Boolean)
+    const preloaders = urls.map(src => {
+      const img = new window.Image()
+      img.decoding = 'async'
+      img.src = src
+      return img
+    })
+    return () => { preloaders.length = 0 }
+  }, [results])
+
   const statusInfo = useMemo(() => {
-    if(refineState === 'loading') return { tone:'loading', title:'AI уточняет подбор', text:'Быстрые результаты уже показаны ниже. Gemini сейчас только улучшает выдачу.' }
+    if(refineState === 'loading') return { tone:'loading', title:'Подбор уже показан', text:'Результаты появились мгновенно. Gemini обновит их, только если успеет быстро.' }
     if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор готов', text: refineSummary || 'Gemini уточнил рекомендации по смыслу запроса.' }
     if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Показаны варианты из каталога. Если внешний AI не ответил, страница всё равно ищет и не зависает.' }
     if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл или настроение.' }
-    return { tone:'idle', title:'Готов к подбору', text:'Напиши запрос и нажми кнопку — результат появится сразу.' }
+    return { tone:'idle', title:'Готов к подбору', text:'Напиши запрос — быстрый результат появится сразу, без ожидания AI.' }
   }, [refineState, refineSummary])
 
   async function refineWithExternalAi(clean, requestId){
@@ -491,7 +505,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-actions ai-actions-v186">
-        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{refineState === 'loading' && !isDirty ? 'Уточняю AI…' : (isDirty ? 'Показать подбор ✨' : 'Подобрать ✨')}</button>
+        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{refineState === 'loading' && !isDirty ? 'Подбор показан' : (isDirty ? 'Показать подбор ✨' : 'Подобрать ✨')}</button>
         <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setRefinedFor(''); setRefineState('idle'); setRefineSummary(''); setRefineSource('instant'); setIsDirty(false) }}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
@@ -512,8 +526,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
 
     <div className="ai-results-grid ai-results-grid-v186 ai-results-grid-v204">
       {!results.length ? <div className="ai-empty-results">Ничего не нашлось. Попробуй написать проще: жанр, похожий тайтл или настроение.</div> : null}
-      {results.slice(0,8).map(item => <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
-        <img loading="eager" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'}/>
+      {results.slice(0,8).map((item, index) => <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
+        <img loading={index < 4 ? 'eager' : 'lazy'} fetchPriority={index < 4 ? 'high' : 'auto'} decoding={index < 4 ? 'sync' : 'async'} width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'}/>
         <div>
           <span>AI {item.match || 80}%</span>
           <b>{getPrimaryTitle(item)}</b>
