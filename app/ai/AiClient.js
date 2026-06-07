@@ -389,7 +389,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const statusInfo = useMemo(() => {
     if(refineState === 'loading') return { tone:'loading', title:'Подбор уже показан', text:'Результаты появились мгновенно. Gemini обновит их, только если успеет быстро.' }
     if(refineState === 'ai-ready') return { tone:'ready', title:'AI-подбор готов', text: refineSummary || 'Gemini уточнил рекомендации по смыслу запроса.' }
-    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Показаны варианты из каталога. Если внешний AI не ответил, страница всё равно ищет и не зависает.' }
+    if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор по каталогу готов', text:'Мгновенный результат сохранён. Если Gemini не успел ответить быстро, карточки не сбрасываются назад.' }
     if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл или настроение.' }
     return { tone:'idle', title:'Готов к подбору', text:'Напиши запрос — быстрый результат появится сразу, без ожидания AI.' }
   }, [refineState, refineSummary])
@@ -428,17 +428,30 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       }
       const source = String(data.source || '').toLowerCase()
       const fromAi = source.includes('gemini') || source.includes('openai') || source.includes('external')
+
+      // Важно: локальный fallback от API не должен заменять уже показанный мгновенный подбор.
+      // Иначе пользователь видит нормальные карточки, а через пару секунд их "отбрасывает назад"
+      // на другой набор. Меняем карточки только когда реально пришёл внешний AI.
+      if(!fromAi){
+        setRefinedFor('')
+        setRefinedResults([])
+        setRefineSource('instant')
+        setRefineSummary('')
+        setRefineState(instantResults.length ? 'local-ready' : 'empty')
+        return
+      }
+
       setRefinedFor(clean)
       setRefinedResults(data.results.map(item => ({
         ...item,
         title: getPrimaryTitle(item),
         genres: safeArray(item.genres),
-        match: item.match || (fromAi ? 86 : 78),
+        match: item.match || 86,
         reason: item.reason || 'подходит по смыслу запроса'
       })))
-      setRefineSource(source || (fromAi ? 'ai' : 'local'))
-      setRefineSummary(fromAi ? (data.summary || 'AI уточнил подбор по смыслу запроса.') : '')
-      setRefineState(fromAi ? 'ai-ready' : 'local-ready')
+      setRefineSource(source || 'ai')
+      setRefineSummary(data.summary || 'AI уточнил подбор по смыслу запроса.')
+      setRefineState('ai-ready')
     }catch(error){
       if(requestId === refineSeqRef.current) setRefineState(instantResults.length ? 'local-ready' : 'empty')
     }finally{
