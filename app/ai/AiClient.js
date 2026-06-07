@@ -76,11 +76,13 @@ function expandQueryAliases(query){
   return parts.filter(Boolean).join(' ')
 }
 
+const QUERY_STOPWORDS = new Set(['аниме', 'anime', 'мультик', 'мульт', 'где', 'про', 'что', 'чтобы', 'когда', 'главный', 'главная', 'герой', 'героиня', 'персонаж', 'персонажи', 'есть', 'хочу', 'подбери', 'подборка', 'посоветуй', 'смотреть'])
+
 function tokenize(value){
   return normalizeSearchText(value)
     .split(' ')
     .map(token => token.trim())
-    .filter(token => token.length >= 2)
+    .filter(token => token.length >= 2 && !QUERY_STOPWORDS.has(token))
     .slice(0, 12)
 }
 
@@ -134,7 +136,9 @@ function getIntent(query){
     wantsCompleted: q.includes('заверш') || q.includes('законч') || q.includes('полностью'),
     light: q.includes('легк') || q.includes('лёгк') || q.includes('уют') || q.includes('позитив') || q.includes('добро') || q.includes('спокой'),
     dark: q.includes('мрач') || q.includes('темн') || q.includes('тёмн') || q.includes('триллер') || q.includes('психолог') || q.includes('хоррор'),
-    noHeavy: q.includes('без жести') || q.includes('без жест') || q.includes('без тяжел') || q.includes('без тяж') || q.includes('без крови') || q.includes('без хоррор') || q.includes('без драмы')
+    noHeavy: q.includes('без жести') || q.includes('без жест') || q.includes('без тяжел') || q.includes('без тяж') || q.includes('без крови') || q.includes('без хоррор') || q.includes('без драмы'),
+    femaleLead: q.includes('главная героин') || q.includes('героиня') || q.includes('девушка') || q.includes('девочка') || q.includes('женский персонаж') || q.includes('женская глав'),
+    maleLead: q.includes('главный герой парень') || q.includes('парень главный') || q.includes('мужской персонаж')
   }
 }
 
@@ -182,6 +186,15 @@ function scoreItem(item, query, context){
 
   score += genreScore(genres, intent)
 
+  if(intent.femaleLead){
+    if(genres.includes('Махо-сёдзё') || genres.includes('Сёдзё')) score += 95
+    if(item.__searchText.includes('девуш') || item.__searchText.includes('девоч') || item.__searchText.includes('героин') || item.__searchText.includes('женск')) score += 140
+    if(item.__titleText.includes('сакура') || item.__titleText.includes('сейлор') || item.__titleText.includes('фрирен') || item.__titleText.includes('мадока')) score += 80
+  }
+  if(intent.maleLead){
+    if(item.__searchText.includes('парен') || item.__searchText.includes('юнош') || item.__searchText.includes('мужск')) score += 90
+  }
+
   if(intent.short){
     const episodes = Number(item.episodes || 0)
     if(item.kind === 'movie') score += 75
@@ -223,6 +236,7 @@ function makeReason(item, query){
   const intent = getIntent(expandQueryAliases(query))
   const genres = safeArray(item.genres)
   if(normalizeSearchText(query) && item.__titleText?.includes(normalizeSearchText(query))) return 'точное совпадение по названию'
+  if(intent.femaleLead && (item.__searchText?.includes('девуш') || item.__searchText?.includes('героин') || item.genres?.includes('Сёдзё') || item.genres?.includes('Махо-сёдзё'))) return 'в центре истории женская героиня или сёдзё-вайб'
   if(intent.short && (item.kind === 'movie' || Number(item.episodes || 0) <= 13)) return 'короткий формат для быстрого просмотра'
   if(intent.wantsTv && item.kind === 'tv') return 'сериал под выбранный формат'
   const hits = intent.wantedGenres.filter(g => genres.includes(g)).slice(0, 3)
@@ -264,17 +278,39 @@ function buildInstantResults(preparedItems, query, options = {}){
   const positive = scored.filter(item => Number(item.aiScore || 0) > 25)
   const pool = positive.length >= 8 ? positive : scored
   const seen = new Set()
-  return pool.filter(item => {
-    if(!item?.slug || seen.has(item.slug)) return false
+  const familyCounts = new Map()
+  const exactTitleSearch = normalizeSearchText(clean)
+  const allowFranchiseStack = TITLE_ALIASES.some(([needle]) => exactTitleSearch.includes(normalizeSearchText(needle))) || exactTitleSearch.length <= 8
+  const selected = []
+
+  for(const item of pool){
+    if(!item?.slug || seen.has(item.slug)) continue
+    const family = String(item.slug || '').replace(/^\d+-/, '').split('-').slice(0, 2).join('-')
+    const count = familyCounts.get(family) || 0
+    if(!allowFranchiseStack && count >= 2) continue
     seen.add(item.slug)
-    return true
-  }).slice(0, 12)
+    familyCounts.set(family, count + 1)
+    selected.push(item)
+    if(selected.length >= 12) break
+  }
+
+  if(selected.length < 8){
+    for(const item of scored){
+      if(!item?.slug || seen.has(item.slug)) continue
+      seen.add(item.slug)
+      selected.push(item)
+      if(selected.length >= 12) break
+    }
+  }
+
+  return selected.slice(0, 12)
 }
 
 export default function AiClient({ items, similarSlug, initialQuery: initialQueryProp }){
   const initialQuery = initialQueryProp || (similarSlug ? 'подбери похожие тайтлы' : 'хочу что-то интересное на вечер')
   const [query, setQuery] = useState(initialQuery)
   const [submitted, setSubmitted] = useState(initialQuery)
+  const [isDirty, setIsDirty] = useState(false)
   const [library, setLibrary] = useState({})
   const [favorites, setFavorites] = useState([])
   const [useLibrary, setUseLibrary] = useState(false)
@@ -288,6 +324,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setFavorites(readJson('anime:favorites', []))
     setQuery(initialQuery)
     setSubmitted(initialQuery)
+    setIsDirty(false)
   }, [initialQuery])
 
   useEffect(() => {
@@ -303,38 +340,37 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     }
   }, [])
 
-  // Не сортируем каталог на каждый символ сразу: это и давало фризы при печати.
-  // Через 220 мс после паузы выдача обновляется сама, а кнопка обновляет мгновенно.
-  useEffect(() => {
-    const clean = String(query || '').trim()
-    if(clean.length < 2) return
-    const timer = window.setTimeout(() => setSubmitted(clean), 220)
-    return () => window.clearTimeout(timer)
-  }, [query])
-
   const results = useMemo(
     () => buildInstantResults(preparedItems, submitted, { useLibrary, libraryContext }),
     [preparedItems, submitted, useLibrary, libraryContext]
   )
 
   function runSearch(nextQuery = query){
-    const clean = String(nextQuery || '').trim()
-    if(!clean) return
+    const clean = String(nextQuery || '').trim() || initialQuery
     setQuery(clean)
     setSubmitted(clean)
+    setIsDirty(false)
   }
 
   function applyPreset(text){
     setQuery(text)
     setSubmitted(text)
+    setIsDirty(false)
   }
 
   function addToQuery(text){
     const clean = String(text || '').trim()
     if(!clean) return
-    const next = query.trim() ? `${query.trim()}, ${clean}` : clean
+    const current = query.trim()
+    const next = current ? `${current}, ${clean}` : clean
     setQuery(next)
     setSubmitted(next)
+    setIsDirty(false)
+  }
+
+  function handleQueryInput(value){
+    setQuery(value)
+    setIsDirty(String(value || '').trim() !== String(submitted || '').trim())
   }
 
   return <>
@@ -349,7 +385,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         {QUICK_PRESETS.map(item => <button key={item.label} type="button" onClick={() => applyPreset(item.query)}>{item.label}</button>)}
       </div>
 
-      <textarea value={query} onChange={e=>setQuery(e.target.value)} placeholder="Например: Ванпис, романтика до 13 серий, мрачный триллер"/>
+      <textarea value={query} onChange={e=>handleQueryInput(e.target.value)} onKeyDown={e=>{ if((e.ctrlKey || e.metaKey) && e.key === 'Enter') runSearch(query) }} placeholder="Например: Ванпис, романтика до 13 серий, мрачный триллер"/>
 
       <div className="ai-smart-builder" aria-label="Уточнить AI-запрос">
         {PROMPT_GROUPS.map(group => <div className="ai-smart-row" key={group.title}>
@@ -361,8 +397,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-actions ai-actions-v186">
-        <button className="primary" type="button" onClick={()=>runSearch(query)}>Подобрать ✨</button>
-        <button className="secondary" type="button" onClick={()=>{ setQuery(''); setSubmitted(initialQuery) }}>Очистить</button>
+        <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{isDirty ? 'Показать подбор ✨' : 'Подобрать ✨'}</button>
+        <button className="secondary" type="button" onClick={()=>{ setQuery(''); setSubmitted(initialQuery); setIsDirty(false) }}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
           <span>Учитывать мою библиотеку</span>
