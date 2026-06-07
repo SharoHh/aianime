@@ -1,3 +1,4 @@
+import '@/lib/runtimeEnv'
 import { NextResponse } from 'next/server'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 
