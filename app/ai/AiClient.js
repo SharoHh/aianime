@@ -3,45 +3,47 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { readJson, saveAiQuery } from '@/lib/userStorage'
-import { scoreAiItem, explainAiMatch, getCatalogHint } from '@/lib/searchRelevance'
+import { scoreAiItem, explainAiMatch, getCatalogHint, isAiItemRelevant, getQueryIntent } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 const PROMPT_GROUPS = [
   {
-    title: 'Настроение',
+    title: 'Вайб',
     items: [
-      'лёгкое позитивное аниме без тяжёлой драмы',
-      'уютное спокойное аниме на вечер',
-      'мрачное напряжённое аниме',
-      'эмоциональное аниме с сильной драмой'
+      'лёгкое и уютное',
+      'романтика и отношения',
+      'мрачное и напряжённое',
+      'смешное и бодрое'
     ]
   },
   {
     title: 'Жанр',
     items: [
-      'динамичный экшен с хорошими боями',
-      'романтика без кринжа',
-      'фэнтези или исекай с приключениями',
-      'психологический триллер с интригой'
+      'романтика',
+      'комедия',
+      'экшен',
+      'фэнтези',
+      'психология',
+      'триллер'
     ]
   },
   {
     title: 'Формат',
     items: [
-      'короткое аниме до 13 серий',
-      'завершённое аниме без ожидания новых серий',
-      'онгоинг с новыми сериями',
-      'аниме фильм на один вечер'
+      'короткое до 13 серий',
+      'завершённое',
+      'онгоинг',
+      'фильм на вечер'
     ]
   }
 ]
 
 const QUICK_PRESETS = [
-  { label: 'Лёгкое', query: 'лёгкое позитивное аниме без тяжёлой драмы' },
-  { label: 'Экшен', query: 'популярное динамичное аниме с экшеном' },
-  { label: 'Романтика', query: 'романтика без кринжа с приятной атмосферой' },
+  { label: 'Романтика', query: 'аниме романтика про отношения' },
+  { label: 'Лёгкое', query: 'лёгкое уютное аниме без тяжёлой драмы' },
+  { label: 'Экшен', query: 'аниме экшен с боями и динамикой' },
   { label: 'Короткое', query: 'короткое аниме до 13 серий на вечер' },
-  { label: 'Мрачное', query: 'мрачное напряжённое аниме с сильным сюжетом' }
+  { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
 
 function localScore(item, query, context){
@@ -101,6 +103,7 @@ function personalizeScore(item, context){
 function normalizeResults(payload, items, submitted, options = {}){
   const libraryContext = options.useLibrary ? options.libraryContext : null
   const baseContext = options.similarSlug ? { baseAnime: items.find(item => item.slug === options.similarSlug) } : {}
+  const intent = getQueryIntent(submitted)
 
   const mapItem = (sourceItem) => {
     const full = items.find(x => x.slug === sourceItem.slug) || sourceItem
@@ -111,7 +114,7 @@ function normalizeResults(payload, items, submitted, options = {}){
       ...sourceItem,
       aiScore: baseScore + personal,
       reason: sourceItem.reason || localReason(full, submitted, baseContext),
-      match: Math.min(99, Math.max(58, Math.round((baseScore + Math.max(0, personal)) / 3)))
+      match: Math.min(98, Math.max(62, Math.round(60 + (baseScore + Math.max(0, personal)) / 18)))
     }
   }
 
@@ -119,6 +122,7 @@ function normalizeResults(payload, items, submitted, options = {}){
     return payload.results
       .map(mapItem)
       .filter(item => Number(item.aiScore) > -9000)
+      .filter(item => isAiItemRelevant(item, submitted))
       .sort((a,b) => Number(b.aiScore || 0) - Number(a.aiScore || 0))
       .slice(0, 12)
   }
@@ -126,9 +130,10 @@ function normalizeResults(payload, items, submitted, options = {}){
   return [...items]
     .map(item => ({ ...item, aiScore: localScore(item, submitted, baseContext) + personalizeScore(item, libraryContext) }))
     .filter(item => Number(item.aiScore) > -9000)
+    .filter(item => isAiItemRelevant(item, submitted) || !intent.strongGenreRequest)
     .sort((a,b) => b.aiScore - a.aiScore)
     .slice(0, 12)
-    .map(item => ({ ...item, reason: localReason(item, submitted, baseContext), match: Math.min(99, Math.max(58, Math.round(item.aiScore / 3))) }))
+    .map(item => ({ ...item, reason: localReason(item, submitted, baseContext), match: Math.min(98, Math.max(62, Math.round(60 + item.aiScore / 18))) }))
 }
 
 export default function AiClient({ items, similarSlug, initialQuery: initialQueryProp }){
@@ -211,18 +216,18 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     <section className="ai-search-panel ai-search-panel-v186 widget">
       <div className="ai-search-copy">
         <span>AI anime finder</span>
-        <h2>Опиши, что хочется посмотреть</h2>
-        <p>Страница стала собирать запрос быстрее: выбери настроение, формат или просто напиши обычным языком. AI подберёт тайтлы из каталога и объяснит, почему они подходят.</p>
+        <h2>Опиши конкретно, что хочется</h2>
+        <p>AI теперь жёстче держится запроса: если пишешь “романтика” — он ищет романтику, а не кидает всё подряд по рейтингу. Можно написать обычной фразой или собрать запрос кнопками.</p>
       </div>
 
       <div className="ai-preset-row" aria-label="Быстрые сценарии AI-подбора">
         {QUICK_PRESETS.map(item => <button key={item.label} type="button" onClick={() => applyPreset(item.query)}>{item.label}</button>)}
       </div>
 
-      <textarea value={query} onChange={e=>setQuery(e.target.value)} placeholder="Например: хочу лёгкое приключение без жестокости, не слишком длинное"/>
+      <textarea value={query} onChange={e=>setQuery(e.target.value)} placeholder="Например: аниме романтика про отношения, без жести, до 13 серий"/>
 
-      <div className="ai-control-grid">
-        {PROMPT_GROUPS.map(group => <div className="ai-control-card" key={group.title}>
+      <div className="ai-smart-builder" aria-label="Уточнить AI-запрос">
+        {PROMPT_GROUPS.map(group => <div className="ai-smart-row" key={group.title}>
           <b>{group.title}</b>
           <div>
             {group.items.map(text => <button key={text} type="button" onClick={() => addToQuery(text)}>{text}</button>)}
