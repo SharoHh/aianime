@@ -266,9 +266,9 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-search-status">
-        <p>{remoteResults?.source === 'openai' ? `OpenAI понял запрос: ${remoteResults.summary || 'подбираем по смыслу и вайбу.'}` : getCatalogHint(submitted)}</p>
-        {remoteResults?.source === 'local' && remoteResults?.openai?.reason === 'missing_api_key' ? <p>Сейчас работает запасной локальный режим. Добавь OPENAI_API_KEY на VPS, чтобы включить настоящий умный подбор.</p> : null}
-        {remoteResults?.source === 'local' && remoteResults?.openai?.enabled && remoteResults?.openai?.reason !== 'missing_api_key' ? <p>OpenAI API не ответил, поэтому показан запасной локальный подбор.</p> : null}
+        <p>{['openai', 'external-openai'].includes(remoteResults?.source) ? `AI понял запрос: ${remoteResults.summary || 'подбираем по смыслу и вайбу.'}` : getCatalogHint(submitted)}</p>
+        {remoteResults?.source === 'local' && remoteResults?.openai?.reason === 'missing_api_key' ? <p>Сейчас работает запасной локальный режим. Добавь OPENAI_API_KEY или AI_RECOMMEND_ENDPOINT на VPS, чтобы включить настоящий умный подбор.</p> : null}
+        {remoteResults?.source === 'local' && remoteResults?.openai?.enabled && remoteResults?.openai?.reason !== 'missing_api_key' ? <p>AI-backend/OpenAI не ответил, поэтому показан запасной локальный подбор.</p> : null}
         {hasPersonalData ? <p>{useLibrary ? 'Просмотренное и брошенное скрываем, любимые жанры поднимаем выше.' : 'Можно включить библиотеку, чтобы убрать уже просмотренное.'}</p> : <p>Добавь тайтлы в библиотеку или избранное — подбор станет персональнее.</p>}
       </div>
 
