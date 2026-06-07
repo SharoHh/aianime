@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { readJson, saveAiQuery } from '@/lib/userStorage'
-import { scoreAiItem, explainAiMatch, getCatalogHint, isAiItemRelevant, getQueryIntent } from '@/lib/searchRelevance'
+import { scoreAiItem, explainAiMatch, isAiItemRelevant, getQueryIntent } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 
 const PROMPT_GROUPS = [
@@ -46,7 +46,18 @@ const QUICK_PRESETS = [
   { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
 
-const AI_REFINEMENT_TIMEOUT_MS = 12000
+const AI_TUNING_ACTIONS = [
+  { label: 'Легче', suffix: 'сделай подборку легче, уютнее и без тяжёлой драмы' },
+  { label: 'Мрачнее', suffix: 'сделай подборку мрачнее, напряжённее и психологичнее' },
+  { label: 'Больше романтики', suffix: 'добавь больше романтики, отношений и эмоциональной химии' },
+  { label: 'Больше динамики', suffix: 'добавь больше динамики, экшена и бодрого темпа' },
+  { label: 'Без жести', suffix: 'убери жестокость, хоррор, мрачняк и тяжёлую драму' },
+  { label: 'Без фильмов', suffix: 'только сериалы, без полнометражных фильмов и одиночных спецвыпусков' },
+  { label: 'Только короткие', suffix: 'только короткие сериалы до 13 серий или очень компактный формат' },
+  { label: 'Больше нового', suffix: 'покажи более свежие тайтлы последних лет' }
+]
+
+const AI_REFINEMENT_TIMEOUT_MS = 4500
 
 function localScore(item, query, context){
   return scoreAiItem(item, query, context)
@@ -58,6 +69,36 @@ function localReason(item, query, context){
 
 function getPrimaryTitle(item){
   return item?.titleRu || item?.displayTitle || item?.title || 'Без названия'
+}
+
+function buildVibeTags(query, results){
+  const q = String(query || '').toLowerCase()
+  const tags = []
+  const add = (tag) => {
+    if(tag && !tags.includes(tag)) tags.push(tag)
+  }
+
+  if(/роман|любов|отнош|лавстори|сёдзё|седзе/.test(q)) add('романтика')
+  if(/школ|учеб|класс/.test(q)) add('школа')
+  if(/л[её]гк|уют|добро|спокой/.test(q)) add('лёгкий вайб')
+  if(/мрач|психолог|триллер|напряж|детектив/.test(q)) add('напряжение')
+  if(/корот|13|вечер|быстр|фильм/.test(q)) add('короткий формат')
+  if(/экшен|бо[ий]|динами|драйв/.test(q)) add('динамика')
+  if(/без жест|без хорр|без драм|без мрач/.test(q)) add('без тяжести')
+
+  const genreCount = new Map()
+  ;(results || []).slice(0, 6).forEach(item => {
+    ;(item?.genres || []).slice(0, 4).forEach(genre => {
+      if(!genre) return
+      genreCount.set(genre, (genreCount.get(genre) || 0) + 1)
+    })
+  })
+  ;[...genreCount.entries()]
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 3)
+    .forEach(([genre]) => add(genre.toLowerCase()))
+
+  return tags.slice(0, 6)
 }
 
 function normalizeLibrary(raw){
@@ -103,12 +144,14 @@ function personalizeScore(item, context){
 }
 
 function normalizeResults(payload, items, submitted, options = {}){
+  const excludedSlugs = options.excludedSlugs || new Set()
   const libraryContext = options.useLibrary ? options.libraryContext : null
   const baseContext = options.similarSlug ? { baseAnime: items.find(item => item.slug === options.similarSlug) } : {}
   const intent = getQueryIntent(submitted)
 
   const mapItem = (sourceItem) => {
     const full = items.find(x => x.slug === sourceItem.slug) || sourceItem
+    if(full?.slug && excludedSlugs.has(full.slug)) return null
     const baseScore = Number(sourceItem.aiScore || sourceItem.match || localScore(full, submitted, baseContext))
     const personal = personalizeScore(full, libraryContext)
     return {
@@ -122,7 +165,7 @@ function normalizeResults(payload, items, submitted, options = {}){
 
   const localPool = [...items]
     .map(item => ({ ...item, aiScore: localScore(item, submitted, baseContext) + personalizeScore(item, libraryContext) }))
-    .filter(item => Number(item.aiScore) > -9000)
+    .filter(item => Number(item.aiScore) > -9000 && !(item?.slug && excludedSlugs.has(item.slug)))
     .sort((a,b) => b.aiScore - a.aiScore)
     .map(item => ({ ...item, reason: localReason(item, submitted, baseContext), match: Math.min(98, Math.max(56, Math.round(60 + item.aiScore / 18))) }))
 
@@ -141,14 +184,24 @@ function normalizeResults(payload, items, submitted, options = {}){
   if(payload?.ok && Array.isArray(payload.results) && payload.results.length){
     const remote = payload.results
       .map(mapItem)
-      .filter(item => Number(item.aiScore) > -9000)
+      .filter(item => item && Number(item.aiScore) > -9000)
       .sort((a,b) => Number(b.aiScore || 0) - Number(a.aiScore || 0))
 
-    const merged = mergeUnique([...remote.filter(item => isAiItemRelevant(item, submitted)), ...relevantLocal, ...softLocal])
+    const merged = mergeUnique([
+      ...remote.filter(item => isAiItemRelevant(item, submitted)),
+      ...remote,
+      ...relevantLocal,
+      ...softLocal,
+      ...localPool
+    ])
     return merged.slice(0, 12)
   }
 
-  const merged = mergeUnique([...(relevantLocal.length ? relevantLocal : []), ...softLocal])
+  const merged = mergeUnique([
+    ...(relevantLocal.length ? relevantLocal : []),
+    ...softLocal,
+    ...localPool
+  ])
   return merged.slice(0, 12)
 }
 
@@ -157,12 +210,12 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [query, setQuery] = useState(initialQuery)
   const [submitted, setSubmitted] = useState(initialQuery)
   const [remoteResults, setRemoteResults] = useState(null)
-  const [refining, setRefining] = useState(false)
   const searchSeq = useRef(0)
   const [history, setHistory] = useState([])
   const [library, setLibrary] = useState({})
   const [favorites, setFavorites] = useState([])
   const [useLibrary, setUseLibrary] = useState(false)
+  const [excludedSlugs, setExcludedSlugs] = useState(() => new Set())
 
   useEffect(() => {
     setHistory(readJson('ai_query_history', []))
@@ -200,15 +253,15 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setQuery(clean)
     setSubmitted(clean)
     setHistory(saveAiQuery(clean))
+    setExcludedSlugs(new Set())
 
     // Мгновенно показываем сильный локальный подбор из уже загруженного каталога.
     // OpenAI уточняет результат в фоне, но пользователь больше не ждёт пустую кнопку 20–30 секунд.
     setRemoteResults({
       ok: true,
       source: 'instant-local',
-      summary: 'Мгновенный подбор готов. GPT уточняет варианты в фоне.'
+      summary: ''
     })
-    setRefining(true)
 
     const controller = new AbortController()
     const timer = window.setTimeout(() => controller.abort(), AI_REFINEMENT_TIMEOUT_MS)
@@ -236,7 +289,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       // Ничего не ломаем: мгновенный локальный результат уже показан.
     }finally{
       window.clearTimeout(timer)
-      if(seq === searchSeq.current) setRefining(false)
     }
   }
 
@@ -251,16 +303,40 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setQuery(next)
   }
 
+  function tuneResults(suffix){
+    const clean = String(suffix || '').trim()
+    if(!clean) return
+    const base = (submitted || query || initialQuery).trim()
+    runSearch(base ? `${base}, ${clean}` : clean)
+  }
+
+  function moreLike(item){
+    const title = getPrimaryTitle(item)
+    const base = (submitted || query || '').trim()
+    runSearch(`похоже на ${title}${base ? `, ${base}` : ''}`)
+  }
+
+  function hideSimilar(item){
+    if(!item?.slug) return
+    setExcludedSlugs(prev => {
+      const next = new Set(prev)
+      next.add(item.slug)
+      return next
+    })
+    setRemoteResults({ ok:true, source:'instant-local', summary:'' })
+  }
+
   const libraryContext = useMemo(() => buildLibraryContext(items, library, favorites), [items, library, favorites])
   const hasPersonalData = Boolean(libraryContext.rows.length || libraryContext.favoriteSlugs.size)
-  const results = useMemo(() => normalizeResults(remoteResults, items, submitted, { useLibrary, libraryContext, similarSlug }), [remoteResults, items, submitted, useLibrary, libraryContext, similarSlug])
+  const results = useMemo(() => normalizeResults(remoteResults, items, submitted, { useLibrary, libraryContext, similarSlug, excludedSlugs }), [remoteResults, items, submitted, useLibrary, libraryContext, similarSlug, excludedSlugs])
+  const vibeTags = useMemo(() => buildVibeTags(submitted, results), [submitted, results])
 
   return <>
     <section className="ai-search-panel ai-search-panel-v186 widget">
       <div className="ai-search-copy">
         <span>AI anime finder</span>
         <h2>Опиши конкретно, что хочется</h2>
-        <p>AI теперь жёстче держится запроса: если пишешь “романтика” — он ищет романтику, а не кидает всё подряд по рейтингу. Можно написать обычной фразой или собрать запрос кнопками.</p>
+        <p>Опиши настроение, жанры, похожий тайтл или ситуацию — AI сразу покажет варианты из каталога.</p>
       </div>
 
       <div className="ai-preset-row" aria-label="Быстрые сценарии AI-подбора">
@@ -279,20 +355,12 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-actions ai-actions-v186">
-        <button className="primary" onClick={()=>runSearch(query)}>{refining ? 'Уточнить ещё ✨' : 'Подобрать ✨'}</button>
+        <button className="primary" onClick={()=>runSearch(query)}>Подобрать ✨</button>
         <button className="secondary" onClick={()=>setQuery('')}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
           <span>Учитывать мою библиотеку</span>
         </label>
-      </div>
-
-      <div className="ai-search-status">
-        <p>{['openai', 'external-openai'].includes(remoteResults?.source) ? `AI понял запрос: ${remoteResults.summary || 'подбираем по смыслу и вайбу.'}` : remoteResults?.source === 'instant-local' ? 'Мгновенный подбор уже показан — без ожидания пустого экрана.' : getCatalogHint(submitted)}</p>
-        {refining ? <p>GPT-5.5 уточняет выдачу в фоне. Можно уже открывать тайтлы, страница не зависает.</p> : null}
-        {remoteResults?.source === 'local' && remoteResults?.openai?.reason === 'missing_api_key' ? <p>Сейчас работает запасной локальный режим. Добавь OPENAI_API_KEY или AI_RECOMMEND_ENDPOINT на VPS, чтобы включить настоящий умный подбор.</p> : null}
-        {remoteResults?.source === 'local' && remoteResults?.openai?.enabled && remoteResults?.openai?.reason !== 'missing_api_key' ? <p>AI-backend/OpenAI не ответил, поэтому показан запасной локальный подбор.</p> : null}
-        {hasPersonalData ? <p>{useLibrary ? 'Просмотренное и брошенное скрываем, любимые жанры поднимаем выше.' : 'Можно включить библиотеку, чтобы убрать уже просмотренное.'}</p> : <p>Добавь тайтлы в библиотеку или избранное — подбор станет персональнее.</p>}
       </div>
 
       {history.length ? <div className="ai-history ai-history-v186">
@@ -302,20 +370,42 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     </section>
 
     <div className="section-title section-title-clean-icons"><h2><HomeSectionIcon type="ai"/>AI рекомендует</h2><Link href="/catalog">Каталог ›</Link></div>
-    <div className="ai-results-grid ai-results-grid-v186">
-      {results.slice(0,8).map(item=><Link className="ai-result-card ai-result-card-v186" href={`/anime/${item.slug}`} key={item.slug} prefetch={false}>
-        <img loading="lazy" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'}/>
+
+    <section className="ai-tune-panel" aria-label="Подкрутить AI-подбор">
+      <div className="ai-tune-head">
         <div>
-          <span>AI {item.match || 80}%</span>
-          <b>{getPrimaryTitle(item)}</b>
-          <p>{item.reason || localReason(item, submitted)}</p>
-          <div className="ai-result-meta">
-            {item.year ? <em>{item.year}</em> : null}
-            {item.episodes ? <em>{item.episodes} сер.</em> : null}
-            {(item.genres || []).slice(0,2).map(genre => <em key={genre}>{genre}</em>)}
-          </div>
+          <span>Вайб подборки</span>
+          <strong>{vibeTags.length ? vibeTags.join(' · ') : 'подбор под твой запрос'}</strong>
         </div>
-      </Link>)}
+        <button type="button" onClick={() => runSearch(submitted || query)}>Обновить</button>
+      </div>
+      <div className="ai-tune-actions">
+        {AI_TUNING_ACTIONS.map(action => (
+          <button key={action.label} type="button" onClick={() => tuneResults(action.suffix)}>{action.label}</button>
+        ))}
+      </div>
+    </section>
+
+    <div className="ai-results-grid ai-results-grid-v186">
+      {results.slice(0,8).map(item=><article className="ai-result-card ai-result-card-v186 ai-result-card-tunable" key={item.slug}>
+        <Link className="ai-result-main-link" href={`/anime/${item.slug}`} prefetch={false}>
+          <img loading="eager" decoding="async" width="320" height="480" src={item.poster} alt={item.title ? `Постер аниме ${getPrimaryTitle(item)}` : 'Постер аниме'}/>
+          <div>
+            <span>AI {item.match || 80}%</span>
+            <b>{getPrimaryTitle(item)}</b>
+            <p>{item.reason || localReason(item, submitted)}</p>
+            <div className="ai-result-meta">
+              {item.year ? <em>{item.year}</em> : null}
+              {item.episodes ? <em>{item.episodes} сер.</em> : null}
+              {(item.genres || []).slice(0,2).map(genre => <em key={genre}>{genre}</em>)}
+            </div>
+          </div>
+        </Link>
+        <div className="ai-card-feedback" aria-label={`Настроить подбор относительно ${getPrimaryTitle(item)}`}>
+          <button type="button" onClick={() => moreLike(item)}>Ещё похожие</button>
+          <button type="button" onClick={() => hideSimilar(item)}>Не то</button>
+        </div>
+      </article>)}
     </div>
   </>
 }
