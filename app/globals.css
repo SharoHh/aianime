@@ -24333,8 +24333,7 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   font-weight:950;
 }
 .ai-tune-head button,
-.ai-tune-actions button,
-.ai-card-feedback button{
+.ai-tune-actions button{
   border:1px solid #eadffb;
   background:#fff;
   color:#635577;
@@ -24343,8 +24342,7 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   transition:transform .16s ease,border-color .16s ease,background .16s ease,color .16s ease;
 }
 .ai-tune-head button:hover,
-.ai-tune-actions button:hover,
-.ai-card-feedback button:hover{
+.ai-tune-actions button:hover{
   transform:translateY(-1px);
   border-color:#d8c4fb;
   background:#f8f2ff;
@@ -24386,24 +24384,22 @@ html body .shell .content .section-title-clean-icons h2 .home-section-icon svg{
   width:138px!important;
   height:174px!important;
 }
-.ai-card-feedback{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  padding-left:154px;
-  margin-top:auto;
-}
-.ai-card-feedback button{
-  min-height:32px;
-  border-radius:999px;
-  padding:0 11px;
-  font-size:11.5px;
-}
 @media(max-width:720px){
   .ai-tune-head{align-items:flex-start;flex-direction:column;}
   .ai-tune-head button{width:100%;justify-content:center;}
   .ai-result-main-link{grid-template-columns:105px 1fr;gap:12px;}
   .ai-result-card-tunable img{width:105px!important;height:166px!important;}
-  .ai-card-feedback{padding-left:0;}
-  .ai-card-feedback button{flex:1 1 auto;}
+}
+
+/* v200: clean AI tuning without query spam */
+.ai-tune-actions button.active{
+  border-color:#cdb4ff!important;
+  background:linear-gradient(180deg,#f6efff,#fff)!important;
+  color:#6f3fd1!important;
+  box-shadow:0 8px 20px rgba(143,93,232,.12)!important;
+}
+.ai-tune-actions button.active::before{
+  content:'✓';
+  margin-right:6px;
+  font-weight:950;
 }

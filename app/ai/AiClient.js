@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { readJson, saveAiQuery } from '@/lib/userStorage'
+import { readJson } from '@/lib/userStorage'
 import { scoreAiItem, explainAiMatch, isAiItemRelevant, getQueryIntent } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 
@@ -47,17 +47,39 @@ const QUICK_PRESETS = [
 ]
 
 const AI_TUNING_ACTIONS = [
-  { label: 'Легче', suffix: 'сделай подборку легче, уютнее и без тяжёлой драмы' },
-  { label: 'Мрачнее', suffix: 'сделай подборку мрачнее, напряжённее и психологичнее' },
-  { label: 'Больше романтики', suffix: 'добавь больше романтики, отношений и эмоциональной химии' },
-  { label: 'Больше динамики', suffix: 'добавь больше динамики, экшена и бодрого темпа' },
-  { label: 'Без жести', suffix: 'убери жестокость, хоррор, мрачняк и тяжёлую драму' },
-  { label: 'Без фильмов', suffix: 'только сериалы, без полнометражных фильмов и одиночных спецвыпусков' },
-  { label: 'Только короткие', suffix: 'только короткие сериалы до 13 серий или очень компактный формат' },
-  { label: 'Больше нового', suffix: 'покажи более свежие тайтлы последних лет' }
+  { id: 'lighter', label: 'Легче', phrase: 'лёгкий уютный вайб без тяжёлой драмы', conflicts: ['darker'] },
+  { id: 'darker', label: 'Мрачнее', phrase: 'мрачнее, напряжённее и психологичнее', conflicts: ['lighter', 'no_hard'] },
+  { id: 'romance', label: 'Больше романтики', phrase: 'больше романтики, отношений и эмоциональной химии', conflicts: [] },
+  { id: 'dynamic', label: 'Больше динамики', phrase: 'больше динамики, экшена и бодрого темпа', conflicts: [] },
+  { id: 'no_hard', label: 'Без жести', phrase: 'без жестокости, хоррора, мрачняка и тяжёлой драмы', conflicts: ['darker'] },
+  { id: 'no_movies', label: 'Без фильмов', phrase: 'только сериалы, без полнометражных фильмов и одиночных спецвыпусков', conflicts: [] },
+  { id: 'short', label: 'Только короткие', phrase: 'короткий формат до 13 серий', conflicts: [] },
+  { id: 'fresh', label: 'Больше нового', phrase: 'более свежие тайтлы последних лет', conflicts: [] }
 ]
 
+const AI_TUNING_BY_ID = new Map(AI_TUNING_ACTIONS.map(action => [action.id, action]))
 const AI_REFINEMENT_TIMEOUT_MS = 4500
+
+function normalizeTuningIds(ids){
+  return Array.isArray(ids) ? ids.filter(id => AI_TUNING_BY_ID.has(id)) : []
+}
+
+function buildTunedQuery(base, tuningIds){
+  const clean = String(base || '').trim()
+  const modifiers = normalizeTuningIds(tuningIds)
+    .map(id => AI_TUNING_BY_ID.get(id)?.phrase)
+    .filter(Boolean)
+  return [clean, ...modifiers].filter(Boolean).join('; ')
+}
+
+function toggleTuningId(current, id){
+  const action = AI_TUNING_BY_ID.get(id)
+  if(!action) return normalizeTuningIds(current)
+  const currentIds = normalizeTuningIds(current)
+  if(currentIds.includes(id)) return currentIds.filter(item => item !== id)
+  const withoutConflicts = currentIds.filter(item => !action.conflicts?.includes(item))
+  return [...withoutConflicts, id]
+}
 
 function localScore(item, query, context){
   return scoreAiItem(item, query, context)
@@ -211,14 +233,12 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [submitted, setSubmitted] = useState(initialQuery)
   const [remoteResults, setRemoteResults] = useState(null)
   const searchSeq = useRef(0)
-  const [history, setHistory] = useState([])
+  const [activeTuning, setActiveTuning] = useState([])
   const [library, setLibrary] = useState({})
   const [favorites, setFavorites] = useState([])
   const [useLibrary, setUseLibrary] = useState(false)
-  const [excludedSlugs, setExcludedSlugs] = useState(() => new Set())
 
   useEffect(() => {
-    setHistory(readJson('ai_query_history', []))
     const nextLibrary = readJson('anime:library', {})
     const nextFavorites = readJson('anime:favorites', [])
     setLibrary(nextLibrary)
@@ -243,20 +263,19 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     }
   }, [])
 
-  async function runSearch(nextQuery = query){
+  async function runSearch(nextQuery = query, options = {}){
     const clean = String(nextQuery || '').trim()
     if(!clean) return
 
+    const tuningIds = normalizeTuningIds(options.tuningIds ?? activeTuning)
+    const effectiveQuery = buildTunedQuery(clean, tuningIds)
     const seq = searchSeq.current + 1
     searchSeq.current = seq
 
-    setQuery(clean)
-    setSubmitted(clean)
-    setHistory(saveAiQuery(clean))
-    setExcludedSlugs(new Set())
-
+    if(options.setInput !== false) setQuery(clean)
+    setSubmitted(effectiveQuery || clean)
     // Мгновенно показываем сильный локальный подбор из уже загруженного каталога.
-    // OpenAI уточняет результат в фоне, но пользователь больше не ждёт пустую кнопку 20–30 секунд.
+    // GPT-уточнение работает тихо в фоне и не превращает поле ввода в кашу из модификаторов.
     setRemoteResults({
       ok: true,
       source: 'instant-local',
@@ -274,7 +293,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: clean,
+          query: effectiveQuery || clean,
           baseSlug: similarSlug || null,
           limit: 12,
           context: useLibrary ? { library: libraryRows, favorites: favoriteSlugs } : null
@@ -293,7 +312,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   }
 
   function applyPreset(text){
-    runSearch(text)
+    setActiveTuning([])
+    runSearch(text, { tuningIds: [] })
   }
 
   function addToQuery(text){
@@ -303,32 +323,24 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setQuery(next)
   }
 
-  function tuneResults(suffix){
-    const clean = String(suffix || '').trim()
-    if(!clean) return
-    const base = (submitted || query || initialQuery).trim()
-    runSearch(base ? `${base}, ${clean}` : clean)
+  function tuneResults(action){
+    if(!action?.id) return
+    const nextTuning = toggleTuningId(activeTuning, action.id)
+    setActiveTuning(nextTuning)
+    const base = (query || initialQuery).trim()
+    runSearch(base, { tuningIds: nextTuning, setInput: false })
   }
 
-  function moreLike(item){
-    const title = getPrimaryTitle(item)
-    const base = (submitted || query || '').trim()
-    runSearch(`похоже на ${title}${base ? `, ${base}` : ''}`)
+  function resetTuning(){
+    setActiveTuning([])
+    runSearch(query || initialQuery, { tuningIds: [], setInput: false })
   }
 
-  function hideSimilar(item){
-    if(!item?.slug) return
-    setExcludedSlugs(prev => {
-      const next = new Set(prev)
-      next.add(item.slug)
-      return next
-    })
-    setRemoteResults({ ok:true, source:'instant-local', summary:'' })
-  }
+
 
   const libraryContext = useMemo(() => buildLibraryContext(items, library, favorites), [items, library, favorites])
   const hasPersonalData = Boolean(libraryContext.rows.length || libraryContext.favoriteSlugs.size)
-  const results = useMemo(() => normalizeResults(remoteResults, items, submitted, { useLibrary, libraryContext, similarSlug, excludedSlugs }), [remoteResults, items, submitted, useLibrary, libraryContext, similarSlug, excludedSlugs])
+  const results = useMemo(() => normalizeResults(remoteResults, items, submitted, { useLibrary, libraryContext, similarSlug }), [remoteResults, items, submitted, useLibrary, libraryContext, similarSlug])
   const vibeTags = useMemo(() => buildVibeTags(submitted, results), [submitted, results])
 
   return <>
@@ -363,10 +375,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         </label>
       </div>
 
-      {history.length ? <div className="ai-history ai-history-v186">
-        <p>Недавние запросы</p>
-        <div>{history.slice(0, 6).map(x=><button key={x} onClick={()=>runSearch(x)}>{x}</button>)}</div>
-      </div> : null}
     </section>
 
     <div className="section-title section-title-clean-icons"><h2><HomeSectionIcon type="ai"/>AI рекомендует</h2><Link href="/catalog">Каталог ›</Link></div>
@@ -377,11 +385,16 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
           <span>Вайб подборки</span>
           <strong>{vibeTags.length ? vibeTags.join(' · ') : 'подбор под твой запрос'}</strong>
         </div>
-        <button type="button" onClick={() => runSearch(submitted || query)}>Обновить</button>
+        <button type="button" onClick={activeTuning.length ? resetTuning : () => runSearch(query, { setInput: false })}>{activeTuning.length ? 'Сбросить' : 'Обновить'}</button>
       </div>
       <div className="ai-tune-actions">
         {AI_TUNING_ACTIONS.map(action => (
-          <button key={action.label} type="button" onClick={() => tuneResults(action.suffix)}>{action.label}</button>
+          <button
+            key={action.id}
+            className={activeTuning.includes(action.id) ? 'active' : ''}
+            type="button"
+            onClick={() => tuneResults(action)}
+          >{action.label}</button>
         ))}
       </div>
     </section>
@@ -401,10 +414,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
             </div>
           </div>
         </Link>
-        <div className="ai-card-feedback" aria-label={`Настроить подбор относительно ${getPrimaryTitle(item)}`}>
-          <button type="button" onClick={() => moreLike(item)}>Ещё похожие</button>
-          <button type="button" onClick={() => hideSimilar(item)}>Не то</button>
-        </div>
       </article>)}
     </div>
   </>
