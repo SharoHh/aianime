@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { readJson } from '@/lib/userStorage'
 import { normalizeSearchText } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
@@ -19,6 +19,8 @@ const QUICK_PRESETS = [
   { label: 'Короткое', query: 'короткое аниме до 13 серий на вечер' },
   { label: 'Мрачное', query: 'мрачный психологический триллер' }
 ]
+
+const AI_REFINE_TIMEOUT_MS = 12000
 
 const TITLE_ALIASES = [
   ['ванпис', ['one piece', 'onepiece', 'ван пис']],
@@ -314,6 +316,10 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [library, setLibrary] = useState({})
   const [favorites, setFavorites] = useState([])
   const [useLibrary, setUseLibrary] = useState(false)
+  const [refinedResults, setRefinedResults] = useState([])
+  const [refinedFor, setRefinedFor] = useState('')
+  const refineAbortRef = useRef(null)
+  const refineTimerRef = useRef(null)
 
   const preparedItems = useMemo(() => prepareItems(items), [items])
   const libraryContext = useMemo(() => buildLibraryContext(preparedItems, library, favorites), [preparedItems, library, favorites])
@@ -325,6 +331,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setQuery(initialQuery)
     setSubmitted(initialQuery)
     setIsDirty(false)
+    setRefinedResults([])
+    setRefinedFor('')
   }, [initialQuery])
 
   useEffect(() => {
@@ -340,22 +348,76 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     }
   }, [])
 
-  const results = useMemo(
+  useEffect(() => {
+    return () => {
+      if(refineAbortRef.current) refineAbortRef.current.abort()
+      if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
+    }
+  }, [])
+
+  const instantResults = useMemo(
     () => buildInstantResults(preparedItems, submitted, { useLibrary, libraryContext }),
     [preparedItems, submitted, useLibrary, libraryContext]
   )
 
+  const results = (refinedFor === submitted && refinedResults.length) ? refinedResults : instantResults
+
+  async function refineWithExternalAi(clean){
+    if(!clean || clean.length < 3) return
+    if(refineAbortRef.current) refineAbortRef.current.abort()
+    if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
+
+    const controller = new AbortController()
+    refineAbortRef.current = controller
+    refineTimerRef.current = setTimeout(() => controller.abort(), AI_REFINE_TIMEOUT_MS)
+
+    try{
+      const response = await fetch('/api/ai/recommend', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: clean,
+          limit: 8,
+          context: useLibrary ? {
+            library: libraryContext.rows.slice(0, 60).map(row => ({ slug: row.slug, status: row.status })),
+            favorites: Array.from(libraryContext.favoriteSlugs || []).slice(0, 60)
+          } : null
+        })
+      })
+      const data = await response.json().catch(() => null)
+      if(!response.ok || !data?.ok || !Array.isArray(data.results) || !data.results.length) return
+      setRefinedFor(clean)
+      setRefinedResults(data.results.map(item => ({
+        ...item,
+        title: getPrimaryTitle(item),
+        genres: safeArray(item.genres),
+        match: item.match || 82,
+        reason: item.reason || 'подходит по смыслу запроса'
+      })))
+    }catch(error){
+      // Ничего не показываем пользователю: локальный моментальный подбор уже на экране.
+    }finally{
+      if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
+      refineTimerRef.current = null
+      if(refineAbortRef.current === controller) refineAbortRef.current = null
+    }
+  }
+
   function runSearch(nextQuery = query){
     const clean = String(nextQuery || '').trim() || initialQuery
+    if(refineAbortRef.current) refineAbortRef.current.abort()
     setQuery(clean)
     setSubmitted(clean)
+    setRefinedResults([])
+    setRefinedFor('')
     setIsDirty(false)
+    // Сначала мгновенный локальный список, затем тихое GPT-уточнение по кнопке.
+    refineWithExternalAi(clean)
   }
 
   function applyPreset(text){
-    setQuery(text)
-    setSubmitted(text)
-    setIsDirty(false)
+    runSearch(text)
   }
 
   function addToQuery(text){
@@ -363,9 +425,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     if(!clean) return
     const current = query.trim()
     const next = current ? `${current}, ${clean}` : clean
-    setQuery(next)
-    setSubmitted(next)
-    setIsDirty(false)
+    runSearch(next)
   }
 
   function handleQueryInput(value){
@@ -398,7 +458,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
 
       <div className="ai-actions ai-actions-v186">
         <button className={`primary ${isDirty ? 'needs-submit' : ''}`} type="button" onClick={()=>runSearch(query)}>{isDirty ? 'Показать подбор ✨' : 'Подобрать ✨'}</button>
-        <button className="secondary" type="button" onClick={()=>{ setQuery(''); setSubmitted(initialQuery); setIsDirty(false) }}>Очистить</button>
+        <button className="secondary" type="button" onClick={()=>{ if(refineAbortRef.current) refineAbortRef.current.abort(); setQuery(''); setSubmitted(initialQuery); setRefinedResults([]); setRefinedFor(''); setIsDirty(false) }}>Очистить</button>
         <label className={`ai-personal-toggle ${useLibrary ? 'active' : ''} ${hasPersonalData ? '' : 'muted'}`}>
           <input type="checkbox" checked={useLibrary} onChange={e=>setUseLibrary(e.target.checked)} disabled={!hasPersonalData}/>
           <span>Учитывать мою библиотеку</span>
