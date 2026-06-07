@@ -118,22 +118,36 @@ function normalizeResults(payload, items, submitted, options = {}){
     }
   }
 
-  if(payload?.ok && Array.isArray(payload.results) && payload.results.length){
-    return payload.results
-      .map(mapItem)
-      .filter(item => Number(item.aiScore) > -9000)
-      .filter(item => isAiItemRelevant(item, submitted))
-      .sort((a,b) => Number(b.aiScore || 0) - Number(a.aiScore || 0))
-      .slice(0, 12)
-  }
-
-  return [...items]
+  const localPool = [...items]
     .map(item => ({ ...item, aiScore: localScore(item, submitted, baseContext) + personalizeScore(item, libraryContext) }))
     .filter(item => Number(item.aiScore) > -9000)
-    .filter(item => isAiItemRelevant(item, submitted) || !intent.strongGenreRequest)
     .sort((a,b) => b.aiScore - a.aiScore)
-    .slice(0, 12)
-    .map(item => ({ ...item, reason: localReason(item, submitted, baseContext), match: Math.min(98, Math.max(62, Math.round(60 + item.aiScore / 18))) }))
+    .map(item => ({ ...item, reason: localReason(item, submitted, baseContext), match: Math.min(98, Math.max(56, Math.round(60 + item.aiScore / 18))) }))
+
+  const relevantLocal = localPool.filter(item => isAiItemRelevant(item, submitted))
+  const softLocal = localPool.filter(item => !relevantLocal.some(x => x.slug === item.slug) && Number(item.aiScore || 0) > 20)
+
+  const mergeUnique = (rows) => {
+    const seen = new Set()
+    return rows.filter(item => {
+      if(!item?.slug || seen.has(item.slug)) return false
+      seen.add(item.slug)
+      return true
+    })
+  }
+
+  if(payload?.ok && Array.isArray(payload.results) && payload.results.length){
+    const remote = payload.results
+      .map(mapItem)
+      .filter(item => Number(item.aiScore) > -9000)
+      .sort((a,b) => Number(b.aiScore || 0) - Number(a.aiScore || 0))
+
+    const merged = mergeUnique([...remote.filter(item => isAiItemRelevant(item, submitted)), ...relevantLocal, ...softLocal])
+    return merged.slice(0, 12)
+  }
+
+  const merged = mergeUnique([...(relevantLocal.length ? relevantLocal : []), ...softLocal])
+  return merged.slice(0, 12)
 }
 
 export default function AiClient({ items, similarSlug, initialQuery: initialQueryProp }){
@@ -181,10 +195,17 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setLoading(true)
 
     try{
+      const libraryRows = Object.values(normalizeLibrary(library)).filter(item => item?.slug).map(item => ({ slug:item.slug, status:item.status }))
+      const favoriteSlugs = normalizeFavorites(favorites).map(item => item.slug)
       const res = await fetch('/api/ai/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: clean, baseSlug: similarSlug || null, limit: 12 })
+        body: JSON.stringify({
+          query: clean,
+          baseSlug: similarSlug || null,
+          limit: 12,
+          context: useLibrary ? { library: libraryRows, favorites: favoriteSlugs } : null
+        })
       })
       const payload = await res.json()
       setRemoteResults(payload)
@@ -245,7 +266,9 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
 
       <div className="ai-search-status">
-        <p>{getCatalogHint(submitted)}</p>
+        <p>{remoteResults?.source === 'openai' ? `OpenAI понял запрос: ${remoteResults.summary || 'подбираем по смыслу и вайбу.'}` : getCatalogHint(submitted)}</p>
+        {remoteResults?.source === 'local' && remoteResults?.openai?.reason === 'missing_api_key' ? <p>Сейчас работает запасной локальный режим. Добавь OPENAI_API_KEY на VPS, чтобы включить настоящий умный подбор.</p> : null}
+        {remoteResults?.source === 'local' && remoteResults?.openai?.enabled && remoteResults?.openai?.reason !== 'missing_api_key' ? <p>OpenAI API не ответил, поэтому показан запасной локальный подбор.</p> : null}
         {hasPersonalData ? <p>{useLibrary ? 'Просмотренное и брошенное скрываем, любимые жанры поднимаем выше.' : 'Можно включить библиотеку, чтобы убрать уже просмотренное.'}</p> : <p>Добавь тайтлы в библиотеку или избранное — подбор станет персональнее.</p>}
       </div>
 
