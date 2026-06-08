@@ -259,76 +259,10 @@ function makeReason(item, query){
   return `жанры: ${genres.slice(0, 3).join(', ') || 'подходит по смыслу запроса'}`
 }
 
-function getRawPosterSrc(item){
-  const raw = String(item?.poster || item?.posterUrl || item?.image || item?.imageUrl || '').trim()
-  return raw || '/posters/name.svg'
-}
-
-function compactMalImageUrl(rawUrl){
-  try{
-    const parsed = new URL(rawUrl)
-    const remote = parsed.searchParams.get('url')
-    if(remote){
-      const decoded = decodeURIComponent(remote)
-      const compactRemote = compactMalImageUrl(decoded)
-      if(compactRemote && compactRemote !== decoded){
-        parsed.searchParams.set('url', compactRemote)
-        return parsed.toString().replace(/^https?:\/\/[^/]+/,'')
-      }
-      return rawUrl
-    }
-  }catch{}
-
-  try{
-    const parsed = new URL(rawUrl)
-    if(parsed.hostname.toLowerCase().includes('myanimelist.net')){
-      const compactPath = parsed.pathname.replace(/(\/[^/]*\d+)l\.(webp|jpg|jpeg|png)$/i, '$1.$2')
-      if(compactPath !== parsed.pathname){
-        parsed.pathname = compactPath
-        return parsed.toString()
-      }
-    }
-  }catch{}
-  return rawUrl
-}
-
 function getPosterSrc(item){
-  const raw = getRawPosterSrc(item)
-  return compactMalImageUrl(raw) || raw || '/posters/name.svg'
-}
-
-function waitForPosterBatch(items, { limit = 8, minReady = 4, timeoutMs = 750 } = {}){
-  if(typeof window === 'undefined') return Promise.resolve()
-  const urls = (items || []).slice(0, limit).map(getPosterSrc).filter(Boolean)
-  if(!urls.length) return Promise.resolve()
-  return new Promise(resolve => {
-    let settled = false
-    let ready = 0
-    const done = () => {
-      if(settled) return
-      if(ready >= Math.min(minReady, urls.length)){
-        settled = true
-        clearTimeout(timer)
-        resolve()
-      }
-    }
-    const timer = setTimeout(() => {
-      if(settled) return
-      settled = true
-      resolve()
-    }, timeoutMs)
-    urls.forEach(src => {
-      try{
-        const img = new window.Image()
-        img.decoding = 'async'
-        img.fetchPriority = 'high'
-        img.onload = () => { ready += 1; done() }
-        img.onerror = () => { ready += 1; done() }
-        img.src = src
-        if(img.complete){ ready += 1; done() }
-      }catch{ ready += 1; done() }
-    })
-  })
+  const raw = String(item?.poster || item?.posterUrl || item?.image || item?.imageUrl || '').trim()
+  if(raw) return raw
+  return '/posters/name.svg'
 }
 
 function prewarmPosterUrls(items, limit = 8){
@@ -346,7 +280,6 @@ function prewarmPosterUrls(items, limit = 8){
         link.fetchPriority = 'high'
         document.head.appendChild(link)
       }
-      fetch(src, { cache: 'force-cache', priority: 'high' }).catch(() => {})
       const img = new window.Image()
       img.decoding = 'async'
       img.fetchPriority = 'high'
@@ -355,44 +288,6 @@ function prewarmPosterUrls(items, limit = 8){
       // preload is only a speed hint
     }
   }
-}
-
-function AiPoster({ item, title, index }){
-  const compactSrc = getPosterSrc(item)
-  const originalSrc = getRawPosterSrc(item)
-  const [src, setSrc] = useState(compactSrc)
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    setSrc(compactSrc)
-    setLoaded(false)
-  }, [compactSrc])
-
-  const priority = index < 8
-  return <div className={`ai-poster-shell ${loaded ? 'poster-loaded' : 'poster-loading'}`} data-rank={index + 1}>
-    <img
-      className="ai-card-poster-img"
-      loading={priority ? 'eager' : 'lazy'}
-      fetchPriority={priority ? 'high' : 'auto'}
-      decoding={index < 4 ? 'sync' : 'async'}
-      width="248"
-      height="336"
-      src={src || '/posters/name.svg'}
-      alt={title ? `Постер аниме ${title}` : 'Постер аниме'}
-      onLoad={() => setLoaded(true)}
-      onError={() => {
-        if(src !== originalSrc && originalSrc){
-          setSrc(originalSrc)
-          setLoaded(false)
-        }else if(src !== '/posters/name.svg'){
-          setSrc('/posters/name.svg')
-          setLoaded(false)
-        }else{
-          setLoaded(true)
-        }
-      }}
-    />
-  </div>
 }
 
 function buildLibraryContext(items, library, favorites){
@@ -473,7 +368,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   const [lastAiMs, setLastAiMs] = useState(0)
   const refineAbortRef = useRef(null)
   const refineSeqRef = useRef(0)
-  const aiAppliedSeqRef = useRef(0)
   const refineTimerRef = useRef(null)
   const refineStartedAtRef = useRef(0)
 
@@ -603,7 +497,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         reason: item.reason || 'подходит по смыслу запроса'
       }))
 
-      aiAppliedSeqRef.current = requestId
       setRefinedFor(clean)
       setRefinedResults(aiResults)
       setRefineSource(source || 'ai')
@@ -628,17 +521,17 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     }
   }
 
-  async function runSearch(nextQuery = query){
+  function runSearch(nextQuery = query){
     const clean = String(nextQuery || '').trim() || initialQuery
     if(refineAbortRef.current) refineAbortRef.current.abort()
     if(refineTimerRef.current) clearTimeout(refineTimerRef.current)
     const requestId = refineSeqRef.current + 1
     refineSeqRef.current = requestId
-    aiAppliedSeqRef.current = 0
     const nextInstant = buildInstantResults(preparedItems, clean, { useLibrary, libraryContext })
     prewarmPosterUrls(nextInstant, 8)
     setQuery(clean)
     setSubmitted(clean)
+    setDisplayResults(nextInstant)
     setRefinedResults([])
     setPendingAiResults([])
     setRefinedFor('')
@@ -648,10 +541,6 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     setRefineState(nextInstant.length ? 'loading' : 'empty')
     setIsDirty(false)
     refineWithExternalAi(clean, requestId)
-    await waitForPosterBatch(nextInstant, { limit: 8, minReady: 4, timeoutMs: 650 })
-    if(requestId === refineSeqRef.current && aiAppliedSeqRef.current !== requestId){
-      setDisplayResults(nextInstant)
-    }
   }
 
   function applyPreset(text){
@@ -732,9 +621,12 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         const title = getPrimaryTitle(item)
         const original = String(item.originalTitle || item.englishTitle || '').trim()
         const showOriginal = original && normalizeSearchText(original) !== normalizeSearchText(title)
+        const poster = getPosterSrc(item)
         const sourceLabel = hasAiRefinement ? 'Gemini' : 'AI быстрый'
         return <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204 ai-result-card-v225" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
-          <AiPoster item={item} title={title} index={index}/>
+          <div className="ai-poster-shell" data-rank={index + 1}>
+            <img className="ai-card-poster-img" loading="eager" fetchPriority="high" decoding="async" width="320" height="480" src={poster} alt={title ? `Постер аниме ${title}` : 'Постер аниме'} onError={event => { event.currentTarget.src = '/posters/name.svg' }}/>
+          </div>
           <div className="ai-card-info">
             <div className="ai-card-topline">
               <span>{sourceLabel} {item.match || 80}%</span>
