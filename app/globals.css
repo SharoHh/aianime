@@ -24897,3 +24897,8 @@ a.ai-result-card-v225{
   .ai-card-topline{align-items:flex-start!important;}
   .ai-card-topline i{display:none!important;}
 }
+
+/* v228: richer AI recommendation cards */
+.ai-card-topline span{max-width:100%;white-space:normal!important;line-height:1.15!important;}
+.ai-result-card-v225 p{font-weight:750!important;color:#5d5578!important;line-height:1.35!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.ai-result-card-v225 b{line-height:1.15!important;}

@@ -27,6 +27,15 @@ const QUICK_PRESETS = [
 
 const AI_REFINE_TIMEOUT_MS = 5200
 
+
+function getAiConfidenceLabel(match = 80, hasGemini = false){
+  const score = Number(match || 0)
+  if(score >= 92) return hasGemini ? 'Gemini · точное попадание' : 'быстрый · очень близко'
+  if(score >= 84) return hasGemini ? 'Gemini · попал в вайб' : 'быстрый · по вайбу'
+  if(score >= 74) return hasGemini ? 'Gemini · близко по смыслу' : 'быстрый · похоже'
+  return hasGemini ? 'Gemini · на пробу' : 'быстрый · на пробу'
+}
+
 function formatAiTime(ms){
   if(!ms || ms < 100) return ''
   const seconds = ms / 1000
@@ -431,8 +440,8 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
   }, [results])
 
   const statusInfo = useMemo(() => {
-    if(refineState === 'loading') return { tone:'loading', title:'Мгновенный подбор уже на экране', text:'Gemini уточняет выдачу в фоне. Если ответ придёт быстро — AI-версия применится сама, без кнопок.' }
-    if(refineState === 'ai-ready') return { tone:'ready', title:'Gemini применил AI-подбор', text: refineSummary || 'AI уточнил выдачу по смыслу запроса и оставил самые близкие варианты.' }
+    if(refineState === 'loading') return { tone:'loading', title:'Мгновенный подбор уже на экране', text:'Сначала показываем быстрый вариант, затем Gemini сам заменит его на более точный, если успеет быстро.' }
+    if(refineState === 'ai-ready') return { tone:'ready', title:'Gemini применил AI-подбор', text: refineSummary || 'Gemini перечитал запрос как человек и оставил варианты, которые лучше попадают в настроение.' }
     if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор готов', text:'Gemini не ответил быстро или был на лимите. Результат не сброшен — можно смотреть сразу.' }
     if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл, персонажа или настроение.' }
     return { tone:'idle', title:'Готов к AI-подбору', text:'Пиши как человек: персонаж, вайб, жанр, похожий тайтл или даже кривой запрос — быстрый результат появится сразу.' }
@@ -622,14 +631,14 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         const original = String(item.originalTitle || item.englishTitle || '').trim()
         const showOriginal = original && normalizeSearchText(original) !== normalizeSearchText(title)
         const poster = getPosterSrc(item)
-        const sourceLabel = hasAiRefinement ? 'Gemini' : 'AI быстрый'
+        const sourceLabel = getAiConfidenceLabel(item.match, hasAiRefinement)
         return <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204 ai-result-card-v225" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
           <div className="ai-poster-shell" data-rank={index + 1}>
             <img className="ai-card-poster-img" loading="eager" fetchPriority="high" decoding="async" width="320" height="480" src={poster} alt={title ? `Постер аниме ${title}` : 'Постер аниме'} onError={event => { event.currentTarget.src = '/posters/name.svg' }}/>
           </div>
           <div className="ai-card-info">
             <div className="ai-card-topline">
-              <span>{sourceLabel} {item.match || 80}%</span>
+              <span>{sourceLabel}</span>
               {index < 3 ? <i>топ {index + 1}</i> : null}
             </div>
             <b>{title}</b>
