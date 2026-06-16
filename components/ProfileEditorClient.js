@@ -150,7 +150,7 @@ export default function ProfileEditorClient({ user }){
         <summary>Указать картинку ссылкой</summary>
         <div className="profile-clean-grid">
           <label><span>Аватар URL</span><input value={profile.avatar} onChange={e=>update('avatar', e.target.value)} placeholder="/posters/oshi.svg"/></label>
-          <label><span>Фон URL</span><input value={profile.cover} onChange={e=>update('cover', e.target.value)} placeholder="/images/profile-sidebar-bg.png"/></label>
+          <label><span>Фон URL</span><input value={profile.cover} onChange={e=>update('cover', e.target.value)} placeholder="/images/profile-sidebar-bg-960.webp"/></label>
         </div>
       </details>
 

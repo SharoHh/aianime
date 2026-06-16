@@ -152,7 +152,7 @@ async function recommendGemini(promptPayload, body, model){
   if(!apiKey) return localPayload(promptPayload, body, 'Gemini API key не задан на AI-backend, показан локальный запасной подбор.', { reason:'missing_gemini_api_key' })
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), Number(process.env.GEMINI_TIMEOUT_MS || process.env.AI_BACKEND_TIMEOUT_MS || 12000))
+  const timeout = setTimeout(() => controller.abort(), Math.min(Math.max(Number(process.env.GEMINI_TIMEOUT_MS || process.env.AI_BACKEND_TIMEOUT_MS || 7000), 3000), 8000))
 
   try{
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModelPath(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
@@ -164,7 +164,7 @@ async function recommendGemini(promptPayload, body, model){
         contents: [{ role:'user', parts:[{ text: JSON.stringify(promptPayload) }] }],
         generationConfig: {
           temperature: 0.25,
-          maxOutputTokens: 1400,
+          maxOutputTokens: Math.min(Math.max(Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || process.env.AI_MAX_OUTPUT_TOKENS || 520), 320), 700),
           responseMimeType: 'application/json'
         }
       })
@@ -202,7 +202,7 @@ async function recommendOpenAI(promptPayload, body, model){
   if(!apiKey) return localPayload(promptPayload, body, 'OpenAI API key не задан на AI-backend, показан локальный запасной подбор.', { reason:'missing_openai_api_key' })
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), Number(process.env.OPENAI_TIMEOUT_MS || process.env.AI_BACKEND_TIMEOUT_MS || 12000))
+  const timeout = setTimeout(() => controller.abort(), Math.min(Math.max(Number(process.env.OPENAI_TIMEOUT_MS || process.env.AI_BACKEND_TIMEOUT_MS || 7000), 3000), 8000))
 
   try{
     const response = await fetch('https://api.openai.com/v1/responses', {
@@ -215,7 +215,7 @@ async function recommendOpenAI(promptPayload, body, model){
       body: JSON.stringify({
         model,
         store: false,
-        max_output_tokens: 1600,
+        max_output_tokens: Math.min(Math.max(Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || process.env.AI_MAX_OUTPUT_TOKENS || 650), 320), 900),
         input: [
           { role: 'developer', content: [{ type: 'input_text', text: systemPrompt() }] },
           { role: 'user', content: [{ type:'input_text', text: JSON.stringify(promptPayload) }] }

@@ -8,7 +8,7 @@ export const baseProfileDefaults = {
   name: 'Профиль Aianime',
   level: 'Новый участник',
   avatar: '/posters/oshi.svg',
-  cover: '/images/profile-sidebar-bg.png'
+  cover: '/images/profile-sidebar-bg-960.webp'
 }
 
 const AUTH_USER_CACHE_KEY = 'anime:auth-user-cache'

@@ -22,7 +22,8 @@ AI_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash-lite
 AI_BACKEND_SECRET=Aianime_ai_backend_secret_2026
-AI_BACKEND_TIMEOUT_MS=12000
+AI_BACKEND_TIMEOUT_MS=7000
+GEMINI_MAX_OUTPUT_TOKENS=520
 PORT=8787
 ```
 
@@ -67,6 +68,8 @@ AI_RECOMMEND_ENDPOINT=http://IP_ИЛИ_ДОМЕН_AI_VPS:8787/recommend
 AI_RECOMMEND_SECRET=Aianime_ai_backend_secret_2026
 AI_RECOMMEND_TIMEOUT_MS=8000
 AI_RECOMMEND_CACHE_TTL_MS=21600000
+AI_RECOMMEND_CANDIDATES=14
+GEMINI_MAX_OUTPUT_TOKENS=520
 ```
 
 Если хочешь держать Gemini прямо на основном сайте без отдельного backend:
@@ -85,3 +88,12 @@ AI_RECOMMEND_TIMEOUT_MS=8000
 ```env
 AI_RECOMMEND_ENDPOINT=https://YOUR-VERCEL-DOMAIN.vercel.app/api/recommend
 ```
+
+
+## v232 правила стоимости/скорости
+
+- Основной сайт ждёт внешний AI-backend максимум `AI_RECOMMEND_TIMEOUT_MS`, но код ограничивает значение 8 секундами, чтобы пользователь не зависал.
+- Backend сам режет Gemini/OpenAI timeout до 3-8 секунд.
+- Gemini output по умолчанию ограничен `GEMINI_MAX_OUTPUT_TOKENS=520`, чтобы один запрос не сжирал тысячи токенов без нужды.
+- Успешные внешние ответы кэшируются на основном сайте `AI_RECOMMEND_CACHE_TTL_MS=21600000` (6 часов).
+- При 429/quota основной сайт включает cooldown и показывает локальный подбор, а не долбит Gemini повторно.

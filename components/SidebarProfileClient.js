@@ -7,7 +7,7 @@ const defaults = {
   name: 'Haruno',
   level: 'Уровень 12',
   avatar: '/posters/oshi.svg',
-  cover: '/images/profile-sidebar-bg.png'
+  cover: '/images/profile-sidebar-bg-960.webp'
 }
 
 function readProfile(){
