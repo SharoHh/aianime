@@ -1,7 +1,7 @@
 import { getAnimeList } from '@/lib/animeRepository'
 import { recommendWithOpenAI } from '@/lib/openAiAnimeRecommend'
 
-const AI_CACHE_TTL_MS = Number(process.env.AI_RECOMMEND_CACHE_TTL_MS || 20 * 60 * 1000)
+const AI_CACHE_TTL_MS = Number(process.env.AI_RECOMMEND_CACHE_TTL_MS || 6 * 60 * 60 * 1000)
 const AI_RESPONSE_CACHE = globalThis.__aianimeAiResponseCache || new Map()
 globalThis.__aianimeAiResponseCache = AI_RESPONSE_CACHE
 
