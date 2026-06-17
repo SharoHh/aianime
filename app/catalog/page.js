@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 import CatalogClient from './CatalogClient'
 import { animeListJsonLd, jsonLd } from '@/lib/seo'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 function compactAnimeText(value, limit = 220){
   const text = String(value || '').replace(/\s+/g, ' ').trim()
   if(!text) return ''
@@ -57,50 +58,8 @@ function compactAnimeItems(items = [], limit = 1000, options = {}){
   return safe.slice(0, Math.max(1, Number(limit || 1000))).map(item => compactAnimeItem(item, options))
 }
 
-function isBrokenCatalogText(item = {}){
-  const text = [item.title, item.titleRu, item.displayTitle, item.originalTitle, item.description, item.slug].filter(Boolean).join(' ').toLowerCase()
-  return text.includes('catalog-title-')
-    || text.includes('стальной алхимик3')
-    || text.includes('тетрадь смерти4')
-}
-
-function decodePosterUrl(value){
-  const raw = String(value || '').trim()
-  if(!raw) return ''
-  try{ return decodeURIComponent(raw) }catch{ return raw }
-}
-
-function isLocalSvgPoster(url){
-  const raw = String(url || '').trim().toLowerCase()
-  const decoded = decodePosterUrl(raw).toLowerCase()
-  return [raw, decoded].some(value => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(value))
-}
-
-function isPlaceholderPoster(url){
-  const poster = String(url || '').trim().toLowerCase()
-  if(!poster) return true
-  if(poster.startsWith('/api/image')){
-    try{
-      const parsed = new URL(poster, 'https://aianime.local')
-      const source = parsed.searchParams.get('url') || ''
-      return !source || isLocalSvgPoster(source)
-    }catch{
-      return true
-    }
-  }
-  return isLocalSvgPoster(poster) || /placeholder|no[-_]?poster|default/.test(poster)
-}
-
 function isRenderableCatalogItem(item = {}){
-  const slug = String(item.slug || '').trim().toLowerCase()
-  if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
-  if(isBrokenCatalogText(item)) return false
-  const title = String(item.title || item.displayTitle || item.titleRu || '').trim()
-  if(!title) return false
-  if(item.hasRealPoster === false || isPlaceholderPoster(item.poster || item.poster_url)) return false
-  // Не показываем карточки, которые точно ведут в пустоту, являются старыми seed-заглушками
-  // или ещё не готовы визуально из-за декоративного placeholder-постера.
-  return true
+  return isPublicReadyAnimeItem(item)
 }
 
 export default async function Catalog(){

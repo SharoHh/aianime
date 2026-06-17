@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { filterAndSortAnime, getCatalogHint } from '@/lib/searchRelevance'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 
 const statusLabels = { all:'Все статусы', ongoing:'Онгоинг', completed:'Завершено', released:'Фильм' }
 const kindLabels = { all:'Любой тип', tv:'TV сериал', movie:'Фильм', ova:'OVA' }
@@ -27,40 +28,8 @@ function animeHref(slug){
   return `/anime/${encodeURIComponent(safe)}`
 }
 
-function decodePosterUrl(value){
-  const raw = String(value || '').trim()
-  if(!raw) return ''
-  try{ return decodeURIComponent(raw) }catch{ return raw }
-}
-
-function isLocalSvgPoster(url){
-  const raw = String(url || '').trim().toLowerCase()
-  const decoded = decodePosterUrl(raw).toLowerCase()
-  return [raw, decoded].some(value => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(value))
-}
-
-function hasPlaceholderPoster(item){
-  const poster = String(item?.poster || '').trim().toLowerCase()
-  if(!poster) return true
-  if(poster.startsWith('/api/image')){
-    try{
-      const parsed = new URL(poster, window.location.origin)
-      const source = parsed.searchParams.get('url') || ''
-      return !source || isLocalSvgPoster(source)
-    }catch{
-      return true
-    }
-  }
-  return isLocalSvgPoster(poster) || /placeholder|no[-_]?poster|default/.test(poster)
-}
-
 function visibleCatalogItem(item){
-  const slug = String(item?.slug || '').trim().toLowerCase()
-  if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
-  const text = [item.title, item.titleRu, item.displayTitle, item.originalTitle, item.description, item.slug].filter(Boolean).join(' ').toLowerCase()
-  if(text.includes('catalog-title-') || text.includes('стальной алхимик3') || text.includes('тетрадь смерти4')) return false
-  if(item?.hasRealPoster === false || hasPlaceholderPoster(item)) return false
-  return true
+  return isPublicReadyAnimeItem(item)
 }
 
 export default function CatalogClient({ items }){

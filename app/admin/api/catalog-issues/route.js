@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { cleanPublicText } from '@/lib/ruContent'
+import { hasUsableAnimePoster, isPlaceholderPoster } from '@/lib/animeQuality'
 
 const BAD_SYMBOL_RE = /[●•◆■□◦]{2,}|[�]/
 const ENGLISH_GENRE_RE = /\b(Urban Fantasy|Slice of Life|Award Winning|Supernatural|Suspense|Avant Garde|Girls Love|Boys Love|Romance|Comedy|Action|Adventure|Fantasy|Drama|Horror|Sci-Fi|Sports|Mystery|Psychological|Thriller|School)\b/i
@@ -73,20 +74,9 @@ function isMissing(value){
 }
 
 
-function isLocalSvgPoster(value){
-  const poster = String(value || '').trim().toLowerCase()
-  if(!poster) return false
-  let decoded = poster
-  try{ decoded = decodeURIComponent(poster).toLowerCase() }catch{}
-  return [poster, decoded].some(item => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(item))
-}
-
-function isBadPosterUrl(value){
-  const poster = String(value || '').trim()
-  if(!poster) return true
-  if(isLocalSvgPoster(poster)) return true
-  if(/placeholder|no[-_]?poster|default/i.test(poster)) return true
-  return false
+function isBadPosterUrl(rowOrValue){
+  if(typeof rowOrValue === 'string') return !rowOrValue || isPlaceholderPoster(rowOrValue) || !hasUsableAnimePoster(rowOrValue)
+  return !hasUsableAnimePoster(rowOrValue)
 }
 
 function hasEnglishGenres(row){
@@ -111,7 +101,7 @@ export async function GET(){
 
       if(!titleRu) issues.push(issueItem(row, 'missing_title_ru', 'warning', 'Нет русского названия'))
       if(BAD_SYMBOL_RE.test(titleBlob)) issues.push(issueItem(row, 'bad_title_symbols', 'error', 'В названии есть мусорные символы'))
-      if(isBadPosterUrl(row.poster_url)) issues.push(issueItem(row, 'missing_poster', 'warning', 'Нет реального постера: локальная SVG-заглушка или пустой poster_url'))
+      if(isBadPosterUrl(row)) issues.push(issueItem(row, 'missing_poster', 'warning', 'Нет реального постера: локальная SVG-заглушка/пустой poster_url или нет usable remote source'))
       if(isMissing(row.description_ru || row.description)) issues.push(issueItem(row, 'missing_description_ru', 'warning', 'Нет нормального русского описания'))
       if(hasEnglishGenres(row)) issues.push(issueItem(row, 'english_ru_content', 'warning', 'Английские жанры/слова в RU-контенте'))
       if(!String(row.kodik_id || row.kodik_link || '').trim()) issues.push(issueItem(row, 'missing_kodik', 'warning', 'Нет Kodik id/link'))

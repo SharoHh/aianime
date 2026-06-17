@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { pushToast } from '@/components/ToastCenter'
 import { translateGenres, makeRussianDescription, cleanPublicText } from '@/lib/ruContent'
+import { isUsableAnimePoster } from '@/lib/animeQuality'
 
 function hasCyrillic(value){
   return /[А-Яа-яЁё]/.test(String(value || ''))
@@ -137,29 +138,8 @@ function adminFetch(url, options = {}){
   return fetch(url, { ...options, credentials:'same-origin', headers })
 }
 
-function isLocalSvgPoster(value){
-  const poster = String(value || '').trim().toLowerCase()
-  if(!poster) return false
-  let decoded = poster
-  try{ decoded = decodeURIComponent(poster).toLowerCase() }catch{}
-  return [poster, decoded].some(item => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(item))
-}
-
 function hasRealPosterUrl(value){
-  const poster = String(value || '').trim().toLowerCase()
-  if(!poster) return false
-  if(poster.startsWith('/api/image')){
-    try{
-      const parsed = new URL(poster, window.location.origin)
-      const source = parsed.searchParams.get('url') || ''
-      return /^https?:\/\//i.test(source) && !isLocalSvgPoster(source)
-    }catch{
-      return false
-    }
-  }
-  if(isLocalSvgPoster(poster)) return false
-  if(poster.includes('/posters/magic') || poster.includes('/posters/placeholder')) return false
-  return /^https?:\/\//i.test(poster) || poster.startsWith('/images/')
+  return isUsableAnimePoster(value)
 }
 
 function guessRussianTitleFromItem(item = {}, form = {}){
@@ -545,7 +525,7 @@ export default function AdminAnimeClient({ items = [] }){
           <span className={!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'ok' : 'warn'}>{!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'Без мусора' : 'Есть ●●'}</span>
           <span className={!hasEnglishGenre(form.genres) ? 'ok' : 'warn'}>{!hasEnglishGenre(form.genres) ? 'Жанры RU' : 'Есть англ. жанры'}</span>
           <span className={!isPlaceholder(form.descriptionRu) && !isShortDescription(form.descriptionRu) ? 'ok' : 'warn'}>{!isPlaceholder(form.descriptionRu) && !isShortDescription(form.descriptionRu) ? 'Описание норм' : 'Нужно описание'}</span>
-          <span className={form.posterUrl ? 'ok' : 'warn'}>{form.posterUrl ? 'Постер есть' : 'Нет постера'}</span>
+          <span className={hasRealPosterUrl(form.posterUrl) ? 'ok' : 'warn'}>{hasRealPosterUrl(form.posterUrl) ? 'Постер норм' : 'Нет реального постера'}</span>
           {dirty ? <span className="warn">Есть несохранённые правки</span> : <span className="ok">Сохранено</span>}
         </div>
 

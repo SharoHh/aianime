@@ -445,9 +445,22 @@ function collapseOptionsToVoiceRepresentatives(rows = []){
   })
 }
 
+function isTrustedPlayerOptionForUi(option = {}, item = {}){
+  if(!usable(option)) return false
+  const expected = expectedEpisodes(item)
+  const source = String(option.source || '').toLowerCase()
+  const score = Number(option.matchScore || option.raw?.match_score || 0) || 0
+  const reliable = Boolean(option.reliableId || option.raw?.reliable_id)
+  if(source === 'kodik-api-episode' || source === 'kodik-api-season-episode') return true
+  if(reliable || score >= 160) return true
+  // Не показываем один слабый iframe как “Плеер Kodik (1 эп.)”: чаще всего это соседний/недоступный материал.
+  if(expected > 1) return false
+  return false
+}
+
 function relaxedOptionsForUi(options = [], item = {}){
   const valid = (Array.isArray(options) ? options : [])
-    .filter(usable)
+    .filter(option => isTrustedPlayerOptionForUi(option, item))
     .filter(option => !isMovieAnime(item) || (isMovieOption(option) && !isSerialOption(option)))
   if(!valid.length) return []
   const expected = expectedEpisodes(item)
