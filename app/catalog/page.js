@@ -64,9 +64,31 @@ function isBrokenCatalogText(item = {}){
     || text.includes('тетрадь смерти4')
 }
 
+function decodePosterUrl(value){
+  const raw = String(value || '').trim()
+  if(!raw) return ''
+  try{ return decodeURIComponent(raw) }catch{ return raw }
+}
+
+function isLocalSvgPoster(url){
+  const raw = String(url || '').trim().toLowerCase()
+  const decoded = decodePosterUrl(raw).toLowerCase()
+  return [raw, decoded].some(value => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(value))
+}
+
 function isPlaceholderPoster(url){
   const poster = String(url || '').trim().toLowerCase()
-  return !poster || /\/posters\/magic|placeholder|no[-_]?poster|default/.test(poster)
+  if(!poster) return true
+  if(poster.startsWith('/api/image')){
+    try{
+      const parsed = new URL(poster, 'https://aianime.local')
+      const source = parsed.searchParams.get('url') || ''
+      return !source || isLocalSvgPoster(source)
+    }catch{
+      return true
+    }
+  }
+  return isLocalSvgPoster(poster) || /placeholder|no[-_]?poster|default/.test(poster)
 }
 
 function isRenderableCatalogItem(item = {}){

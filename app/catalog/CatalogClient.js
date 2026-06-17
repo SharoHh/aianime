@@ -27,9 +27,31 @@ function animeHref(slug){
   return `/anime/${encodeURIComponent(safe)}`
 }
 
+function decodePosterUrl(value){
+  const raw = String(value || '').trim()
+  if(!raw) return ''
+  try{ return decodeURIComponent(raw) }catch{ return raw }
+}
+
+function isLocalSvgPoster(url){
+  const raw = String(url || '').trim().toLowerCase()
+  const decoded = decodePosterUrl(raw).toLowerCase()
+  return [raw, decoded].some(value => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(value))
+}
+
 function hasPlaceholderPoster(item){
   const poster = String(item?.poster || '').trim().toLowerCase()
-  return !poster || /\/posters\/magic|placeholder|no[-_]?poster|default/.test(poster)
+  if(!poster) return true
+  if(poster.startsWith('/api/image')){
+    try{
+      const parsed = new URL(poster, window.location.origin)
+      const source = parsed.searchParams.get('url') || ''
+      return !source || isLocalSvgPoster(source)
+    }catch{
+      return true
+    }
+  }
+  return isLocalSvgPoster(poster) || /placeholder|no[-_]?poster|default/.test(poster)
 }
 
 function visibleCatalogItem(item){

@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { getAnimeList } from '@/lib/animeRepository'
+import { getAnimeAdminList } from '@/lib/animeRepository'
 import AdminAnimeClient from './AdminAnimeClient'
 
 export const metadata = { title:'Админпанель — AIanime', robots:{ index:false, follow:false } }
 
 export default async function AdminAnimePage(){
-  const anime = await getAnimeList({limit:1000})
+  const anime = await getAnimeAdminList({limit:1000})
   return <main className="admin-page">
     <section className="admin-episodes">
       <div className="page-head admin-page-head-row">

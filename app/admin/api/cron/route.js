@@ -8,6 +8,7 @@ const jobs = {
   titles: { label:'Русские названия', path:'/api/cron/russify-titles', params:{ enable:'1', limit:'80' } },
   russify: { label:'Описание/жанры', path:'/api/cron/russify', params:{ enable:'1', limit:'80' } },
   missingTitles: { label:'Добор missing titles', path:'/api/cron/missing-titles', params:{} },
+  enrichCatalog: { label:'Обогащение каталога', path:'/api/cron/enrich-catalog', params:{} },
 }
 
 function json(data, status = 200){
@@ -48,7 +49,7 @@ export async function POST(request){
 
   const base = process.env.AIANIME_INTERNAL_URL || process.env.AIANIME_URL || 'http://127.0.0.1:3000'
   const allowedExtra = {}
-  for(const key of ['limit','offset','pages','page','all','dry','force','onlyMissing','clean','only','minDescriptionLength','q','titles','type','types','preset','order','details','delay']){
+  for(const key of ['limit','offset','pages','page','all','dry','force','onlyMissing','clean','only','minDescriptionLength','q','titles','type','types','preset','order','details','delay','slug','slugs','scan','jikan','kodik','episodes']){
     if(body[key] !== undefined && body[key] !== null && body[key] !== '') allowedExtra[key] = body[key]
   }
 

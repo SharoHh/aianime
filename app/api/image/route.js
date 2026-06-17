@@ -19,7 +19,8 @@ const ALLOWED_HOSTS = [
   'myanimelist.net',
   'i.kodikres.com',
   'kodikres.com',
-  'shikimori.one'
+  'shikimori.one',
+  'shikimori.io'
 ]
 
 function isAllowedRemoteImage(url){

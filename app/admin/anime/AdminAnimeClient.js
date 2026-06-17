@@ -114,9 +114,69 @@ const filterLabels = {
 
 const validFilters = new Set(Object.keys(filterLabels))
 
+
+function currentAdminSecret(){
+  if(typeof window === 'undefined') return ''
+  try{
+    const params = new URLSearchParams(window.location.search || '')
+    const fromUrl = params.get('admin_secret') || params.get('adminToken') || ''
+    if(fromUrl){
+      window.sessionStorage?.setItem('aianime_admin_secret', fromUrl)
+      return fromUrl
+    }
+    return window.sessionStorage?.getItem('aianime_admin_secret') || ''
+  }catch{
+    return ''
+  }
+}
+
+function adminFetch(url, options = {}){
+  const secret = currentAdminSecret()
+  const headers = { ...(options.headers || {}) }
+  if(secret) headers['x-admin-secret'] = secret
+  return fetch(url, { ...options, credentials:'same-origin', headers })
+}
+
+function isLocalSvgPoster(value){
+  const poster = String(value || '').trim().toLowerCase()
+  if(!poster) return false
+  let decoded = poster
+  try{ decoded = decodeURIComponent(poster).toLowerCase() }catch{}
+  return [poster, decoded].some(item => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(item))
+}
+
+function hasRealPosterUrl(value){
+  const poster = String(value || '').trim().toLowerCase()
+  if(!poster) return false
+  if(poster.startsWith('/api/image')){
+    try{
+      const parsed = new URL(poster, window.location.origin)
+      const source = parsed.searchParams.get('url') || ''
+      return /^https?:\/\//i.test(source) && !isLocalSvgPoster(source)
+    }catch{
+      return false
+    }
+  }
+  if(isLocalSvgPoster(poster)) return false
+  if(poster.includes('/posters/magic') || poster.includes('/posters/placeholder')) return false
+  return /^https?:\/\//i.test(poster) || poster.startsWith('/images/')
+}
+
+function guessRussianTitleFromItem(item = {}, form = {}){
+  const candidates = [
+    form.titleRu,
+    item.titleRu,
+    item.displayTitle,
+    item.title,
+    item.kodikTitle,
+    item.otherTitle,
+    item.titleOrigKodik,
+  ]
+  return candidates.map(cleanTitle).find(value => value && hasCyrillic(value)) || ''
+}
+
 function itemHasPoster(item){
-  const poster = String(item?.poster || '').trim()
-  return Boolean(poster && !poster.includes('/posters/magic') && !poster.includes('/posters/placeholder'))
+  return hasRealPosterUrl(item?.poster || item?.posterUrl || item?.banner)
 }
 
 function itemMatchesFilter(item, filter){
@@ -203,7 +263,7 @@ export default function AdminAnimeClient({ items = [] }){
     if(!form.slug) return false
     setSaving(true)
     try{
-      const res = await fetch('/admin/api/anime', {
+      const res = await adminFetch('/admin/api/anime', {
         method:'PATCH',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify(form)
@@ -298,14 +358,31 @@ export default function AdminAnimeClient({ items = [] }){
   }
 
   function fillRuFromCurrent(){
-    if(!form.titleRu && selected?.title && hasCyrillic(selected.title)){
-      update('titleRu', selected.title)
+    const guessed = guessRussianTitleFromItem(selected, form)
+    if(guessed && (!form.titleRu || hasLatinOnly(form.titleRu) || !hasCyrillic(form.titleRu))){
+      update('titleRu', guessed)
       pushToast('Русское название подставлено', 'success')
       return
     }
-    if(hasLatinOnly(form.titleRu) && selected?.title && hasCyrillic(selected.title)){
-      update('titleRu', selected.title)
-      pushToast('Латинский title_ru заменён русским из карточки', 'success')
+    pushToast('В данных тайтла нет готового русского названия. Запусти “Добить постер/Kodik”, потом попробуй снова.', 'error')
+  }
+
+  async function enrichSelected(){
+    if(!selected?.slug) return
+    setSaving(true)
+    try{
+      const res = await adminFetch('/admin/api/cron', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ job:'enrichCatalog', slugs:selected.slug, limit:1, scan:1000, delay:1000, jikan:1, kodik:1, episodes:1 })
+      })
+      const payload = await res.json().catch(()=>null)
+      if(!res.ok || payload?.ok === false) throw new Error(payload?.error || payload?.payload?.error || 'Обогащение не сработало')
+      pushToast('Тайтл добит через Jikan/Kodik. Обнови список или страницу.', 'success')
+    }catch(error){
+      pushToast(error?.message || 'Ошибка обогащения', 'error')
+    }finally{
+      setSaving(false)
     }
   }
 
@@ -340,7 +417,7 @@ export default function AdminAnimeClient({ items = [] }){
           descriptionRu: cleanDescription(item.descriptionRu || item.description),
           description: cleanDescription(item.description),
         }
-        const res = await fetch('/admin/api/anime', {
+        const res = await adminFetch('/admin/api/anime', {
           method:'PATCH',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(payload)
@@ -389,7 +466,7 @@ export default function AdminAnimeClient({ items = [] }){
           }) : cleanDescription(currentDescription),
           description: cleanDescription(item.description),
         }
-        const res = await fetch('/admin/api/anime', {
+        const res = await adminFetch('/admin/api/anime', {
           method:'PATCH',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(payload)
@@ -502,6 +579,7 @@ export default function AdminAnimeClient({ items = [] }){
           <button className="secondary" onClick={translateGenresInForm}>Перевести жанры</button>
           <button className="secondary" onClick={generateDescriptionInForm}>Описание RU</button>
           <button className="secondary" onClick={cleanupContentForm}>Контент fix</button>
+          <button className="secondary" onClick={enrichSelected} disabled={saving}>Добить постер/Kodik</button>
           <button className="secondary" onClick={fillRuFromCurrent}>Подставить RU</button>
           <button className="secondary" onClick={goNext} disabled={!nextProblem}>Следующий</button>
           <Link className="secondary" href={`/anime/${selected.slug}`}>Открыть на сайте</Link>

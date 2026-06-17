@@ -4,6 +4,29 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { pushToast } from '@/components/ToastCenter'
 
+
+function currentAdminSecret(){
+  if(typeof window === 'undefined') return ''
+  try{
+    const params = new URLSearchParams(window.location.search || '')
+    const fromUrl = params.get('admin_secret') || params.get('adminToken') || ''
+    if(fromUrl){
+      window.sessionStorage?.setItem('aianime_admin_secret', fromUrl)
+      return fromUrl
+    }
+    return window.sessionStorage?.getItem('aianime_admin_secret') || ''
+  }catch{
+    return ''
+  }
+}
+
+function adminFetch(url, options = {}){
+  const secret = currentAdminSecret()
+  const headers = { ...(options.headers || {}) }
+  if(secret) headers['x-admin-secret'] = secret
+  return fetch(url, { ...options, credentials:'same-origin', headers })
+}
+
 const jobs = [
   { id:'sync', title:'Jikan / MAL', text:'Обновить каталог из Jikan. Не трогает дизайн сайта.', params:{ limit:25 } },
   { id:'kodik', title:'Kodik metadata', text:'Русские названия, качество, озвучки, Kodik-ссылки.', params:{ limit:30, all:1 } },
@@ -60,7 +83,7 @@ export default function AdminDiagnosticsClient(){
   async function loadCatalogIssues(){
     setCatalogIssuesLoading(true)
     try{
-      const res = await fetch('/admin/api/catalog-issues', { cache:'no-store' })
+      const res = await adminFetch('/admin/api/catalog-issues', { cache:'no-store' })
       const payload = await res.json()
       setCatalogIssues(payload)
     }catch(error){
@@ -113,7 +136,7 @@ export default function AdminDiagnosticsClient(){
     try{
       const params = new URLSearchParams({ q, limit:'10' })
       if(missingType) params.set('type', missingType)
-      const res = await fetch(`/admin/api/title-search?${params.toString()}`, { cache:'no-store' })
+      const res = await adminFetch(`/admin/api/title-search?${params.toString()}`, { cache:'no-store' })
       const payload = await res.json()
       if(!payload.ok) throw new Error(payload.error || 'Поиск не сработал')
       setMissingSearch(payload)
@@ -130,7 +153,7 @@ export default function AdminDiagnosticsClient(){
     if(!candidate?.malId) return
     setImportingMalId(String(candidate.malId))
     try{
-      const res = await fetch('/admin/api/import-title', {
+      const res = await adminFetch('/admin/api/import-title', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify({ malId:candidate.malId, titleRu:missingQuery })
@@ -158,7 +181,7 @@ export default function AdminDiagnosticsClient(){
     try{
       const body = { job:job.id, ...job.params }
       if(job.id === 'titles' || job.id === 'russify') body.offset = offset || 0
-      const res = await fetch('/admin/api/cron', {
+      const res = await adminFetch('/admin/api/cron', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify(body)
@@ -181,7 +204,7 @@ export default function AdminDiagnosticsClient(){
     const collected = []
     try{
       for(const currentOffset of [0,80,160,240,320,400,480,560,640]){
-        const res = await fetch('/admin/api/cron', {
+        const res = await adminFetch('/admin/api/cron', {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           body:JSON.stringify({ job:'titles', limit:80, offset:currentOffset })
@@ -207,7 +230,7 @@ export default function AdminDiagnosticsClient(){
     const collected = []
     try{
       for(const currentOffset of [0,80,160,240,320,400,480,560,640]){
-        const res = await fetch('/admin/api/cron', {
+        const res = await adminFetch('/admin/api/cron', {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           body:JSON.stringify({ job:'titles', limit:80, offset:currentOffset })
@@ -216,7 +239,7 @@ export default function AdminDiagnosticsClient(){
         collected.push({ step:'titles', offset:currentOffset, result:payload })
         if(!payload.ok) throw new Error(payload.error || payload.payload?.error || `Ошибка title_ru на offset ${currentOffset}`)
       }
-      const scheduleRes = await fetch('/admin/api/cron', {
+      const scheduleRes = await adminFetch('/admin/api/cron', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify({ job:'schedule', limit:25, pages:2 })
@@ -240,7 +263,7 @@ export default function AdminDiagnosticsClient(){
     const collected = []
     try{
       for(const currentOffset of [0,80,160,240,320,400,480,560,640]){
-        const res = await fetch('/admin/api/cron', {
+        const res = await adminFetch('/admin/api/cron', {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           body:JSON.stringify({ job:'russify', limit:80, offset:currentOffset, clean:1 })

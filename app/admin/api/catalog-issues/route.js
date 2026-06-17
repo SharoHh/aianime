@@ -72,6 +72,23 @@ function isMissing(value){
   return !text || PLACEHOLDER_RE.test(text)
 }
 
+
+function isLocalSvgPoster(value){
+  const poster = String(value || '').trim().toLowerCase()
+  if(!poster) return false
+  let decoded = poster
+  try{ decoded = decodeURIComponent(poster).toLowerCase() }catch{}
+  return [poster, decoded].some(item => /^\/posters\/[^?#]+\.svg(?:[?#].*)?$/.test(item))
+}
+
+function isBadPosterUrl(value){
+  const poster = String(value || '').trim()
+  if(!poster) return true
+  if(isLocalSvgPoster(poster)) return true
+  if(/placeholder|no[-_]?poster|default/i.test(poster)) return true
+  return false
+}
+
 function hasEnglishGenres(row){
   const genres = Array.isArray(row.genres) ? row.genres.join(' ') : String(row.genres || '')
   const description = `${row.description_ru || ''} ${row.description || ''}`
@@ -94,7 +111,7 @@ export async function GET(){
 
       if(!titleRu) issues.push(issueItem(row, 'missing_title_ru', 'warning', 'Нет русского названия'))
       if(BAD_SYMBOL_RE.test(titleBlob)) issues.push(issueItem(row, 'bad_title_symbols', 'error', 'В названии есть мусорные символы'))
-      if(!String(row.poster_url || '').trim()) issues.push(issueItem(row, 'missing_poster', 'warning', 'Нет poster_url'))
+      if(isBadPosterUrl(row.poster_url)) issues.push(issueItem(row, 'missing_poster', 'warning', 'Нет реального постера: локальная SVG-заглушка или пустой poster_url'))
       if(isMissing(row.description_ru || row.description)) issues.push(issueItem(row, 'missing_description_ru', 'warning', 'Нет нормального русского описания'))
       if(hasEnglishGenres(row)) issues.push(issueItem(row, 'english_ru_content', 'warning', 'Английские жанры/слова в RU-контенте'))
       if(!String(row.kodik_id || row.kodik_link || '').trim()) issues.push(issueItem(row, 'missing_kodik', 'warning', 'Нет Kodik id/link'))
