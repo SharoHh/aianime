@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { fetchJikanAnimeDetails, searchJikanAnimeVariants, normalizeJikanAnime, getJikanSearchQueryVariants, pickBestJikanSearchCandidate } from '@/lib/jikan'
 import { saveAnimeRowsToDb } from '@/lib/animeDbImport'
+import { enrichMissingTitleAfterImport, resolveRussianTitle } from '@/lib/missingTitleEnrichment'
 
 function json(data, status = 200){
   return NextResponse.json(data, {
@@ -55,11 +56,21 @@ export async function POST(request){
     }
 
     const normalized = normalizeJikanAnime(details)
-    if(titleRu) normalized.title_ru = titleRu
-    const database = await saveAnimeRowsToDb([normalized], { source:'jikan-manual', titleRu })
+    const resolvedTitleRu = resolveRussianTitle({ explicitTitleRu:titleRu, query:String(body.q || body.query || ''), malId:normalized.mal_id, row:normalized })
+    if(resolvedTitleRu) normalized.title_ru = resolvedTitleRu
+    const database = await saveAnimeRowsToDb([normalized], { source:'jikan-manual', titleRu:resolvedTitleRu })
     if(!database.ok){
       return json({ ok:false, error:database.error || database.reason || 'Supabase save failed', resolved }, 500)
     }
+
+    const enrichment = await enrichMissingTitleAfterImport({
+      normalized,
+      database,
+      query:String(body.q || body.query || ''),
+      titleRu:resolvedTitleRu,
+      enrichKodik: body.kodik !== false,
+      saveEpisodes: body.kodik !== false,
+    })
 
     return json({
       ok:true,
@@ -71,14 +82,15 @@ export async function POST(request){
         slug: normalized.slug,
         malId: normalized.mal_id,
         title: normalized.title,
-        titleRu: titleRu || normalized.title_ru || '',
+        titleRu: enrichment?.titleRu || resolvedTitleRu || normalized.title_ru || '',
         originalTitle: normalized.original_title,
         kind: normalized.kind,
         year: normalized.year,
         episodes: normalized.episodes,
         posterUrl: normalized.poster_url,
       },
-      database
+      database,
+      enrichment
     })
   }catch(error){
     return json({ ok:false, error:error?.message || 'Import failed' }, 500)

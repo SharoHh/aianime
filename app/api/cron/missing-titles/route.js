@@ -1,6 +1,7 @@
 import { verifyCronAccess, cronAuthError } from '@/lib/cronAuth'
 import { fetchJikanAnimePaged, fetchJikanAnimeDetails, normalizeJikanAnime, searchJikanAnimeVariants, pickBestJikanSearchCandidate, scoreJikanSearchCandidate } from '@/lib/jikan'
 import { saveAnimeRowsToDb } from '@/lib/animeDbImport'
+import { enrichMissingTitleAfterImport, resolveRussianTitle } from '@/lib/missingTitleEnrichment'
 
 function splitList(value){
   return String(value || '')
@@ -20,16 +21,27 @@ function cyrillicTitle(value){
   return hasCyrillic(ru) ? ru : ''
 }
 
-async function importMalId(malId, titleRu = ''){
+async function importMalId(malId, { titleRu = '', query = '', enrich = true, kodik = true } = {}){
   const details = await fetchJikanAnimeDetails(malId)
   if(!details) return { ok:false, malId, error:'not_found' }
   const normalized = normalizeJikanAnime(details)
-  if(titleRu) normalized.title_ru = titleRu
-  const database = await saveAnimeRowsToDb([normalized], { source:'jikan-missing-title-mal-id', titleRu })
-  return { ok:Boolean(database.ok), malId, resolvedBy:'mal_id', item:{ slug:normalized.slug, malId:normalized.mal_id, title:normalized.title, titleRu:titleRu || normalized.title_ru || '', kind:normalized.kind, year:normalized.year, episodes:normalized.episodes }, database }
+  const resolvedTitleRu = resolveRussianTitle({ explicitTitleRu:titleRu, query, malId, row:normalized })
+  if(resolvedTitleRu) normalized.title_ru = resolvedTitleRu
+  const database = await saveAnimeRowsToDb([normalized], { source:'jikan-missing-title-mal-id', titleRu:resolvedTitleRu })
+  const enrichment = enrich && database?.ok
+    ? await enrichMissingTitleAfterImport({ normalized, database, query, titleRu:resolvedTitleRu, enrichKodik:kodik, saveEpisodes:kodik })
+    : null
+  return {
+    ok:Boolean(database.ok),
+    malId,
+    resolvedBy:'mal_id',
+    item:{ slug:normalized.slug, malId:normalized.mal_id, title:normalized.title, titleRu:resolvedTitleRu || normalized.title_ru || '', kind:normalized.kind, year:normalized.year, episodes:normalized.episodes },
+    database,
+    enrichment
+  }
 }
 
-async function importQuery(q, type = ''){
+async function importQuery(q, type = '', { titleRu = '', enrich = true, kodik = true } = {}){
   const search = await searchJikanAnimeVariants({ q, type, limit:10, order:'title' })
   const picked = pickBestJikanSearchCandidate(search.data, q, { minScore:70 })
   const found = picked.item
@@ -47,10 +59,21 @@ async function importQuery(q, type = ''){
   let details = found
   try{ details = await fetchJikanAnimeDetails(found.mal_id) || found }catch{}
   const normalized = normalizeJikanAnime(details)
-  const titleRu = cyrillicTitle(q)
-  if(titleRu) normalized.title_ru = titleRu
-  const database = await saveAnimeRowsToDb([normalized], { source:'jikan-missing-title', titleRu })
-  return { ok:Boolean(database.ok), q, type:type || null, attempts:search.attempts, item:{ slug:normalized.slug, malId:normalized.mal_id, title:normalized.title, titleRu, kind:normalized.kind, year:normalized.year, episodes:normalized.episodes }, database }
+  const resolvedTitleRu = resolveRussianTitle({ explicitTitleRu:titleRu, query:q, malId:normalized.mal_id, row:normalized })
+  if(resolvedTitleRu) normalized.title_ru = resolvedTitleRu
+  const database = await saveAnimeRowsToDb([normalized], { source:'jikan-missing-title', titleRu:resolvedTitleRu })
+  const enrichment = enrich && database?.ok
+    ? await enrichMissingTitleAfterImport({ normalized, database, query:q, titleRu:resolvedTitleRu, enrichKodik:kodik, saveEpisodes:kodik })
+    : null
+  return {
+    ok:Boolean(database.ok),
+    q,
+    type:type || null,
+    attempts:search.attempts,
+    item:{ slug:normalized.slug, malId:normalized.mal_id, title:normalized.title, titleRu:resolvedTitleRu, kind:normalized.kind, year:normalized.year, episodes:normalized.episodes },
+    database,
+    enrichment
+  }
 }
 
 async function importTypePages({ types, pages, limit, order, withDetails, delay }){
@@ -79,6 +102,7 @@ export async function GET(request){
   const { searchParams } = new URL(request.url)
   const queries = splitList(searchParams.get('q') || searchParams.get('titles') || process.env.AIANIME_MISSING_TITLES || '')
   const malIds = splitList(searchParams.get('malId') || searchParams.get('mal_id') || searchParams.get('id')).map(Number).filter(x => Number.isFinite(x) && x > 0)
+  const explicitTitleRu = String(searchParams.get('titleRu') || searchParams.get('title_ru') || '').trim()
   const type = String(searchParams.get('type') || '').trim().toLowerCase()
   const preset = String(searchParams.get('preset') || '').trim().toLowerCase()
   const types = preset === 'mini'
@@ -88,6 +112,8 @@ export async function GET(request){
   const limit = Math.min(Math.max(Number(searchParams.get('limit') || 10), 1), 25)
   const order = searchParams.get('order') || 'popularity'
   const withDetails = searchParams.get('details') === '1'
+  const enrich = searchParams.get('enrich') !== '0'
+  const kodik = searchParams.get('kodik') !== '0'
   const delay = Math.min(Math.max(Number(searchParams.get('delay') || process.env.JIKAN_SYNC_DELAY_MS || 900), 500), 4000)
   const startedAt = new Date().toISOString()
   const imported = []
@@ -95,12 +121,12 @@ export async function GET(request){
 
   try{
     for(const malId of malIds){
-      imported.push(await importMalId(malId, ''))
+      imported.push(await importMalId(malId, { titleRu:explicitTitleRu, query:queries[0] || '', enrich, kodik }))
       await new Promise(resolve => setTimeout(resolve, delay))
     }
 
     for(const q of queries){
-      imported.push(await importQuery(q, type))
+      imported.push(await importQuery(q, type, { titleRu:explicitTitleRu, enrich, kodik }))
       await new Promise(resolve => setTimeout(resolve, delay))
     }
 
@@ -112,14 +138,14 @@ export async function GET(request){
     return Response.json({
       ok:true,
       source:'missing-titles',
-      requested:{ queries, malIds, type:type || null, preset:preset || null, types, pages, limit, order, details:withDetails },
+      requested:{ queries, malIds, titleRu:explicitTitleRu || null, type:type || null, preset:preset || null, types, pages, limit, order, details:withDetails, enrich, kodik },
       imported,
       typeBackfill: typeBackfill ? { batches:typeBackfill.batches, saved:typeBackfill.database?.saved || 0, database:typeBackfill.database } : null,
       saved: savedFromQueries + Number(typeBackfill?.database?.saved || 0),
       auth:auth.mode,
       startedAt,
       finishedAt:new Date().toISOString(),
-      hint:'Для точного импорта используй malId=57782. По q импорт теперь строгий и не сохранит первый левый результат.'
+      hint:'Для точного импорта используй malId=57782. По умолчанию импорт сразу дополняет title_ru/description и пробует Kodik-плеер. Можно отключить: enrich=0 или kodik=0.'
     })
   }catch(error){
     return Response.json({ ok:false, source:'missing-titles', error:error?.message || String(error), imported, typeBackfill, startedAt, finishedAt:new Date().toISOString() }, { status:200 })
