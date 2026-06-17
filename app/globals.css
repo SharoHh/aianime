@@ -24912,3 +24912,25 @@ a.ai-result-card-v225{
 .admin-catalog-issues{margin-top:18px}.admin-issue-summary{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.admin-issue-summary span{display:inline-flex;gap:6px;align-items:center;border:1px solid rgba(77,62,110,.1);background:#fff;border-radius:999px;padding:8px 12px;color:#6f6686;font-size:13px}.admin-issue-summary b{color:#201c3a}.admin-issue-table-wrap{overflow:auto;border:1px solid rgba(77,62,110,.1);border-radius:18px;background:#fff}.admin-issue-table{width:100%;border-collapse:collapse;min-width:760px}.admin-issue-table th,.admin-issue-table td{padding:12px 14px;border-bottom:1px solid rgba(77,62,110,.08);text-align:left;vertical-align:top}.admin-issue-table th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8b82a3;background:#faf8ff}.admin-issue-table td{font-size:13px;color:#4a435d}.admin-issue-table td b{display:block;color:#201c3a;font-size:14px}.admin-issue-table td small{display:block;margin-top:4px;color:#8b82a3}.admin-issue-table td span{display:inline-flex;border-radius:999px;padding:6px 9px;background:#f4f0ff;color:#5d43cb;font-weight:800}.admin-issue-table tr.severity-error td span{background:#fff0f0;color:#cf3f4f}.admin-issue-table tr.severity-warning td span{background:#fff7e8;color:#ad6b00}.admin-issue-table tr.severity-info td span{background:#edf7ff;color:#2870a8}.admin-issue-table a{font-weight:800;color:#6e54df}.admin-empty-inline{border:1px dashed rgba(77,62,110,.18);border-radius:16px;padding:16px;color:#6f6686;background:#fff}
 @media (max-width: 920px){.ai-starter-scenarios{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width: 560px){.ai-starter-scenarios{grid-template-columns:1fr}.admin-issue-summary{display:grid;grid-template-columns:1fr 1fr}.admin-issue-summary span{justify-content:center}}
+
+/* v234: admin missing title import */
+.admin-missing-title-tool{margin-top:18px}
+.admin-missing-search-row{display:grid;grid-template-columns:minmax(0,1fr) 150px 120px;gap:10px;margin:16px 0 12px}
+.admin-missing-search-row input,.admin-missing-search-row select{height:44px;border:1px solid rgba(77,62,110,.12);border-radius:14px;background:#fff;color:#201c3a;padding:0 13px;font:inherit;font-size:13px;font-weight:750;outline:none}
+.admin-missing-search-row input:focus,.admin-missing-search-row select:focus{border-color:rgba(109,84,223,.42);box-shadow:0 0 0 4px rgba(109,84,223,.08)}
+.admin-missing-search-row button,.admin-missing-candidates button{border:0;border-radius:14px;background:linear-gradient(135deg,#8d55ee,#ec6dbc);color:#fff;font-weight:950;cursor:pointer;box-shadow:0 14px 26px rgba(141,85,238,.18)}
+.admin-missing-search-row button:disabled,.admin-missing-candidates button:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+.admin-missing-attempts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.admin-missing-attempts span{border-radius:999px;background:#f6f1ff;border:1px solid rgba(77,62,110,.08);color:#6f6686;padding:7px 10px;font-size:12px;font-weight:850}
+.admin-missing-candidates{display:grid;gap:10px;margin-top:12px}
+.admin-missing-candidates article{display:grid;grid-template-columns:58px minmax(0,1fr) 116px;gap:12px;align-items:center;border:1px solid rgba(77,62,110,.1);border-radius:18px;background:#fff;padding:10px;box-shadow:0 14px 34px rgba(79,61,127,.045)}
+.admin-missing-candidates article.is-existing{opacity:.72;background:#fbf9ff}
+.admin-missing-candidates img,.admin-missing-poster{width:58px;height:78px;border-radius:12px;object-fit:cover;background:linear-gradient(135deg,#f3ecff,#fff3fb)}
+.admin-missing-candidates b{display:block;color:#201c3a;font-size:14px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-missing-candidates span{display:block;color:#6f6686;font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-missing-candidates small{display:block;color:#8b82a3;font-size:11px;margin-top:4px;font-weight:800}
+.admin-missing-candidates em{display:block;color:#6d54df;font-style:normal;font-size:12px;margin-top:5px;font-weight:900}
+.admin-missing-candidates button{height:40px;padding:0 12px;font-size:12px}
+.admin-missing-hint{margin-top:12px;border-radius:16px;background:#fbf8ff;border:1px solid rgba(77,62,110,.08);padding:12px 14px;color:#6f6686;font-size:13px;line-height:1.55}
+.admin-missing-hint b{color:#201c3a}
+@media (max-width: 720px){.admin-missing-search-row{grid-template-columns:1fr}.admin-missing-search-row button{height:44px}.admin-missing-candidates article{grid-template-columns:48px minmax(0,1fr);align-items:start}.admin-missing-candidates button{grid-column:1 / -1;width:100%}.admin-missing-candidates img,.admin-missing-poster{width:48px;height:66px}}

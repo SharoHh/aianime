@@ -11,6 +11,7 @@ const jobs = [
   { id:'schedule', title:'Расписание', text:'Реальные эфиры текущей недели из Jikan schedules.', params:{ limit:25, pages:2 } },
   { id:'titles', title:'Русские названия', text:'Заполнить только пустые title_ru. Без force, ручные правки не затирает.', params:{ limit:80 } },
   { id:'russify', title:'Описание и жанры', text:'Русификация description_ru/genres без затирания хорошего контента.', params:{ limit:80, clean:1 } },
+  { id:'missingTitles', title:'Добор мини/спешлов', text:'Добавляет ONA/Special/Mini Anime, которые не попали в основной popularity-sync.', params:{ preset:'mini', pages:1, limit:12 } },
 ]
 
 function summarize(payload){
@@ -34,6 +35,11 @@ export default function AdminDiagnosticsClient(){
   const [healthLoading,setHealthLoading] = useState(true)
   const [catalogIssues,setCatalogIssues] = useState(null)
   const [catalogIssuesLoading,setCatalogIssuesLoading] = useState(true)
+  const [missingQuery,setMissingQuery] = useState('')
+  const [missingType,setMissingType] = useState('')
+  const [missingSearch,setMissingSearch] = useState(null)
+  const [missingLoading,setMissingLoading] = useState(false)
+  const [importingMalId,setImportingMalId] = useState('')
 
 
   async function loadHealth(){
@@ -94,6 +100,57 @@ export default function AdminDiagnosticsClient(){
     if(!result) return ''
     try{ return JSON.stringify(result.payload || result, null, 2) }catch{ return String(result) }
   }, [result])
+
+
+  async function searchMissingTitle(){
+    const q = missingQuery.trim()
+    if(!q){
+      pushToast('Введи название тайтла', 'error')
+      return
+    }
+    setMissingLoading(true)
+    setMissingSearch(null)
+    try{
+      const params = new URLSearchParams({ q, limit:'10' })
+      if(missingType) params.set('type', missingType)
+      const res = await fetch(`/admin/api/title-search?${params.toString()}`, { cache:'no-store' })
+      const payload = await res.json()
+      if(!payload.ok) throw new Error(payload.error || 'Поиск не сработал')
+      setMissingSearch(payload)
+      pushToast(payload.candidates?.length ? 'Найдены варианты для импорта' : 'Jikan ничего не нашёл', payload.candidates?.length ? 'success' : 'error')
+    }catch(error){
+      setMissingSearch({ ok:false, error:error?.message || 'Ошибка поиска' })
+      pushToast(error?.message || 'Ошибка поиска', 'error')
+    }finally{
+      setMissingLoading(false)
+    }
+  }
+
+  async function importMissingTitle(candidate){
+    if(!candidate?.malId) return
+    setImportingMalId(String(candidate.malId))
+    try{
+      const res = await fetch('/admin/api/import-title', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ malId:candidate.malId, titleRu:missingQuery })
+      })
+      const payload = await res.json()
+      if(!payload.ok) throw new Error(payload.error || 'Импорт не сработал')
+      setResult(payload)
+      pushToast('Тайтл добавлен/обновлён в Supabase', 'success')
+      await Promise.all([loadHealth(), loadCatalogIssues()])
+      setMissingSearch(prev => prev ? ({
+        ...prev,
+        candidates:(prev.candidates || []).map(item => item.malId === candidate.malId ? { ...item, exists:true, existing:payload.item } : item)
+      }) : prev)
+    }catch(error){
+      pushToast(error?.message || 'Ошибка импорта', 'error')
+      setResult({ ok:false, error:error?.message || 'Ошибка импорта' })
+    }finally{
+      setImportingMalId('')
+    }
+  }
 
   async function run(job){
     setRunning(job.id)
@@ -282,6 +339,56 @@ export default function AdminDiagnosticsClient(){
             </tbody>
           </table>
         </div> : <div className="admin-empty-inline">{catalogIssuesLoading ? 'Сканируем каталог…' : 'Явных проблем не найдено.'}</div>}
+      </section>
+
+
+      <section className="widget admin-missing-title-tool">
+        <div className="admin-live-health-head">
+          <div>
+            <span>missing title import</span>
+            <h2>Найти и добавить отсутствующий тайтл</h2>
+            <p>Для мини-аниме, ONA, Special и коротких спешлов: ищет по Jikan/MAL и сохраняет найденный тайтл в Supabase, не трогая остальные записи.</p>
+          </div>
+          <Link className="secondary" href="/admin/anime?filter=missingTitle">Без русского</Link>
+        </div>
+        <div className="admin-missing-search-row">
+          <input
+            value={missingQuery}
+            onChange={e=>setMissingQuery(e.target.value)}
+            onKeyDown={e=>{ if(e.key === 'Enter') searchMissingTitle() }}
+            placeholder="Например: Любовь с кончиков пальцев: Мини-аниме / Yubisaki to Renren Mini Anime"
+          />
+          <select value={missingType} onChange={e=>setMissingType(e.target.value)} aria-label="Тип тайтла">
+            <option value="">Любой тип</option>
+            <option value="tv">TV</option>
+            <option value="movie">Movie</option>
+            <option value="ona">ONA / mini</option>
+            <option value="special">Special</option>
+            <option value="ova">OVA</option>
+          </select>
+          <button type="button" onClick={searchMissingTitle} disabled={missingLoading}>{missingLoading ? 'Ищем…' : 'Найти'}</button>
+        </div>
+        {missingSearch?.error ? <div className="admin-live-health-warnings"><span>{missingSearch.error}</span></div> : null}
+        {missingSearch?.attempts?.length ? <div className="admin-missing-attempts">
+          {missingSearch.attempts.map((attempt,index) => <span key={`${attempt.q}-${index}`}>{attempt.q}: {attempt.error ? 'ошибка' : `${attempt.count} шт.`}</span>)}
+        </div> : null}
+        {missingSearch?.candidates?.length ? <div className="admin-missing-candidates">
+          {missingSearch.candidates.map(candidate => <article key={candidate.malId || candidate.slug} className={candidate.exists ? 'is-existing' : ''}>
+            {candidate.posterUrl ? <img src={candidate.posterUrl} alt="" loading="lazy"/> : <div className="admin-missing-poster"/>}
+            <div>
+              <b>{candidate.title}</b>
+              <span>{candidate.originalTitle}</span>
+              <small>MAL {candidate.malId} · {candidate.type || candidate.kind || 'anime'}{candidate.year ? ` · ${candidate.year}` : ''}{candidate.episodes ? ` · ${candidate.episodes} эп.` : ''}</small>
+              {candidate.exists ? <em>Уже есть: {candidate.existing?.slug || candidate.slug}</em> : <em>Можно добавить в каталог</em>}
+            </div>
+            <button type="button" onClick={()=>importMissingTitle(candidate)} disabled={Boolean(importingMalId) || candidate.exists}>
+              {importingMalId === String(candidate.malId) ? 'Импорт…' : candidate.exists ? 'Уже есть' : 'Добавить'}
+            </button>
+          </article>)}
+        </div> : missingSearch?.ok ? <div className="admin-empty-inline">Ничего не найдено. Попробуй латинское название или тип ONA/Special.</div> : null}
+        <div className="admin-missing-hint">
+          <b>Быстрый cron:</b> если нужно добрать пачку мини/спешлов, ниже есть кнопка “Добор мини/спешлов”. Для конкретного тайтла надёжнее использовать поиск выше.
+        </div>
       </section>
 
       <div className="admin-cron-grid">
