@@ -18,7 +18,7 @@ export async function GET(request){
       auth:auth.mode,
       startedAt,
       finishedAt:new Date().toISOString(),
-      hint:'Запускай маленькими пачками: types=ona,special,ova&limit=5-10&delay=2000. Для одного тайтла используй slug=...'
+      hint:'Для массовой чистки плейсхолдеров запускай: types=all&limit=8&scan=500&delay=1800&jikan=1&kodik=1. Для одного тайтла используй slug=...'
     })
   }catch(error){
     return Response.json({ ok:false, source:'enrich-catalog', requested:params, error:error?.message || String(error), startedAt, finishedAt:new Date().toISOString() }, { status:200 })
