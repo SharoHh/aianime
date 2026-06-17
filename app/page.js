@@ -140,10 +140,10 @@ function buildSiteStats(anime, todaySchedule, totalAnimeCount = null){
   const newEpisodesToday = Array.isArray(todaySchedule) ? todaySchedule.length : 0
 
   return [
-    { key:'accounts', icon:'accounts', label:'Аккаунтов на сайте', value:'0' },
+    { key:'accounts', icon:'accounts', label:'Аккаунтов на сайте', value:'—' },
     { key:'anime', icon:'anime', label:'Всего аниме', value:formatStat(animeCount) },
     { key:'episodesToday', icon:'episodesToday', label:'Новых серий сегодня', value:formatStat(newEpisodesToday) },
-    { key:'comments', icon:'comments', label:'Комментариев', value:'0' },
+    { key:'comments', icon:'comments', label:'Комментариев', value:'—' },
     { key:'openTabs', icon:'openTabs', label:'Вкладок открыто', value:'1', dividerBefore:true },
     { key:'online', icon:'online', label:'Пользователей онлайн', value:'1', isOnline:true },
   ]

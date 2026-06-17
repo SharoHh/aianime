@@ -32,6 +32,8 @@ export default function AdminDiagnosticsClient(){
   const [offset,setOffset] = useState('0')
   const [health,setHealth] = useState(null)
   const [healthLoading,setHealthLoading] = useState(true)
+  const [catalogIssues,setCatalogIssues] = useState(null)
+  const [catalogIssuesLoading,setCatalogIssuesLoading] = useState(true)
 
 
   async function loadHealth(){
@@ -47,8 +49,25 @@ export default function AdminDiagnosticsClient(){
     }
   }
 
+
+
+  async function loadCatalogIssues(){
+    setCatalogIssuesLoading(true)
+    try{
+      const res = await fetch('/admin/api/catalog-issues', { cache:'no-store' })
+      const payload = await res.json()
+      setCatalogIssues(payload)
+    }catch(error){
+      setCatalogIssues({ ok:false, error:error?.message || 'Не удалось получить список проблем каталога' })
+    }finally{
+      setCatalogIssuesLoading(false)
+    }
+  }
+
+
   useEffect(()=>{
     loadHealth()
+    loadCatalogIssues()
   }, [])
 
   const healthCards = useMemo(()=>{
@@ -183,6 +202,23 @@ export default function AdminDiagnosticsClient(){
     }
   }
 
+
+  const issueLabels = {
+    missing_title_ru:'Нет title_ru',
+    bad_title_symbols:'Мусор в названии',
+    missing_poster:'Нет постера',
+    missing_description_ru:'Нет RU-описания',
+    english_ru_content:'Английский RU-контент',
+    missing_kodik:'Нет Kodik',
+    missing_player_episodes:'Нет серий',
+    partial_player_episodes:'Неполный плеер',
+    few_player_voices:'Мало озвучек'
+  }
+
+  const issueRows = Array.isArray(catalogIssues?.issues) ? catalogIssues.issues.slice(0, 40) : []
+  const issueSummary = catalogIssues?.summary || { total:0, byIssue:{}, bySeverity:{} }
+
+
   return <main className="admin-page admin-tools-page">
     <section className="admin-episodes">
       <div className="page-head admin-page-head-row">
@@ -213,6 +249,39 @@ export default function AdminDiagnosticsClient(){
         {health?.warnings?.length ? <div className="admin-live-health-warnings">
           {health.warnings.map(warning => <span key={warning}>{warning}</span>)}
         </div> : null}
+      </section>
+
+
+
+      <section className="widget admin-catalog-issues">
+        <div className="admin-live-health-head">
+          <div>
+            <span>catalog quality</span>
+            <h2>Проблемные тайтлы</h2>
+            <p>Не только общие цифры из health, а конкретные slug: что без title_ru, где мусор, где нет Kodik/серий/описания.</p>
+          </div>
+          <button type="button" onClick={loadCatalogIssues} disabled={catalogIssuesLoading}>{catalogIssuesLoading ? 'Проверяем…' : 'Обновить'}</button>
+        </div>
+        <div className="admin-issue-summary">
+          <span><b>{catalogIssuesLoading ? '…' : (issueSummary.total ?? 0)}</b> всего</span>
+          <span><b>{issueSummary.bySeverity?.error ?? 0}</b> критичных</span>
+          <span><b>{issueSummary.bySeverity?.warning ?? 0}</b> предупреждений</span>
+          <span><b>{catalogIssues?.animeCount ?? '—'}</b> тайтлов проверено</span>
+        </div>
+        {catalogIssues?.error ? <div className="admin-live-health-warnings"><span>{catalogIssues.error}</span></div> : null}
+        {issueRows.length ? <div className="admin-issue-table-wrap">
+          <table className="admin-issue-table">
+            <thead><tr><th>Тайтл</th><th>Проблема</th><th>Подсказка</th><th></th></tr></thead>
+            <tbody>
+              {issueRows.map((item, index) => <tr key={`${item.slug}-${item.issue}-${index}`} className={`severity-${item.severity}`}>
+                <td><b>{item.title}</b><small>{item.slug}{item.year ? ` · ${item.year}` : ''}</small></td>
+                <td><span>{issueLabels[item.issue] || item.issue}</span></td>
+                <td>{item.hint || 'Проверь карточку'}</td>
+                <td><Link href={`/admin/anime?q=${encodeURIComponent(item.slug)}`}>Открыть</Link></td>
+              </tr>)}
+            </tbody>
+          </table>
+        </div> : <div className="admin-empty-inline">{catalogIssuesLoading ? 'Сканируем каталог…' : 'Явных проблем не найдено.'}</div>}
       </section>
 
       <div className="admin-cron-grid">

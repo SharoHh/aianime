@@ -13,16 +13,22 @@ const PROMPT_GROUPS = [
 ]
 
 const QUICK_PRESETS = [
-  { label: 'Романтика', query: 'аниме романтика про отношения' },
-  { label: 'Лёгкое', query: 'лёгкое уютное аниме без тяжёлой драмы' },
-  { label: 'Экшен', query: 'аниме экшен с боями и динамикой' },
-  { label: 'Как Ванпис', query: 'хочу как ванпис приключения команда' },
-  { label: 'Канеки', query: 'канеки токийский гуль мрачное' },
-  { label: 'Отаку', query: 'главный герой настоящий отаку' },
-  { label: 'ГГ имба', query: 'аниме где гг имба и быстро становится сильным' },
-  { label: 'Попаданец', query: 'исекай попаданец в другой мир' },
-  { label: 'Короткое', query: 'короткое аниме до 13 серий на вечер' },
-  { label: 'Мрачное', query: 'мрачный психологический триллер' }
+  { label: 'Как Наруто, но взрослее', query: 'как наруто но взрослее: команда, путь героя, битвы и драма' },
+  { label: 'Мрачное с надломом', query: 'мрачное аниме где герой сломан но продолжает идти' },
+  { label: 'Романтика без кринжа', query: 'романтика без кринжа с нормальной химией персонажей' },
+  { label: 'Короткое на вечер', query: 'короткое аниме до 13 серий на вечер' },
+  { label: 'Онгоинг сейчас', query: 'онгоинг который сейчас выходит и цепляет с первых серий' },
+  { label: 'Как Ванпис', query: 'хочу как ванпис приключения команда и большое путешествие' },
+  { label: 'Канеки', query: 'канеки токийский гуль мрачное про потерю себя' },
+  { label: 'ГГ имба', query: 'аниме где гг имба и быстро становится сильным' }
+]
+
+
+const STARTER_SCENARIOS = [
+  { title:'По похожему тайтлу', text:'Напиши “как Ванпис”, “похоже на Тетрадь смерти”, “как Наруто, но взрослее”.', query:'как Ванпис приключения команда' },
+  { title:'По настроению', text:'Мрачное, уютное, грустное, бодрое, романтика без кринжа — можно писать криво.', query:'мрачное где герой сломан но не сдаётся' },
+  { title:'По персонажу', text:'Канеки, Луффи, Эрен, Танджиро — AI поймёт персонажа и поднимет нужную франшизу.', query:'канеки токийский гуль мрачное' },
+  { title:'По формату', text:'Короткое на вечер, онгоинг сейчас, завершённое, фильм — подбор не должен тащить всё подряд.', query:'короткое аниме до 13 серий на вечер' }
 ]
 
 const AI_REFINE_TIMEOUT_MS = 5200
@@ -317,7 +323,8 @@ function buildLibraryContext(items, library, favorites){
 }
 
 function buildInstantResults(preparedItems, query, options = {}){
-  const clean = String(query || '').trim() || 'хочу что-то интересное на вечер'
+  const clean = String(query || '').trim()
+  if(!clean) return []
   const scored = preparedItems.map(item => {
     const aiScore = scoreItem(item, clean, options.libraryContext && options.useLibrary ? options.libraryContext : null)
     return {
@@ -360,7 +367,7 @@ function buildInstantResults(preparedItems, query, options = {}){
 }
 
 export default function AiClient({ items, similarSlug, initialQuery: initialQueryProp }){
-  const initialQuery = initialQueryProp || (similarSlug ? 'подбери похожие тайтлы' : 'хочу что-то интересное на вечер')
+  const initialQuery = initialQueryProp || (similarSlug ? 'подбери похожие тайтлы' : '')
   const [query, setQuery] = useState(initialQuery)
   const [submitted, setSubmitted] = useState(initialQuery)
   const [isDirty, setIsDirty] = useState(false)
@@ -444,7 +451,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
     if(refineState === 'ai-ready') return { tone:'ready', title:'Gemini применил AI-подбор', text: refineSummary || 'Gemini перечитал запрос как человек и оставил варианты, которые лучше попадают в настроение.' }
     if(refineState === 'local-ready') return { tone:'local', title:'Быстрый подбор готов', text:'Gemini не ответил быстро или был на лимите. Результат не сброшен — можно смотреть сразу.' }
     if(refineState === 'empty') return { tone:'empty', title:'По запросу мало совпадений', text:'Попробуй добавить жанр, похожий тайтл, персонажа или настроение.' }
-    return { tone:'idle', title:'Готов к AI-подбору', text:'Пиши как человек: персонаж, вайб, жанр, похожий тайтл или даже кривой запрос — быстрый результат появится сразу.' }
+    return { tone:'idle', title:'Выбери сценарий или напиши запрос', text:'Не показываем случайную стартовую кашу. Сначала уточни вайб, похожий тайтл, персонажа или формат — быстрый подбор появится сразу.' }
   }, [refineState, refineSummary])
 
   async function refineWithExternalAi(clean, requestId){
@@ -624,8 +631,15 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
       </div>
     </div>
 
+    {!results.length && refineState === 'idle' ? <section className="ai-starter-scenarios" aria-label="Сценарии AI-подбора">
+      {STARTER_SCENARIOS.map(item => <button type="button" key={item.title} onClick={() => runSearch(item.query)}>
+        <b>{item.title}</b>
+        <span>{item.text}</span>
+      </button>)}
+    </section> : null}
+
     <div className="ai-results-grid ai-results-grid-v186 ai-results-grid-v204 ai-results-grid-v225">
-      {!results.length ? <div className="ai-empty-results">Ничего не нашлось. Попробуй написать проще: жанр, похожий тайтл, персонажа или настроение.</div> : null}
+      {!results.length && refineState !== 'idle' ? <div className="ai-empty-results">Ничего не нашлось. Попробуй написать проще: жанр, похожий тайтл, персонажа или настроение.</div> : null}
       {results.slice(0,8).map((item, index) => {
         const title = getPrimaryTitle(item)
         const original = String(item.originalTitle || item.englishTitle || '').trim()

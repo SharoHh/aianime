@@ -256,7 +256,7 @@ function groupByVoice(options, expectedEpisodes = 0){
       if(canSafelyExpandSequentially(item, expectedEpisodes)) return Number(item.episodesCount || item.groupedEpisodeCount || 0)
       return 0
     }).filter(Boolean), 0)
-    return {
+    const group = {
       voice,
       episodes,
       count: new Set(episodes.map(item => item.episodeNumber)).size || explicitCount,
@@ -264,7 +264,52 @@ function groupByVoice(options, expectedEpisodes = 0){
       type: sourceEpisodes.find(item => item.translationType)?.translationType || null,
       quality: sourceEpisodes.find(item => item.quality)?.quality || null,
     }
-  }).sort((a,b) => Math.max(b.count, b.declaredCount || 0) - Math.max(a.count, a.declaredCount || 0) || a.voice.localeCompare(b.voice, 'ru'))
+    return {
+      ...group,
+      optionLabel: voiceOptionLabel(group, expectedEpisodes),
+      rank: voiceRank(group, expectedEpisodes)
+    }
+  }).sort((a,b) => Number(b.rank || 0) - Number(a.rank || 0) || a.voice.localeCompare(b.voice, 'ru'))
+}
+
+
+function voiceEpisodeCapacity(group = {}, expectedEpisodes = 0){
+  const expected = Math.max(0, Number(expectedEpisodes || 0) || 0)
+  const count = Math.max(Number(group.count || 0) || 0, Number(group.declaredCount || 0) || 0, Array.isArray(group.episodes) ? group.episodes.length : 0)
+  const target = expected > 1 ? expected : count
+  const ratio = target > 0 ? count / target : 0
+  return { count, target, ratio }
+}
+
+function voiceRank(group = {}, expectedEpisodes = 0){
+  const { count, target, ratio } = voiceEpisodeCapacity(group, expectedEpisodes)
+  let score = count * 4
+  if(target > 1 && ratio >= 0.98) score += 1000
+  else if(target > 1 && ratio >= 0.85) score += 650
+  else if(count > 1) score += 260
+  else score -= 220
+  if(String(group.voice || '').toLowerCase() === 'kodik' && count <= 1) score -= 160
+  if(group.quality) score += 8
+  return score
+}
+
+function voiceOptionLabel(group = {}, expectedEpisodes = 0){
+  const voice = group.voice || 'Kodik'
+  const { count, target, ratio } = voiceEpisodeCapacity(group, expectedEpisodes)
+  if(target > 1 && ratio >= 0.98) return `${voice} · полная · ${count} сер.`
+  if(target > 1 && ratio >= 0.85) return `${voice} · почти полная · ${count} из ${target}`
+  if(count > 1) return `${voice} · частичная · ${count} сер.`
+  return `${voice} · внутри Kodik`
+}
+
+function readLastVoice(slug){
+  if(typeof window === 'undefined') return ''
+  try{ return window.localStorage.getItem(`aianime:last-voice:${slug}`) || '' }catch{ return '' }
+}
+
+function writeLastVoice(slug, voice){
+  if(typeof window === 'undefined' || !slug || !voice) return
+  try{ window.localStorage.setItem(`aianime:last-voice:${slug}`, voice) }catch{}
 }
 
 function pickInitialOption(options, episode, voice, expectedEpisodes = 0){
@@ -349,6 +394,16 @@ export default function KodikPlayerClient({
   const hasRealEpisodeButtons = activeEpisodes.length > 1 && uniqueNativeEpisodes.size > 1
   const canUseVoiceSelector = voices.length > 1
 
+  useEffect(() => {
+    if(!slug || !voices.length) return
+    const hasUrlVoice = String(selectedVoice || '').trim() && String(selectedVoice || '').trim() !== 'Kodik'
+    if(hasUrlVoice) return
+    const storedVoice = readLastVoice(slug)
+    if(!storedVoice || storedVoice === activeVoice) return
+    const group = voices.find(item => item.voice === storedVoice)
+    if(group?.episodes?.length) chooseVoice(storedVoice)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, voices.length])
 
   useEffect(() => {
     if(typeof window === 'undefined') return
@@ -490,6 +545,7 @@ export default function KodikPlayerClient({
     if(!option?.embedUrl) return
     setSelected(option)
     setState({ loading:false, ok:true, embedUrl:option.embedUrl, error:null, source:option.source, voice:option.voice, quality:option.quality || null })
+    writeLastVoice(slug, option.voice)
     updateUrl(slug, option.episodeNumber, option.voice)
     if(historyItem?.slug) saveHistoryItem({ ...historyItem, voice:option.voice, provider:'kodik' }, option.episodeNumber, 0)
   }
@@ -517,7 +573,7 @@ export default function KodikPlayerClient({
           aria-label="Выбор озвучки"
         >
           {voices.length ? voices.map(item => <option key={item.voice} value={item.voice}>
-            {item.voice} ({item.count > 1 ? `${item.count} сер.` : item.declaredCount > 1 ? `${item.declaredCount} сер.` : 'Kodik'})
+            {item.optionLabel || voiceOptionLabel(item, expectedEpisodes)}
           </option>) : <option value={activeVoice || 'Kodik'}>{activeVoice || 'Kodik'}</option>}
         </select>
       </label>

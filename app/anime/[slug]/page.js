@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getAnimeList, getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/animeRepository'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
-import { recommendAnime } from '@/lib/aiAnime'
+import { getSimilarAnime } from '@/lib/similarAnime'
 import TitleActions from '@/components/TitleActions'
 import LibraryStatusClient from '@/components/LibraryStatusClient'
 import RatingControl from '@/components/RatingControl'
@@ -919,7 +919,7 @@ export default async function AnimePage({ params, searchParams }){
   const originalTitle = cleanPublicText(item.originalTitle || item.englishTitle || item.title)
   const description = cleanPublicText(item.description) || 'Описание скоро появится.'
   const [allAnime, episodes, siteRating, externalRatings] = await Promise.all([
-    getAnimeList({limit:80}),
+    getAnimeList({limit:1000}),
     getEpisodesBySlug(item.slug, item.episodes || item.episodesList?.length || 12),
     getSiteRatingStats(item?.slug),
     getExternalRatingsSnapshot(item)
@@ -943,7 +943,7 @@ export default async function AnimePage({ params, searchParams }){
     if(voice) params.set('voice', voice)
     return `/anime/${encodeURIComponent(item.slug)}?${params.toString()}#player`
   }
-  const similar = recommendAnime(allAnime, `похожие на ${title}`, { baseAnime: item, limit: 6 })
+  const similar = getSimilarAnime(item, allAnime, 6)
   const displayEpisodeCount = getDisplayEpisodeCount(item, playerOptions)
   const titleFaqEntries = buildTitleFaqEntries(item, title, displayEpisodeCount)
 
@@ -1111,6 +1111,7 @@ export default async function AnimePage({ params, searchParams }){
           <GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="compact-similar-rating"/>
           <b>{a.title}</b>
           <span>{a.meta}</span>
+          {a.similarReason ? <em className="compact-similar-reason">{a.similarReason}</em> : null}
         </Link>)}
       </div>
     </section>
