@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { fetchJikanAnimeDetails, searchJikanAnimeVariants, normalizeJikanAnime, getJikanSearchQueryVariants } from '@/lib/jikan'
+import { fetchJikanAnimeDetails, searchJikanAnimeVariants, normalizeJikanAnime, getJikanSearchQueryVariants, pickBestJikanSearchCandidate } from '@/lib/jikan'
 import { saveAnimeRowsToDb } from '@/lib/animeDbImport'
 
 function json(data, status = 200){
@@ -32,10 +32,14 @@ async function resolveItem(body){
   const q = String(body.q || body.query || '').trim()
   if(!q) throw new Error('malId or q is required')
   const type = String(body.type || '').trim()
-  const search = await searchJikanAnimeVariants({ q, type, limit:8 })
-  const item = search.data[0]
-  if(!item) throw new Error(`Jikan did not find anime for query: ${q}`)
-  return { item, resolvedBy:'query', attempts:search.attempts, variants:getJikanSearchQueryVariants(q) }
+  const search = await searchJikanAnimeVariants({ q, type, limit:12, order:'title' })
+  const picked = pickBestJikanSearchCandidate(search.data, q, { minScore:70 })
+  const item = picked.item
+  if(!item){
+    const best = picked.best
+    throw new Error(`Jikan did not find a strict match for query: ${q}. Best: ${best?.item?.title_english || best?.item?.title || 'none'} (${best?.relevance?.score || 0})`)
+  }
+  return { item, resolvedBy:'query', attempts:search.attempts, variants:getJikanSearchQueryVariants(q), relevance:picked.best?.relevance || null }
 }
 
 export async function POST(request){
@@ -62,6 +66,7 @@ export async function POST(request){
       imported:true,
       resolvedBy:resolved.resolvedBy,
       attempts:resolved.attempts,
+      relevance:resolved.relevance || null,
       item:{
         slug: normalized.slug,
         malId: normalized.mal_id,

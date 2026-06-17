@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { searchJikanAnimeVariants, normalizeJikanAnime } from '@/lib/jikan'
+import { searchJikanAnimeVariants, normalizeJikanAnime, scoreJikanSearchCandidate } from '@/lib/jikan'
 import { findExistingAnimeByMalIds } from '@/lib/animeDbImport'
 
 function json(data, status = 200){
@@ -9,8 +9,9 @@ function json(data, status = 200){
   })
 }
 
-function compactCandidate(item){
+function compactCandidate(item, query){
   const normalized = normalizeJikanAnime(item)
+  const relevance = scoreJikanSearchCandidate(item, query)
   return {
     malId: item?.mal_id || normalized.mal_id,
     slug: normalized.slug,
@@ -24,6 +25,8 @@ function compactCandidate(item){
     score: item?.score || normalized.rating,
     posterUrl: normalized.poster_url,
     sourceQuery: item?.__aianime_search_query || '',
+    relevanceScore: relevance.score,
+    matchedTitle: relevance.matchedTitle,
   }
 }
 
@@ -38,8 +41,8 @@ export async function GET(request){
   }
 
   try{
-    const search = await searchJikanAnimeVariants({ q, type, limit })
-    const candidates = search.data.map(compactCandidate)
+    const search = await searchJikanAnimeVariants({ q, type, limit, order:'title' })
+    const candidates = search.data.map(item => compactCandidate(item, q)).sort((a, b) => Number(b.relevanceScore || 0) - Number(a.relevanceScore || 0))
     const existing = await findExistingAnimeByMalIds(candidates.map(item => item.malId))
     const withState = candidates.map(item => ({
       ...item,

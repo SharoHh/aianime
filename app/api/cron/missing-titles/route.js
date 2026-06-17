@@ -1,5 +1,5 @@
 import { verifyCronAccess, cronAuthError } from '@/lib/cronAuth'
-import { fetchJikanAnimePaged, fetchJikanAnimeDetails, normalizeJikanAnime, searchJikanAnimeVariants } from '@/lib/jikan'
+import { fetchJikanAnimePaged, fetchJikanAnimeDetails, normalizeJikanAnime, searchJikanAnimeVariants, pickBestJikanSearchCandidate, scoreJikanSearchCandidate } from '@/lib/jikan'
 import { saveAnimeRowsToDb } from '@/lib/animeDbImport'
 
 function splitList(value){
@@ -20,11 +20,29 @@ function cyrillicTitle(value){
   return hasCyrillic(ru) ? ru : ''
 }
 
+async function importMalId(malId, titleRu = ''){
+  const details = await fetchJikanAnimeDetails(malId)
+  if(!details) return { ok:false, malId, error:'not_found' }
+  const normalized = normalizeJikanAnime(details)
+  if(titleRu) normalized.title_ru = titleRu
+  const database = await saveAnimeRowsToDb([normalized], { source:'jikan-missing-title-mal-id', titleRu })
+  return { ok:Boolean(database.ok), malId, resolvedBy:'mal_id', item:{ slug:normalized.slug, malId:normalized.mal_id, title:normalized.title, titleRu:titleRu || normalized.title_ru || '', kind:normalized.kind, year:normalized.year, episodes:normalized.episodes }, database }
+}
+
 async function importQuery(q, type = ''){
-  const search = await searchJikanAnimeVariants({ q, type, limit:5 })
-  const found = search.data[0]
+  const search = await searchJikanAnimeVariants({ q, type, limit:10, order:'title' })
+  const picked = pickBestJikanSearchCandidate(search.data, q, { minScore:70 })
+  const found = picked.item
   if(!found){
-    return { ok:false, q, type:type || null, attempts:search.attempts, error:'not_found' }
+    return {
+      ok:false,
+      q,
+      type:type || null,
+      attempts:search.attempts,
+      error:'no_strict_match',
+      bestScore:picked.best?.relevance?.score || 0,
+      candidates:picked.ranked.slice(0, 5).map(row => ({ malId:row.item?.mal_id, title:row.item?.title_english || row.item?.title, type:row.item?.type, score:row.relevance?.score, matchedTitle:row.relevance?.matchedTitle }))
+    }
   }
   let details = found
   try{ details = await fetchJikanAnimeDetails(found.mal_id) || found }catch{}
@@ -60,6 +78,7 @@ export async function GET(request){
   if(!auth.ok) return cronAuthError(auth)
   const { searchParams } = new URL(request.url)
   const queries = splitList(searchParams.get('q') || searchParams.get('titles') || process.env.AIANIME_MISSING_TITLES || '')
+  const malIds = splitList(searchParams.get('malId') || searchParams.get('mal_id') || searchParams.get('id')).map(Number).filter(x => Number.isFinite(x) && x > 0)
   const type = String(searchParams.get('type') || '').trim().toLowerCase()
   const preset = String(searchParams.get('preset') || '').trim().toLowerCase()
   const types = preset === 'mini'
@@ -75,6 +94,11 @@ export async function GET(request){
   let typeBackfill = null
 
   try{
+    for(const malId of malIds){
+      imported.push(await importMalId(malId, ''))
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+
     for(const q of queries){
       imported.push(await importQuery(q, type))
       await new Promise(resolve => setTimeout(resolve, delay))
@@ -88,14 +112,14 @@ export async function GET(request){
     return Response.json({
       ok:true,
       source:'missing-titles',
-      requested:{ queries, type:type || null, preset:preset || null, types, pages, limit, order, details:withDetails },
+      requested:{ queries, malIds, type:type || null, preset:preset || null, types, pages, limit, order, details:withDetails },
       imported,
       typeBackfill: typeBackfill ? { batches:typeBackfill.batches, saved:typeBackfill.database?.saved || 0, database:typeBackfill.database } : null,
       saved: savedFromQueries + Number(typeBackfill?.database?.saved || 0),
       auth:auth.mode,
       startedAt,
       finishedAt:new Date().toISOString(),
-      hint:'Для конкретного пропавшего тайтла запускай q=название. Для добора мини/спешлов запускай preset=mini&pages=1-3.'
+      hint:'Для точного импорта используй malId=57782. По q импорт теперь строгий и не сохранит первый левый результат.'
     })
   }catch(error){
     return Response.json({ ok:false, source:'missing-titles', error:error?.message || String(error), imported, typeBackfill, startedAt, finishedAt:new Date().toISOString() }, { status:200 })
