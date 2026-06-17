@@ -27,11 +27,17 @@ function animeHref(slug){
   return `/anime/${encodeURIComponent(safe)}`
 }
 
+function hasPlaceholderPoster(item){
+  const poster = String(item?.poster || '').trim().toLowerCase()
+  return !poster || /\/posters\/magic|placeholder|no[-_]?poster|default/.test(poster)
+}
+
 function visibleCatalogItem(item){
   const slug = String(item?.slug || '').trim().toLowerCase()
   if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
   const text = [item.title, item.titleRu, item.displayTitle, item.originalTitle, item.description, item.slug].filter(Boolean).join(' ').toLowerCase()
   if(text.includes('catalog-title-') || text.includes('стальной алхимик3') || text.includes('тетрадь смерти4')) return false
+  if(item?.hasRealPoster === false || hasPlaceholderPoster(item)) return false
   return true
 }
 

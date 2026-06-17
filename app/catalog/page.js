@@ -64,13 +64,20 @@ function isBrokenCatalogText(item = {}){
     || text.includes('тетрадь смерти4')
 }
 
+function isPlaceholderPoster(url){
+  const poster = String(url || '').trim().toLowerCase()
+  return !poster || /\/posters\/magic|placeholder|no[-_]?poster|default/.test(poster)
+}
+
 function isRenderableCatalogItem(item = {}){
   const slug = String(item.slug || '').trim().toLowerCase()
   if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
   if(isBrokenCatalogText(item)) return false
   const title = String(item.title || item.displayTitle || item.titleRu || '').trim()
   if(!title) return false
-  // Не показываем карточки, которые точно ведут в пустоту или являются старыми seed-заглушками.
+  if(item.hasRealPoster === false || isPlaceholderPoster(item.poster || item.poster_url)) return false
+  // Не показываем карточки, которые точно ведут в пустоту, являются старыми seed-заглушками
+  // или ещё не готовы визуально из-за декоративного placeholder-постера.
   return true
 }
 
