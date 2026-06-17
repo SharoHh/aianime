@@ -21,6 +21,20 @@ function ratingToneClass(item){
 
 function unique(list){ return Array.from(new Set(list)).filter(Boolean) }
 
+function animeHref(slug){
+  const safe = String(slug || '').trim()
+  if(!safe || safe === 'undefined' || safe === 'null') return '/catalog'
+  return `/anime/${encodeURIComponent(safe)}`
+}
+
+function visibleCatalogItem(item){
+  const slug = String(item?.slug || '').trim().toLowerCase()
+  if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
+  const text = [item.title, item.titleRu, item.displayTitle, item.originalTitle, item.description, item.slug].filter(Boolean).join(' ').toLowerCase()
+  if(text.includes('catalog-title-') || text.includes('стальной алхимик3') || text.includes('тетрадь смерти4')) return false
+  return true
+}
+
 export default function CatalogClient({ items }){
   const [query,setQuery] = useState('')
   const [genre,setGenre] = useState('all')
@@ -30,10 +44,11 @@ export default function CatalogClient({ items }){
   const [sort,setSort] = useState('relevant')
   const [visible,setVisible] = useState(24)
 
-  const genres = useMemo(()=>unique(items.flatMap(a=>a.genres)).sort((a,b)=>a.localeCompare(b,'ru')), [items])
-  const years = useMemo(()=>unique(items.map(a=>a.year)).sort((a,b)=>b-a), [items])
+  const safeItems = useMemo(()=>Array.isArray(items) ? items.filter(visibleCatalogItem) : [], [items])
+  const genres = useMemo(()=>unique(safeItems.flatMap(a=>a.genres)).sort((a,b)=>a.localeCompare(b,'ru')), [safeItems])
+  const years = useMemo(()=>unique(safeItems.map(a=>a.year)).sort((a,b)=>b-a), [safeItems])
 
-  const filtered = useMemo(()=>filterAndSortAnime(items, query, { genre, status, kind, year }, sort), [items, query, genre, status, kind, year, sort])
+  const filtered = useMemo(()=>filterAndSortAnime(safeItems, query, { genre, status, kind, year }, sort), [safeItems, query, genre, status, kind, year, sort])
 
   const reset = () => { setQuery(''); setGenre('all'); setStatus('all'); setKind('all'); setYear('all'); setSort('relevant'); setVisible(24) }
   const activeSearchHint = getCatalogHint(query)
@@ -66,7 +81,7 @@ export default function CatalogClient({ items }){
       </aside>
       <div className="catalog-results">
         {!filtered.length ? <div className="catalog-empty widget"><b>Ничего не нашли</b><p>Попробуй другое название, жанр, настроение или сбрось фильтры. Поиск понимает русские и английские названия, описание, студию и год.</p><button className="secondary" onClick={reset}>Сбросить фильтры</button></div> : null}
-        {filtered.slice(0, visible).map(a=><Link className="catalog-card catalog-card-live" href={`/anime/${a.slug}`} key={a.slug} prefetch={false}>
+        {filtered.slice(0, visible).map(a=><Link className="catalog-card catalog-card-live" href={animeHref(a.slug)} key={a.slug} prefetch={false}>
           <div className="catalog-cover"><img loading="lazy" decoding="async" width="240" height="340" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : "Постер аниме"}/><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount}/></div>
           <div className="catalog-body"><b>{a.title}</b><em>{a.originalTitle}</em><p>{a.description}</p><div>{a.genres.slice(0,3).map(g=><i key={g}>{g}</i>)}</div><small>{a.year} · {a.meta} · {statusLabels[a.status] || a.status}</small></div>
           <div className="catalog-hover-preview" aria-hidden="true">

@@ -57,9 +57,27 @@ function compactAnimeItems(items = [], limit = 1000, options = {}){
   return safe.slice(0, Math.max(1, Number(limit || 1000))).map(item => compactAnimeItem(item, options))
 }
 
+function isBrokenCatalogText(item = {}){
+  const text = [item.title, item.titleRu, item.displayTitle, item.originalTitle, item.description, item.slug].filter(Boolean).join(' ').toLowerCase()
+  return text.includes('catalog-title-')
+    || text.includes('стальной алхимик3')
+    || text.includes('тетрадь смерти4')
+}
+
+function isRenderableCatalogItem(item = {}){
+  const slug = String(item.slug || '').trim().toLowerCase()
+  if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
+  if(isBrokenCatalogText(item)) return false
+  const title = String(item.title || item.displayTitle || item.titleRu || '').trim()
+  if(!title) return false
+  // Не показываем карточки, которые точно ведут в пустоту или являются старыми seed-заглушками.
+  return true
+}
+
 export default async function Catalog(){
-  const anime = await getAnimeList({limit:720})
-  const clientAnime = compactAnimeItems(anime, 720, { descriptionLimit: 260, genresLimit: 10 })
+  const rawAnime = await getAnimeList({limit:1000})
+  const anime = rawAnime.filter(isRenderableCatalogItem)
+  const clientAnime = compactAnimeItems(anime, 900, { descriptionLimit: 260, genresLimit: 10 })
   return <main className="page catalog-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(animeListJsonLd(anime, '/catalog'))}} />
     <div className="page-head catalog-hero-head"><Link href="/">← На главную</Link><h1>Каталог аниме</h1><p>Удобная база тайтлов: фильтры, быстрый поиск, крупные постеры и аккуратная сетка без перегруза.</p></div>
     <CatalogClient items={clientAnime}/>
