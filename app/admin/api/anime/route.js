@@ -1,138 +1,215 @@
 import { NextResponse } from 'next/server'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
-import { translateGenres, cleanPublicText } from '@/lib/ruContent'
+import { cleanPublicText, translateGenres } from '@/lib/ruContent'
+import { adminAnimeStats, matchesAdminFilter, normalizeAdminAnime, cleanAdminText } from '@/lib/adminQuality'
+import { makeAnimeRestriction } from '@/lib/contentRestrictions'
+import { invalidateAnimeRepositoryCache } from '@/lib/animeRepository'
+import { invalidateScheduleCache } from '@/lib/scheduleData'
+import { revalidatePath } from 'next/cache'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+function json(data, status = 200){
+  return NextResponse.json(data, {
+    status,
+    headers:{ 'Cache-Control':'no-store, max-age=0', 'X-Robots-Tag':'noindex, nofollow' }
+  })
+}
 
 function cleanString(value){
-  if(value === null || value === undefined) return null
+  if(value === undefined) return undefined
+  if(value === null) return null
   const text = String(value).trim()
   return text || null
 }
 
-function cleanContentString(value){
+function cleanContent(value){
+  if(value === undefined) return undefined
   const text = cleanString(value)
   if(!text) return null
   return cleanPublicText(text) || null
 }
 
-
 function cleanUrl(value){
+  if(value === undefined) return undefined
   const text = cleanString(value)
   if(!text) return null
   if(text.startsWith('/api/image?')){
     try{
       const parsed = new URL(text, 'https://aianime.local')
-      const raw = parsed.searchParams.get('url')
-      return raw || text
-    }catch{
-      return text
-    }
+      return parsed.searchParams.get('url') || text
+    }catch{ return text }
   }
   return text
 }
 
 function cleanNumber(value){
-  if(value === null || value === undefined || value === '') return null
+  if(value === undefined) return undefined
+  if(value === null || value === '') return null
   const n = Number(value)
   return Number.isFinite(n) ? n : null
 }
 
-function normalizePayload(body){
-  const rawGenres = Array.isArray(body.genres)
-    ? body.genres.map(x => String(x).trim()).filter(Boolean)
-    : String(body.genres || '').split(',').map(x => x.trim()).filter(Boolean)
-  const genres = translateGenres(rawGenres)
-
-  return {
-    title: cleanContentString(body.title || body.titleEnglish),
-    title_ru: cleanContentString(body.titleRu || body.title_ru),
-    original_title: cleanContentString(body.originalTitle || body.original_title),
-    description: cleanContentString(body.description),
-    description_ru: cleanContentString(body.descriptionRu || body.description_ru),
-    poster_url: cleanUrl(body.posterUrl || body.poster_url),
-    banner_url: cleanUrl(body.bannerUrl || body.banner_url),
-    status: cleanString(body.status),
-    kind: cleanString(body.kind),
-    year: cleanNumber(body.year),
-    episodes: cleanNumber(body.episodes),
-    rating: cleanNumber(body.rating),
-    genres,
-    studio: cleanString(body.studio),
-    updated_at: new Date().toISOString()
-  }
+function normalizeGenres(value){
+  if(value === undefined) return undefined
+  const raw = Array.isArray(value)
+    ? value.map(item => cleanAdminText(item)).filter(Boolean)
+    : String(value || '').split(',').map(item => cleanAdminText(item)).filter(Boolean)
+  return translateGenres(raw)
 }
 
-function stripEmpty(payload){
-  const next = { ...payload }
-  Object.keys(next).forEach(key => {
-    const value = next[key]
-    if(value === undefined || value === null || (Array.isArray(value) && value.length === 0)){
-      delete next[key]
-    }
-  })
+function hasOwn(body, ...keys){
+  return keys.some(key => Object.prototype.hasOwnProperty.call(body, key))
+}
+
+function normalizePatch(body){
+  const payload = { updated_at:new Date().toISOString() }
+  if(hasOwn(body, 'titleRu', 'title_ru')) payload.title_ru = cleanContent(body.titleRu ?? body.title_ru)
+  if(hasOwn(body, 'title', 'titleEnglish')) payload.title = cleanContent(body.title ?? body.titleEnglish)
+  if(hasOwn(body, 'originalTitle', 'original_title')) payload.original_title = cleanContent(body.originalTitle ?? body.original_title)
+  if(hasOwn(body, 'otherTitle', 'other_title')) payload.other_title = cleanContent(body.otherTitle ?? body.other_title)
+  if(hasOwn(body, 'descriptionRu', 'description_ru')) payload.description_ru = cleanContent(body.descriptionRu ?? body.description_ru)
+  if(hasOwn(body, 'description')) payload.description = cleanContent(body.description)
+  if(hasOwn(body, 'posterUrl', 'poster_url')) payload.poster_url = cleanUrl(body.posterUrl ?? body.poster_url)
+  if(hasOwn(body, 'bannerUrl', 'banner_url')) payload.banner_url = cleanUrl(body.bannerUrl ?? body.banner_url)
+  if(hasOwn(body, 'status')) payload.status = cleanString(body.status)
+  if(hasOwn(body, 'kind')) payload.kind = cleanString(body.kind)
+  if(hasOwn(body, 'year')) payload.year = cleanNumber(body.year)
+  if(hasOwn(body, 'episodes')) payload.episodes = cleanNumber(body.episodes)
+  if(hasOwn(body, 'rating')) payload.rating = cleanNumber(body.rating)
+  if(hasOwn(body, 'studio')) payload.studio = cleanString(body.studio)
+  if(hasOwn(body, 'genres')) payload.genres = normalizeGenres(body.genres)
+  return payload
+}
+
+function stripForLegacy(payload){
+  const allowed = new Set(['raw','title','title_ru','original_title','other_title','description','description_ru','poster_url','banner_url','status','kind','year','episodes','rating','genres','studio','updated_at'])
+  const next = {}
+  for(const [key,value] of Object.entries(payload)){
+    if(allowed.has(key)) next[key] = value
+  }
   return next
+}
+
+async function readCurrentRow(filter){
+  const res = await supabaseRequest(`anime?select=id,slug,status,raw&${filter}&limit=1`, { method:'GET', timeout:10000 })
+  const text = await res.text()
+  let rows = []
+  try{ rows = text ? JSON.parse(text) : [] }catch{}
+  if(!res.ok) throw new Error(text || `Supabase current row read failed ${res.status}`)
+  return Array.isArray(rows) ? rows[0] || null : null
+}
+
+function boolValue(value){
+  if(value === true || value === 1) return true
+  if(value === false || value === 0 || value === null) return false
+  return ['1','true','yes','on','blocked','restricted'].includes(String(value || '').trim().toLowerCase())
+}
+
+function restrictionWasSubmitted(body = {}){
+  return hasOwn(body, 'restricted', 'restrictionBlocked', 'restrictionMessage', 'restrictionReason', 'restrictionRegion')
+}
+
+async function readRows(){
+  const res = await supabaseRequest('anime?select=*&order=updated_at.desc.nullslast&limit=1400', { method:'GET', timeout:15000 })
+  const text = await res.text()
+  let data = []
+  try{ data = text ? JSON.parse(text) : [] }catch{}
+  if(!res.ok) throw new Error(text || `Supabase read failed ${res.status}`)
+  return Array.isArray(data) ? data : []
+}
+
+export async function GET(request){
+  try{
+    if(!hasSupabase()) return json({ ok:false, error:'Supabase env is not configured' }, 400)
+    const { searchParams } = new URL(request.url)
+    const q = cleanAdminText(searchParams.get('q')).toLowerCase()
+    const filter = cleanAdminText(searchParams.get('filter') || 'all') || 'all'
+    const limit = Math.min(Math.max(Number(searchParams.get('limit') || 120), 1), 500)
+
+    const rows = await readRows()
+    const normalized = rows.map(normalizeAdminAnime)
+    const stats = adminAnimeStats(normalized)
+    const items = normalized.filter(item => {
+      if(!matchesAdminFilter(item, filter)) return false
+      if(!q) return true
+      const hay = `${item.slug} ${item.title} ${item.titleRu} ${item.originalTitle} ${item.otherTitle} ${item.genres.join(' ')}`.toLowerCase()
+      return hay.includes(q)
+    })
+
+    return json({ ok:true, filter, q, stats, total:items.length, items:items.slice(0, limit) })
+  }catch(error){
+    return json({ ok:false, error:error?.message || 'Unknown admin anime error' }, 500)
+  }
 }
 
 export async function PATCH(request){
   try{
-    if(!hasSupabase()){
-      return NextResponse.json({ ok:false, error:'Supabase env is not configured' }, { status: 400 })
-    }
-
+    if(!hasSupabase()) return json({ ok:false, error:'Supabase env is not configured' }, 400)
     const body = await request.json()
-    const slug = cleanString(body.slug)
+    const slug = cleanAdminText(body.slug)
+    const id = body.id !== undefined && body.id !== null && body.id !== '' ? Number(body.id) : null
+    if(!slug && !id) return json({ ok:false, error:'slug or id is required' }, 400)
 
-    if(!slug){
-      return NextResponse.json({ ok:false, error:'slug is required' }, { status: 400 })
+    const payload = normalizePatch(body)
+    const filter = id ? `id=eq.${encodeURIComponent(id)}` : `slug=eq.${encodeURIComponent(slug)}`
+
+    if(restrictionWasSubmitted(body)){
+      const current = await readCurrentRow(filter)
+      if(!current) return json({ ok:false, error:'Anime row not found' }, 404)
+      const currentRaw = current.raw && typeof current.raw === 'object' && !Array.isArray(current.raw) ? current.raw : {}
+      const existing = currentRaw.aianime_restriction && typeof currentRaw.aianime_restriction === 'object' ? currentRaw.aianime_restriction : {}
+      const blocked = boolValue(body.restricted ?? body.restrictionBlocked)
+      const submittedStatus = cleanString(body.status)
+      const originalStatus = cleanString(existing.original_status)
+        || (current.status && current.status !== 'restricted_ru' ? current.status : null)
+        || (submittedStatus && submittedStatus !== 'restricted_ru' ? submittedStatus : null)
+        || 'completed'
+      payload.status = blocked ? 'restricted_ru' : originalStatus
+      payload.raw = {
+        ...currentRaw,
+        aianime_restriction: makeAnimeRestriction({
+          blocked,
+          message: body.restrictionMessage ?? existing.message,
+          reason: body.restrictionReason ?? existing.reason,
+          region: body.restrictionRegion ?? existing.region ?? 'RU',
+          originalStatus,
+        })
+      }
     }
 
-    const payload = stripEmpty(normalizePayload(body))
-
-    const tryUpdate = async (table, data = payload) => {
-      const res = await supabaseRequest(`${table}?slug=eq.${encodeURIComponent(slug)}`, {
+    const run = async (data) => {
+      const res = await supabaseRequest(`anime?${filter}&select=*`, {
         method:'PATCH',
         headers:{ 'Content-Type':'application/json', Prefer:'return=representation' },
         body: JSON.stringify(data),
-        timeout: 15000
+        timeout:15000,
       })
       const text = await res.text()
       let parsed = null
       try{ parsed = text ? JSON.parse(text) : null }catch{}
-      return { res, text, data: parsed, table }
+      return { res, text, parsed }
     }
 
-    let result = await tryUpdate('anime')
-
-    // Мягкий fallback на старую схему: если какой-то новой колонки нет, пробуем сохранить базовые поля.
+    let result = await run(payload)
     if(!result.res.ok && /column|schema cache|PGRST204|does not exist/i.test(result.text || '')){
-      const legacyPayload = stripEmpty({
-        title: payload.title_ru || payload.title,
-        original_title: payload.original_title,
-        description: payload.description_ru || payload.description,
-        poster_url: payload.poster_url,
-        banner_url: payload.banner_url,
-        status: payload.status,
-        kind: payload.kind,
-        year: payload.year,
-        episodes: payload.episodes,
-        rating: payload.rating,
-        genres: payload.genres,
-        studio: payload.studio,
-        updated_at: payload.updated_at,
-      })
-      result = await tryUpdate('anime', legacyPayload)
+      result = await run(stripForLegacy(payload))
     }
+    if(!result.res.ok) return json({ ok:false, error:`Supabase update failed: ${result.res.status} ${result.text}` }, 500)
 
-    if(!result.res.ok){
-      const fallback = await tryUpdate('anime_titles')
-      if(fallback.res.ok) result = fallback
-    }
-
-    if(!result.res.ok){
-      return NextResponse.json({ ok:false, error:`Supabase update failed: ${result.res.status} ${result.text}` }, { status: 500 })
-    }
-
-    return NextResponse.json({ ok:true, table:result.table, item:Array.isArray(result.data) ? result.data[0] : result.data })
+    const row = Array.isArray(result.parsed) ? result.parsed[0] : result.parsed
+    const changedSlug = row?.slug || slug
+    invalidateAnimeRepositoryCache(changedSlug)
+    invalidateScheduleCache()
+    try{
+      revalidatePath('/')
+      revalidatePath('/catalog')
+      revalidatePath('/schedule')
+      if(changedSlug) revalidatePath(`/anime/${changedSlug}`)
+    }catch{}
+    return json({ ok:true, item:normalizeAdminAnime(row || {}) })
   }catch(error){
-    return NextResponse.json({ ok:false, error:error?.message || 'Unknown error' }, { status: 500 })
+    return json({ ok:false, error:error?.message || 'Unknown admin save error' }, 500)
   }
 }

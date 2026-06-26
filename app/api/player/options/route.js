@@ -1,6 +1,7 @@
 import { getAnimeBySlugFromRepo, getEpisodesBySlug } from '@/lib/animeRepository'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
 import { hasKodik, resolveKodikEpisodeRowsForAnime } from '@/lib/kodik'
+import { getAnimeRestriction } from '@/lib/contentRestrictions'
 
 export const dynamic = 'force-dynamic'
 
@@ -445,22 +446,9 @@ function collapseOptionsToVoiceRepresentatives(rows = []){
   })
 }
 
-function isTrustedPlayerOptionForUi(option = {}, item = {}){
-  if(!usable(option)) return false
-  const expected = expectedEpisodes(item)
-  const source = String(option.source || '').toLowerCase()
-  const score = Number(option.matchScore || option.raw?.match_score || 0) || 0
-  const reliable = Boolean(option.reliableId || option.raw?.reliable_id)
-  if(source === 'kodik-api-episode' || source === 'kodik-api-season-episode') return true
-  if(reliable || score >= 160) return true
-  // Не показываем один слабый iframe как “Плеер Kodik (1 эп.)”: чаще всего это соседний/недоступный материал.
-  if(expected > 1) return false
-  return false
-}
-
 function relaxedOptionsForUi(options = [], item = {}){
   const valid = (Array.isArray(options) ? options : [])
-    .filter(option => isTrustedPlayerOptionForUi(option, item))
+    .filter(usable)
     .filter(option => !isMovieAnime(item) || (isMovieOption(option) && !isSerialOption(option)))
   if(!valid.length) return []
   const expected = expectedEpisodes(item)
@@ -650,6 +638,19 @@ async function saveRows(rows){
   return { ok:true, saved:Array.isArray(saved) ? saved.length : rows.length }
 }
 
+async function readCurrentRestriction(slug){
+  if(!hasSupabase()) return getAnimeRestriction(slug)
+  try{
+    const res = await supabaseRequest(`anime?select=slug,status,raw&slug=eq.${encodeURIComponent(slug)}&limit=1`, { method:'GET', timeout:8000 })
+    if(!res.ok) return getAnimeRestriction(slug)
+    const rows = await res.json().catch(() => [])
+    const row = Array.isArray(rows) ? rows[0] || null : null
+    return getAnimeRestriction(row || slug)
+  }catch{
+    return getAnimeRestriction(slug)
+  }
+}
+
 async function handleGET(req){
   const url = new URL(req.url)
   const slug = String(url.searchParams.get('slug') || '').trim()
@@ -659,8 +660,13 @@ async function handleGET(req){
 
   if(!slug) return json({ ok:false, error:'slug is required' }, 400)
 
+  const restriction = await readCurrentRestriction(slug)
+  if(restriction) return json({ ok:false, restricted:true, region:restriction.region || 'RU', error:'Недоступно в РФ' }, Number(restriction.status || 451))
+
   const item = await getAnimeBySlugFromRepo(slug)
   if(!item) return json({ ok:false, error:'anime not found' }, 404)
+  const itemRestriction = getAnimeRestriction(item)
+  if(itemRestriction) return json({ ok:false, restricted:true, region:itemRestriction.region || 'RU', error:'Недоступно в РФ' }, Number(itemRestriction.status || 451))
 
   const existingEpisodes = await getEpisodesBySlug(slug, item.episodes || item.episodesList?.length || 1)
   const existingOptions = filterOptionsForAnime(existingEpisodes.map(rowToOption), item)

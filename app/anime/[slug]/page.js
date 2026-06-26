@@ -22,6 +22,7 @@ import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { encodeSlug } from '@/lib/routeSlugs'
 import { itemLastModified } from '@/lib/sitemapSeo'
 import { cleanPublicText, isPlaceholderText } from '@/lib/ruContent'
+import { getAnimeRestriction } from '@/lib/contentRestrictions'
 
 export async function generateMetadata({ params }){
   const resolvedParams = await params
@@ -31,6 +32,16 @@ export async function generateMetadata({ params }){
       title: 'Тайтл не найден — AIanime',
       description: 'Этот тайтл удалён или больше не доступен в каталоге AIanime.',
       robots: { index:false, follow:false }
+    }
+  }
+
+  const restriction = getAnimeRestriction(item)
+  if(restriction){
+    return {
+      title:`Недоступно в РФ — AIanime`,
+      description:restriction.message || 'Материал недоступен на территории Российской Федерации.',
+      robots:{ index:false, follow:false, noarchive:true },
+      alternates:{ canonical:`/anime/${encodeURIComponent(item.slug).replace(/%2F/g, '/')}` },
     }
   }
 
@@ -909,12 +920,41 @@ function getDisplayEpisodeCount(item = {}, playerOptions = []){
 }
 
 
+function RestrictedAnimePage({ item, restriction }){
+  const title = cleanPublicText(item?.title) || cleanPublicText(item?.titleRu) || 'Этот тайтл'
+  const message = restriction?.message || 'Этот тайтл недоступен для просмотра на территории Российской Федерации.'
+  return <main style={{minHeight:'100vh',background:'#f7f5ef',color:'#211d35',fontFamily:'Manrope,Inter,system-ui,sans-serif'}}>
+    <header className="title-wide-header-v80" aria-label="Меню сайта">
+      <div className="title-wide-header-v80__bar">
+        <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
+          <img src="/aianime-logo.png" alt="" aria-hidden="true" width="44" height="44" />
+          <b>Aianime</b>
+        </Link>
+        <nav className="title-wide-header-v80__nav" aria-label="Разделы сайта">
+          <Link href="/catalog"><HomeSectionIcon type="catalog"/>Каталог</Link>
+          <Link href="/schedule"><HomeSectionIcon type="schedule"/>Расписание</Link>
+          <Link href="/collections"><HomeSectionIcon type="collections"/>Подборки</Link>
+        </nav>
+      </div>
+    </header>
+    <section style={{width:'min(760px,calc(100% - 32px))',margin:'72px auto',background:'#fff',border:'1px solid rgba(33,29,53,.12)',borderRadius:28,padding:'36px',boxShadow:'0 24px 80px rgba(33,29,53,.10)'}}>
+      <div style={{display:'inline-flex',padding:'7px 11px',borderRadius:999,background:'#ffe5e9',color:'#8b1d31',fontWeight:900,fontSize:13,marginBottom:16}}>Доступ ограничен</div>
+      <h1 style={{fontSize:'clamp(32px,6vw,54px)',letterSpacing:'-.05em',lineHeight:1,margin:'0 0 14px'}}>Недоступно в РФ</h1>
+      <p style={{fontSize:18,lineHeight:1.65,color:'#716b82',margin:'0 0 12px'}}>{message}</p>
+      <p style={{fontSize:14,lineHeight:1.6,color:'#918b9f',margin:'0 0 26px'}}>«{title}» исключён из просмотра, плеера и публичных подборок для Российской Федерации.</p>
+      <Link href="/catalog" style={{display:'inline-flex',padding:'12px 16px',borderRadius:14,background:'#211d35',color:'#fff',textDecoration:'none',fontWeight:900}}>Вернуться в каталог</Link>
+    </section>
+  </main>
+}
+
 export default async function AnimePage({ params, searchParams }){
   const resolvedParams = await params
   const resolvedSearchParams = await searchParams
   if(String(resolvedParams.slug || '').startsWith('catalog-title-')) notFound()
   const item = await getAnimeBySlugFromRepo(resolvedParams.slug)
   if(!item) notFound()
+  const restriction = getAnimeRestriction(item)
+  if(restriction) return <RestrictedAnimePage item={item} restriction={restriction} />
   const title = cleanPublicText(item.title) || 'Без названия'
   const originalTitle = cleanPublicText(item.originalTitle || item.englishTitle || item.title)
   const description = cleanPublicText(item.description) || 'Описание скоро появится.'

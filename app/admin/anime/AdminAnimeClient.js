@@ -1,573 +1,176 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { pushToast } from '@/components/ToastCenter'
-import { translateGenres, makeRussianDescription, cleanPublicText } from '@/lib/ruContent'
-import { isUsableAnimePoster } from '@/lib/animeQuality'
+import { useEffect, useMemo, useState } from 'react'
+import { adminFetch, openAdminWithSecret } from '../adminClient'
 
-function hasCyrillic(value){
-  return /[А-Яа-яЁё]/.test(String(value || ''))
+const FILTERS = [
+  ['all','Все'],
+  ['restricted','Закрытые в РФ'],
+  ['needs_work','Проблемные'],
+  ['missing_ru','Без RU'],
+  ['missing_poster','Без постера'],
+  ['bad_poster','Плохой постер'],
+  ['missing_description','Без описания'],
+  ['short_description','Короткие'],
+  ['missing_genres','Без жанров'],
+  ['english_genres','Англ. жанры'],
+  ['missing_player','Без плеера'],
+  ['suspicious_player','Подозр. плеер'],
+  ['ready','Готовые'],
+]
+
+const ISSUE_LABELS = {
+  restricted:'Закрыт в РФ',   missing_ru:'Без RU', latin_ru:'RU латиницей', missing_poster:'Без постера', bad_poster:'Плохой постер', bad_banner:'Плохой баннер', missing_description:'Без описания', short_description:'Короткое', missing_genres:'Без жанров', english_genres:'Англ. жанры', bad_symbols:'Мусор', missing_player:'Без плеера', suspicious_player:'Подозр. плеер'
 }
 
-function hasLatinOnly(value){
-  const text = String(value || '').trim()
-  return Boolean(text && /[A-Za-z]/.test(text) && !hasCyrillic(text))
-}
+function css(){ return <style>{`
+.admin-v244-page{min-height:100vh;background:#f6f4ef;color:#201c3a;font-family:Manrope,system-ui,sans-serif;padding:22px}.anime-admin{max-width:1500px;margin:0 auto}.aa-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.aa-top h1{font-size:36px;line-height:1;margin:6px 0 8px;font-weight:900;letter-spacing:-.05em}.aa-top p{margin:0;color:#746e86}.aa-nav{display:flex;gap:8px;flex-wrap:wrap}.aa-btn,.aa-nav a{border:1px solid rgba(32,28,58,.14);background:white;color:#201c3a;border-radius:14px;padding:10px 13px;text-decoration:none;font-weight:850;cursor:pointer}.aa-btn.primary{background:#201c3a;color:white}.aa-btn:disabled{opacity:.55;cursor:not-allowed}.aa-grid{display:grid;grid-template-columns:420px minmax(0,1fr);gap:14px}.aa-panel{background:white;border:1px solid rgba(32,28,58,.1);border-radius:24px;padding:16px;box-shadow:0 18px 40px rgba(32,28,58,.07)}.aa-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}.aa-stat{border:1px solid rgba(32,28,58,.09);background:#fbfaf7;border-radius:16px;padding:10px;cursor:pointer;text-align:left;color:#201c3a}.aa-stat span{display:block;font-size:11px;color:#746e86;font-weight:800}.aa-stat b{font-size:22px}.aa-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.aa-input,.aa-select,.aa-textarea{border:1px solid rgba(32,28,58,.15);border-radius:14px;background:#fff;color:#201c3a;padding:10px 12px;font:inherit}.aa-input{min-width:0;flex:1}.aa-list{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 360px);overflow:auto;padding-right:4px}.aa-item{border:1px solid rgba(32,28,58,.1);background:#fbfaf7;border-radius:17px;padding:9px;display:grid;grid-template-columns:42px 1fr;gap:10px;text-align:left;color:#201c3a;cursor:pointer}.aa-item.active{outline:2px solid #201c3a;background:white}.aa-item img{width:42px;height:58px;border-radius:10px;object-fit:cover;background:#eee}.aa-item b{display:block;font-size:13px;line-height:1.2}.aa-item small{display:block;color:#746e86;margin-top:3px;font-size:11px}.aa-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.aa-badge{display:inline-flex;border-radius:999px;background:#eeeaf7;color:#201c3a;font-size:10px;font-weight:850;padding:4px 7px}.aa-badge.bad{background:#ffe0e4;color:#8b1d31}.aa-badge.warn{background:#fff2c7;color:#6a4a00}.aa-editor-head{display:grid;grid-template-columns:92px 1fr;gap:14px;align-items:start;margin-bottom:14px}.aa-editor-head img{width:92px;height:128px;border-radius:18px;object-fit:cover;background:#eee}.aa-editor-head h2{margin:0 0 6px;font-size:25px;line-height:1.08}.aa-editor-head p{margin:2px 0;color:#746e86;font-size:13px}.aa-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.aa-field{display:flex;flex-direction:column;gap:6px}.aa-field span{font-size:12px;color:#746e86;font-weight:850}.aa-field.wide{grid-column:1/-1}.aa-field input,.aa-field select,.aa-field textarea{border:1px solid rgba(32,28,58,.15);border-radius:14px;background:#fff;color:#201c3a;padding:11px 12px;font:inherit}.aa-field textarea{min-height:116px;resize:vertical}.aa-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;position:sticky;bottom:12px;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);padding:10px;border-radius:18px;border:1px solid rgba(32,28,58,.09)}.aa-log{white-space:pre-wrap;background:#19162a;color:white;border-radius:16px;padding:12px;font-size:12px;line-height:1.45;max-height:180px;overflow:auto;margin-top:12px}.aa-empty{padding:32px;text-align:center;color:#746e86}.aa-danger{color:#8b1d31}.aa-ok{color:#236033}@media(max-width:980px){.admin-v244-page{padding:14px}.aa-grid{grid-template-columns:1fr}.aa-list{max-height:420px}.aa-form{grid-template-columns:1fr}.aa-top{display:block}.aa-nav{margin-top:12px}}
+`}</style> }
 
-function isPlaceholder(value){
-  const text = String(value || '').trim().toLowerCase()
-  return !text || text.includes('будет добавлено') || text.includes('описание появится') || text === '—' || text === 'default'
-}
-
-function hasBadSymbols(value){
-  return /[●•]{2,}/.test(String(value || ''))
-}
-
-function asGenreList(value){
-  if(Array.isArray(value)) return value
-  return String(value || '').split(',').map(x => x.trim()).filter(Boolean)
-}
-
-function hasEnglishGenre(value){
-  return asGenreList(value).some(genre => {
-    const text = String(genre || '').trim()
-    return Boolean(text && /^[A-Za-z0-9\s()'&:/.+-]+$/.test(text))
-  })
-}
-
-function normalizeGenres(value){
-  return translateGenres(asGenreList(value)).join(', ')
-}
-
-function descriptionText(item){
-  return cleanPublicText(item?.descriptionRu || item?.description || '')
-}
-
-function isShortDescription(value){
-  const text = cleanPublicText(value)
-  return !text || text.length < 140
-}
-
-function isGeneratedDescription(value){
-  const text = String(value || '')
-  return text.includes('подойдёт зрителям') || text.includes('атмосферу истории, развитие персонажей')
-}
-
-function needsContentWork(item){
-  return isPlaceholder(item.descriptionRu || item.description)
-    || isShortDescription(item.descriptionRu || item.description)
-    || hasEnglishGenre(item.genres)
-    || hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || item.description || ''}`)
-}
-
-function cleanTitle(value){
-  return String(value || '')
-    .replace(/[●•]{2,}/g, '')
-    .replace(/\s+([:,.!?])/g, '$1')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-}
-
-function cleanDescription(value){
-  return String(value || '')
-    .replace(/[●•]{2,}/g, '')
-    .replace(/\s+([:,.!?])/g, '$1')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
+function issueTone(issue){
+  if(['restricted','missing_poster','bad_poster','bad_banner','missing_player'].includes(issue)) return 'bad'
+  if(['missing_ru','missing_description','short_description','missing_genres','english_genres','suspicious_player','latin_ru','bad_symbols'].includes(issue)) return 'warn'
+  return ''
 }
 
 function toForm(item){
-  const titleRu = item?.titleRu || (hasCyrillic(item?.title) ? item.title : '')
   return {
-    slug: item?.slug || '',
-    titleRu,
-    title: item?.englishTitle || (!hasCyrillic(item?.title) ? item?.title : '') || '',
-    originalTitle: item?.originalTitle || '',
-    descriptionRu: item?.descriptionRu || item?.description || '',
-    description: item?.description || '',
-    posterUrl: item?.poster || '',
-    bannerUrl: item?.banner || '',
-    year: item?.year || '',
-    episodes: item?.episodes || '',
-    rating: item?.score || item?.rating || '',
-    status: item?.status || 'completed',
-    kind: item?.kind || 'tv',
-    genres: (item?.genres || []).join(', '),
-    studio: item?.studio || ''
+    id:item?.id || '', slug:item?.slug || '', titleRu:item?.titleRu || '', title:item?.title || '', originalTitle:item?.originalTitle || '', otherTitle:item?.otherTitle || '', descriptionRu:item?.descriptionRu || '', description:item?.description || '', posterUrl:item?.posterUrl || '', bannerUrl:item?.bannerUrl || '', genres:Array.isArray(item?.genres) ? item.genres.join(', ') : '', year:item?.year || '', status:item?.status || '', kind:item?.kind || '', episodes:item?.episodes || '', rating:item?.rating || '', studio:item?.studio || '', restricted:Boolean(item?.restricted), restrictionMessage:item?.restriction?.message || 'Этот тайтл недоступен для просмотра на территории Российской Федерации.', restrictionReason:item?.restriction?.reason || '', restrictionRegion:item?.restriction?.region || 'RU'
   }
 }
 
-const filterLabels = {
-  all: 'Все',
-  needsContent: 'Контент-проблемы',
-  missingTitle: 'Без русского',
-  latinTitle: 'title_ru латиницей',
-  missingDescription: 'Без описания',
-  shortDescription: 'Короткое описание',
-  generatedDescription: 'Шаблонное описание',
-  englishGenres: 'Англ. жанры',
-  badSymbols: 'С мусором',
-  missingPoster: 'Без постера',
-  ongoing: 'Онгоинги'
-}
-
-const validFilters = new Set(Object.keys(filterLabels))
-
-
-function currentAdminSecret(){
-  if(typeof window === 'undefined') return ''
-  try{
-    const params = new URLSearchParams(window.location.search || '')
-    const fromUrl = params.get('admin_secret') || params.get('adminToken') || ''
-    if(fromUrl){
-      window.sessionStorage?.setItem('aianime_admin_secret', fromUrl)
-      return fromUrl
-    }
-    return window.sessionStorage?.getItem('aianime_admin_secret') || ''
-  }catch{
-    return ''
-  }
-}
-
-function adminFetch(url, options = {}){
-  const secret = currentAdminSecret()
-  const headers = { ...(options.headers || {}) }
-  if(secret) headers['x-admin-secret'] = secret
-  return fetch(url, { ...options, credentials:'same-origin', headers })
-}
-
-function hasRealPosterUrl(value){
-  return isUsableAnimePoster(value)
-}
-
-function guessRussianTitleFromItem(item = {}, form = {}){
-  const candidates = [
-    form.titleRu,
-    item.titleRu,
-    item.displayTitle,
-    item.title,
-    item.kodikTitle,
-    item.otherTitle,
-    item.titleOrigKodik,
-  ]
-  return candidates.map(cleanTitle).find(value => value && hasCyrillic(value)) || ''
-}
-
-function itemHasPoster(item){
-  return hasRealPosterUrl(item?.poster || item?.posterUrl || item?.banner)
-}
-
-function itemMatchesFilter(item, filter){
-  if(filter === 'needsContent') return needsContentWork(item)
-  if(filter === 'missingTitle') return !String(item.titleRu || '').trim()
-  if(filter === 'latinTitle') return hasLatinOnly(item.titleRu)
-  if(filter === 'missingDescription') return isPlaceholder(item.descriptionRu || item.description)
-  if(filter === 'shortDescription') return isShortDescription(item.descriptionRu || item.description)
-  if(filter === 'generatedDescription') return isGeneratedDescription(item.descriptionRu || item.description)
-  if(filter === 'englishGenres') return hasEnglishGenre(item.genres)
-  if(filter === 'badSymbols') return hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || item.description || ''}`)
-  if(filter === 'missingPoster') return !itemHasPoster(item)
-  if(filter === 'ongoing') return item.status === 'ongoing'
-  return true
-}
-
-export default function AdminAnimeClient({ items = [] }){
-  const searchParams = useSearchParams()
-  const initialFilter = searchParams.get('filter')
-  const initialQuery = searchParams.get('q') || ''
-
-  const [query,setQuery] = useState(initialQuery)
-  const [filter,setFilter] = useState(validFilters.has(initialFilter) ? initialFilter : 'all')
-  const [selected,setSelected] = useState(items[0] || null)
-  const [form,setForm] = useState(toForm(items[0] || null))
+export default function AdminAnimeClient(){
+  const [filter,setFilter] = useState('all')
+  const [query,setQuery] = useState('')
+  const [items,setItems] = useState([])
+  const [stats,setStats] = useState({})
+  const [selected,setSelected] = useState(null)
+  const [form,setForm] = useState(toForm(null))
+  const [loading,setLoading] = useState(false)
   const [saving,setSaving] = useState(false)
-  const [bulkRunning,setBulkRunning] = useState(false)
-  const [autoNext,setAutoNext] = useState(true)
-  const [dirty,setDirty] = useState(false)
+  const [log,setLog] = useState('')
 
-  const stats = useMemo(()=>{
-    const total = items.length
-    const missingTitle = items.filter(item => !String(item.titleRu || '').trim()).length
-    const latinTitle = items.filter(item => hasLatinOnly(item.titleRu)).length
-    const badSymbols = items.filter(item => hasBadSymbols(`${item.titleRu || ''} ${item.title || ''} ${item.descriptionRu || item.description || ''}`)).length
-    const ongoing = items.filter(item => item.status === 'ongoing').length
-    const missingDescription = items.filter(item => isPlaceholder(item.descriptionRu || item.description)).length
-    const shortDescription = items.filter(item => isShortDescription(item.descriptionRu || item.description)).length
-    const generatedDescription = items.filter(item => isGeneratedDescription(item.descriptionRu || item.description)).length
-    const englishGenres = items.filter(item => hasEnglishGenre(item.genres)).length
-    const missingPoster = items.filter(item => !itemHasPoster(item)).length
-    const needsContent = items.filter(item => needsContentWork(item)).length
-    return { total, missingTitle, latinTitle, badSymbols, ongoing, missingDescription, shortDescription, generatedDescription, englishGenres, missingPoster, needsContent }
-  }, [items])
+  function initFromUrl(){
+    if(typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const f = params.get('filter')
+    const q = params.get('q')
+    if(f) setFilter(f)
+    if(q) setQuery(q)
+  }
 
-  const filteredAll = useMemo(()=>{
-    const q = query.trim().toLowerCase()
-    return items.filter(item => {
-      const hay = `${item.title || ''} ${item.titleRu || ''} ${item.englishTitle || ''} ${item.originalTitle || ''} ${item.slug || ''} ${(item.genres || []).join(' ')}`.toLowerCase()
-      if(q && !hay.includes(q)) return false
-      return itemMatchesFilter(item, filter)
-    })
-  }, [items, query, filter])
-
-  const filtered = useMemo(()=>filteredAll.slice(0,260), [filteredAll])
-  const selectedIndex = useMemo(()=>filtered.findIndex(item => item.slug === selected?.slug), [filtered, selected])
-  const nextProblem = filtered[selectedIndex + 1] || filtered[0] || null
-
-  useEffect(()=>{
-    if(!selected || !filtered.some(item => item.slug === selected.slug)){
-      const first = filtered[0] || items[0] || null
-      setSelected(first)
-      setForm(toForm(first))
-      setDirty(false)
+  async function load(next = {}){
+    setLoading(true)
+    const f = next.filter ?? filter
+    const q = next.query ?? query
+    try{
+      const params = new URLSearchParams({ filter:f, q, limit:'220' })
+      const data = await adminFetch(`/admin/api/anime?${params.toString()}`)
+      setItems(data.items || [])
+      setStats(data.stats || {})
+      const current = data.items?.find(item => item.id === selected?.id) || data.items?.[0] || null
+      setSelected(current)
+      setForm(toForm(current))
+      setLog(`Загружено: ${data.items?.length || 0} из ${data.total || 0}. Фильтр: ${f}`)
+    }catch(error){
+      setLog(error?.message || 'Ошибка загрузки')
+    }finally{
+      setLoading(false)
     }
-  }, [filter, query, filtered, items, selected])
+  }
 
-  function select(item, options = {}){
-    if(!options.force && dirty && selected?.slug !== item?.slug){
-      const ok = window.confirm('Есть несохранённые изменения. Перейти к другому тайтлу без сохранения?')
-      if(!ok) return
-    }
+  useEffect(()=>{ initFromUrl() }, [])
+  useEffect(()=>{ load() }, [filter])
+
+  function select(item){
     setSelected(item)
     setForm(toForm(item))
-    setDirty(false)
   }
 
-  function update(key, value){
-    setForm(prev => ({ ...prev, [key]: value }))
-    setDirty(true)
+  function update(key,value){
+    setForm(prev => ({ ...prev, [key]:value }))
   }
 
-  async function save(options = {}){
-    if(!form.slug) return false
+  async function save(patch = {}){
+    if(!form.slug && !form.id) return
     setSaving(true)
     try{
-      const res = await adminFetch('/admin/api/anime', {
-        method:'PATCH',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify(form)
-      })
-      const payload = await res.json()
-      if(!payload.ok) throw new Error(payload.error || 'Ошибка сохранения')
-      pushToast('Тайтл сохранён в Supabase', 'success')
-      setDirty(false)
-      if(options.next && nextProblem){
-        select(nextProblem, { force:true })
-      }
-      return true
+      const data = await adminFetch('/admin/api/anime', { method:'PATCH', body:JSON.stringify({ ...form, ...patch }) })
+      setSelected(data.item)
+      setForm(toForm(data.item))
+      setLog(`Сохранено: ${data.item?.slug}`)
+      await load()
     }catch(error){
-      pushToast(error?.message || 'Не удалось сохранить', 'error')
-      return false
+      setLog(error?.message || 'Ошибка сохранения')
     }finally{
       setSaving(false)
     }
   }
 
-  function copySlug(){
-    if(!selected) return
-    navigator.clipboard?.writeText(selected.slug)
-    pushToast('Slug скопирован', 'success')
-  }
-
-  function cleanupForm(){
-    setForm(prev => ({
-      ...prev,
-      titleRu: cleanTitle(prev.titleRu),
-      title: cleanTitle(prev.title),
-      originalTitle: cleanTitle(prev.originalTitle),
-      descriptionRu: cleanDescription(prev.descriptionRu),
-      description: cleanDescription(prev.description),
-    }))
-    setDirty(true)
-    pushToast('Название и описание очищены в форме', 'success')
-  }
-
-  function translateGenresInForm(){
-    const nextGenres = normalizeGenres(form.genres)
-    update('genres', nextGenres)
-    pushToast('Жанры переведены в форме', 'success')
-  }
-
-  function generateDescriptionInForm(){
-    const genres = asGenreList(form.genres)
-    const descriptionRu = makeRussianDescription({
-      title_ru: form.titleRu || form.title || selected?.titleRu || selected?.title,
-      title: form.title || selected?.englishTitle || selected?.title,
-      original_title: form.originalTitle || selected?.originalTitle,
-      genres,
-      kind: form.kind,
-      status: form.status,
-      year: form.year,
-      episodes: form.episodes,
-      studio: form.studio,
-      rating: form.rating
-    })
-    update('descriptionRu', descriptionRu)
-    pushToast('Описание RU сгенерировано', 'success')
-  }
-
-  function cleanupContentForm(){
-    const translatedGenres = normalizeGenres(form.genres)
-    const currentDescription = cleanDescription(form.descriptionRu)
-    const shouldGenerate = isPlaceholder(currentDescription) || isShortDescription(currentDescription)
-    const generatedDescription = shouldGenerate ? makeRussianDescription({
-      title_ru: cleanTitle(form.titleRu || selected?.titleRu || selected?.title),
-      title: cleanTitle(form.title || selected?.englishTitle || selected?.title),
-      original_title: cleanTitle(form.originalTitle || selected?.originalTitle),
-      genres: asGenreList(translatedGenres),
-      kind: form.kind,
-      status: form.status,
-      year: form.year,
-      episodes: form.episodes,
-      studio: form.studio,
-      rating: form.rating
-    }) : currentDescription
-
-    setForm(prev => ({
-      ...prev,
-      titleRu: cleanTitle(prev.titleRu),
-      title: cleanTitle(prev.title),
-      originalTitle: cleanTitle(prev.originalTitle),
-      genres: translatedGenres,
-      descriptionRu: generatedDescription,
-      description: cleanDescription(prev.description),
-    }))
-    setDirty(true)
-    pushToast('Контент в форме приведён в порядок', 'success')
-  }
-
-  function fillRuFromCurrent(){
-    const guessed = guessRussianTitleFromItem(selected, form)
-    if(guessed && (!form.titleRu || hasLatinOnly(form.titleRu) || !hasCyrillic(form.titleRu))){
-      update('titleRu', guessed)
-      pushToast('Русское название подставлено', 'success')
+  function applyRuCandidate(){
+    if(!selected?.ruCandidate){
+      setLog('Для этого тайтла нет русского кандидата в raw/Kodik.')
       return
     }
-    pushToast('В данных тайтла нет готового русского названия. Запусти “Добить постер/Kodik”, потом попробуй снова.', 'error')
+    update('titleRu', selected.ruCandidate)
+    setLog(`Подставил RU в форму: ${selected.ruCandidate}`)
   }
 
-  async function enrichSelected(){
-    if(!selected?.slug) return
-    setSaving(true)
-    try{
-      const res = await adminFetch('/admin/api/cron', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify({ job:'enrichCatalog', slugs:selected.slug, limit:1, scan:1000, delay:1000, jikan:1, kodik:1, episodes:1 })
-      })
-      const payload = await res.json().catch(()=>null)
-      if(!res.ok || payload?.ok === false) throw new Error(payload?.error || payload?.payload?.error || 'Обогащение не сработало')
-      pushToast('Тайтл добит через Jikan/Kodik. Обнови список или страницу.', 'success')
-    }catch(error){
-      pushToast(error?.message || 'Ошибка обогащения', 'error')
-    }finally{
-      setSaving(false)
-    }
+  function cleanForm(){
+    const clean = (v) => String(v || '').replace(/[●•]{2,}/g, '').replace(/\s+([:,.!?])/g, '$1').replace(/\s{2,}/g, ' ').trim()
+    setForm(prev => ({ ...prev, titleRu:clean(prev.titleRu), title:clean(prev.title), originalTitle:clean(prev.originalTitle), descriptionRu:clean(prev.descriptionRu), description:clean(prev.description) }))
   }
 
-  async function saveAndNext(){
-    const ok = await save({ next:false })
-    if(ok && autoNext && nextProblem) select(nextProblem, { force:true })
-  }
+  const statButtons = [
+    ['total','Всего','all'], ['needs_work','Проблем','needs_work'], ['missing_ru','Без RU','missing_ru'], ['missing_poster','Без постера','missing_poster'], ['bad_poster','Плохой постер','bad_poster'], ['missing_player','Без плеера','missing_player'], ['restricted','Закрыто','restricted']
+  ]
 
-  function goNext(){
-    if(nextProblem) select(nextProblem, { force:true })
-  }
-
-  async function bulkCleanupVisible(){
-    const targets = filteredAll.filter(item => itemMatchesFilter(item, 'badSymbols')).slice(0,120)
-    if(!targets.length){
-      pushToast('В текущей выборке нет мусорных символов', 'success')
-      return
-    }
-    const ok = window.confirm(`Очистить ●● в ${targets.length} тайтлах текущей выборки? Это сохранит изменения в Supabase.`)
-    if(!ok) return
-
-    setBulkRunning(true)
-    let done = 0
-    let failed = 0
-    try{
-      for(const item of targets){
-        const payload = {
-          slug: item.slug,
-          titleRu: cleanTitle(item.titleRu || item.title),
-          title: cleanTitle(item.englishTitle || item.title),
-          originalTitle: cleanTitle(item.originalTitle),
-          descriptionRu: cleanDescription(item.descriptionRu || item.description),
-          description: cleanDescription(item.description),
-        }
-        const res = await adminFetch('/admin/api/anime', {
-          method:'PATCH',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify(payload)
-        })
-        const data = await res.json().catch(()=>null)
-        if(res.ok && data?.ok) done += 1
-        else failed += 1
-      }
-      pushToast(`Очистка завершена: ${done} сохранено${failed ? `, ошибок: ${failed}` : ''}`, failed ? 'error' : 'success')
-    }catch(error){
-      pushToast(error?.message || 'Ошибка массовой очистки', 'error')
-    }finally{
-      setBulkRunning(false)
-    }
-  }
-
-  async function bulkContentVisible(){
-    const targets = filteredAll.filter(item => needsContentWork(item)).slice(0,80)
-    if(!targets.length){
-      pushToast('В текущей выборке нет явных проблем с контентом', 'success')
-      return
-    }
-    const ok = window.confirm(`Русифицировать жанры и заполнить короткие/пустые описания в ${targets.length} тайтлах текущей выборки? Хорошие описания не затираются.`)
-    if(!ok) return
-
-    setBulkRunning(true)
-    let done = 0
-    let failed = 0
-    try{
-      for(const item of targets){
-        const genres = translateGenres(item.genres || [])
-        const currentDescription = descriptionText(item)
-        const shouldGenerate = isPlaceholder(currentDescription) || isShortDescription(currentDescription)
-        const payload = {
-          slug: item.slug,
-          titleRu: cleanTitle(item.titleRu || item.title),
-          title: cleanTitle(item.englishTitle || item.title),
-          originalTitle: cleanTitle(item.originalTitle),
-          genres: genres.join(', '),
-          descriptionRu: shouldGenerate ? makeRussianDescription({
-            ...item,
-            title_ru: item.titleRu || item.title,
-            title: item.englishTitle || item.title,
-            original_title: item.originalTitle,
-            genres
-          }) : cleanDescription(currentDescription),
-          description: cleanDescription(item.description),
-        }
-        const res = await adminFetch('/admin/api/anime', {
-          method:'PATCH',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify(payload)
-        })
-        const data = await res.json().catch(()=>null)
-        if(res.ok && data?.ok) done += 1
-        else failed += 1
-      }
-      pushToast(`Контент обработан: ${done} сохранено${failed ? `, ошибок: ${failed}` : ''}`, failed ? 'error' : 'success')
-    }catch(error){
-      pushToast(error?.message || 'Ошибка массовой обработки контента', 'error')
-    }finally{
-      setBulkRunning(false)
-    }
-  }
-
-  const visibleNotice = filteredAll.length > filtered.length
-    ? `Показано ${filtered.length} из ${filteredAll.length}. Уточни поиск, чтобы список был легче.`
-    : `${filtered.length} в текущей выборке`
-
-  return <section className="admin-content-layout">
-    <aside className="widget admin-panel admin-anime-left">
-      <div className="admin-section-title">
-        <div>
-          <h2>Тайтлы</h2>
-          <p>{visibleNotice}</p>
-        </div>
-        <Link href="/admin/sync">Cron</Link>
-      </div>
-
-      <div className="admin-mini-stats admin-mini-stats-six admin-mini-stats-content">
-        <button onClick={()=>setFilter('all')} className={filter==='all'?'active':''}><span>Всего</span><b>{stats.total}</b></button>
-        <button onClick={()=>setFilter('needsContent')} className={filter==='needsContent'?'active':''}><span>Контент</span><b>{stats.needsContent}</b></button>
-        <button onClick={()=>setFilter('missingTitle')} className={filter==='missingTitle'?'active':''}><span>Без RU</span><b>{stats.missingTitle}</b></button>
-        <button onClick={()=>setFilter('englishGenres')} className={filter==='englishGenres'?'active':''}><span>Англ. жанры</span><b>{stats.englishGenres}</b></button>
-        <button onClick={()=>setFilter('shortDescription')} className={filter==='shortDescription'?'active':''}><span>Короткие</span><b>{stats.shortDescription}</b></button>
-        <button onClick={()=>setFilter('badSymbols')} className={filter==='badSymbols'?'active':''}><span>Мусор</span><b>{stats.badSymbols}</b></button>
-      </div>
-
-      <div className="catalog-search admin-search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Найти тайтл, slug, жанр..."/></div>
-
-      <div className="admin-filter-row">
-        {Object.entries(filterLabels).map(([id,label])=><button key={id} onClick={()=>setFilter(id)} className={filter===id?'active':''}>{label}</button>)}
-      </div>
-
-      <div className="admin-bulk-tools admin-bulk-tools-wrap">
-        <button onClick={bulkCleanupVisible} disabled={bulkRunning || !stats.badSymbols}>{bulkRunning ? 'Очищаю…' : 'Очистить ●● в выборке'}</button>
-        <button onClick={bulkContentVisible} disabled={bulkRunning || !stats.needsContent}>{bulkRunning ? 'Обработка…' : 'Жанры + описания в выборке'}</button>
-        <label><input type="checkbox" checked={autoNext} onChange={e=>setAutoNext(e.target.checked)}/> после сохранения — следующий</label>
-      </div>
-
-      <div className="admin-list admin-anime-list">
-        {filtered.map(item=><button className={selected?.slug===item.slug?'active':''} onClick={()=>select(item)} key={item.slug}>
-          <img src={item.poster}/>
-          <span>{item.titleRu || item.title}</span>
-          <em>{item.year || '—'} · {item.status === 'ongoing' ? 'онгоинг' : item.kind || 'tv'} · ★ {item.rating}</em>
-          {!item.titleRu ? <i>нет RU</i> : hasLatinOnly(item.titleRu) ? <i>латиница</i> : hasBadSymbols(`${item.titleRu} ${item.title}`) ? <i>мусор</i> : null}
-        </button>)}
-      </div>
-    </aside>
-
-    <div className="widget admin-edit-preview admin-anime-editor">
-      {selected ? <>
-        <div className="admin-current admin-current-wide">
-          <img src={form.posterUrl || selected.poster}/>
-          <div>
-            <b>{form.titleRu || form.title || selected.title}</b>
-            <span>{form.originalTitle || form.title || selected.originalTitle}</span>
-            <small>{selected.slug}</small>
+  return <div className="anime-admin">
+    {css()}
+    <header className="aa-top">
+      <div><Link href={openAdminWithSecret('/admin')}>← Админка</Link><h1>Менеджер тайтлов</h1><p>Один рабочий экран вместо пачки дублей. Фильтр → тайтл → правка → сохранить.</p></div>
+      <nav className="aa-nav"><Link href={openAdminWithSecret('/admin/tasks')}>Задачи</Link><Link href={openAdminWithSecret('/admin/import')}>Импорт</Link><Link href="/catalog">Каталог</Link><button className="aa-btn" onClick={()=>load()} disabled={loading}>{loading?'Гружу…':'Обновить'}</button></nav>
+    </header>
+    <section className="aa-grid">
+      <aside className="aa-panel">
+        <div className="aa-stats">{statButtons.map(([key,label,f]) => <button key={key} className="aa-stat" onClick={()=>setFilter(f)}><span>{label}</span><b>{stats[key] ?? 0}</b></button>)}</div>
+        <div className="aa-tools"><input className="aa-input" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') load({ query }) }} placeholder="Поиск: название / slug / жанр"/><button className="aa-btn" onClick={()=>load({ query })}>Найти</button></div>
+        <div className="aa-tools">{FILTERS.map(([id,label]) => <button key={id} className={`aa-btn ${filter===id?'primary':''}`} onClick={()=>setFilter(id)}>{label}</button>)}</div>
+        <div className="aa-list">{items.map(item => <button key={item.id || item.slug} className={`aa-item ${selected?.id===item.id?'active':''}`} onClick={()=>select(item)}><img src={item.posterUrl || '/posters/placeholder.svg'} alt=""/><div><b>{item.titleRu || item.title || item.slug}</b><small>{item.slug} · {item.year || '—'} · {item.kind || '—'} · {item.episodes || 0} эп.</small><div className="aa-badges">{(item.issues || []).slice(0,4).map(issue => <span key={issue} className={`aa-badge ${issueTone(issue)}`}>{ISSUE_LABELS[issue] || issue}</span>)}</div></div></button>)}</div>
+      </aside>
+      <section className="aa-panel">
+        {selected ? <>
+          <div className="aa-editor-head"><img src={form.posterUrl || selected.posterUrl || '/posters/placeholder.svg'} alt=""/><div><h2>{form.titleRu || form.title || selected.slug}</h2><p>{selected.slug}</p><p>{selected.hasKodik ? <span className="aa-ok">Kodik есть</span> : <span className="aa-danger">Kodik не найден</span>} · {selected.episodes || 0} эп. · {selected.status || 'status?'}</p><div className="aa-badges">{(selected.issues || []).map(issue => <span key={issue} className={`aa-badge ${issueTone(issue)}`}>{ISSUE_LABELS[issue] || issue}</span>)}</div></div></div>
+          <div className="aa-form">
+            <label className="aa-field"><span>Русское название</span><input value={form.titleRu} onChange={e=>update('titleRu', e.target.value)} /></label>
+            <label className="aa-field"><span>English/MAL title</span><input value={form.title} onChange={e=>update('title', e.target.value)} /></label>
+            <label className="aa-field"><span>Оригинальное название</span><input value={form.originalTitle} onChange={e=>update('originalTitle', e.target.value)} /></label>
+            <label className="aa-field"><span>Other title</span><input value={form.otherTitle} onChange={e=>update('otherTitle', e.target.value)} /></label>
+            <label className="aa-field"><span>Год</span><input value={form.year} onChange={e=>update('year', e.target.value)} /></label>
+            <label className="aa-field"><span>Эпизоды</span><input value={form.episodes} onChange={e=>update('episodes', e.target.value)} /></label>
+            <label className="aa-field"><span>Статус</span><input value={form.status} onChange={e=>update('status', e.target.value)} /></label>
+            <label className="aa-field"><span>Тип</span><input value={form.kind} onChange={e=>update('kind', e.target.value)} /></label>
+            <label className="aa-field wide" style={{padding:'14px',border:'1px solid rgba(139,29,49,.22)',borderRadius:16,background:form.restricted?'#fff1f3':'#f8fbf8'}}>
+              <span style={{fontSize:14,color:form.restricted?'#8b1d31':'#236033'}}>Региональный доступ</span>
+              <label style={{display:'flex',alignItems:'center',gap:10,fontWeight:900,cursor:'pointer'}}>
+                <input type="checkbox" checked={Boolean(form.restricted)} onChange={e=>update('restricted', e.target.checked)} style={{width:18,height:18}} />
+                {form.restricted ? 'Тайтл закрыт на территории РФ' : 'Тайтл доступен'}
+              </label>
+            </label>
+            <label className="aa-field wide"><span>Текст на закрытой странице</span><textarea value={form.restrictionMessage} onChange={e=>update('restrictionMessage', e.target.value)} /></label>
+            <label className="aa-field"><span>Причина / номер обращения</span><input value={form.restrictionReason} onChange={e=>update('restrictionReason', e.target.value)} placeholder="Например: уведомление РКН" /></label>
+            <label className="aa-field"><span>Регион</span><input value={form.restrictionRegion} onChange={e=>update('restrictionRegion', e.target.value.toUpperCase())} placeholder="RU" /></label>
+            <label className="aa-field wide"><span>Постер URL</span><input value={form.posterUrl} onChange={e=>update('posterUrl', e.target.value)} /></label>
+            <label className="aa-field wide"><span>Баннер URL</span><input value={form.bannerUrl} onChange={e=>update('bannerUrl', e.target.value)} /></label>
+            <label className="aa-field wide"><span>Жанры через запятую</span><input value={form.genres} onChange={e=>update('genres', e.target.value)} /></label>
+            <label className="aa-field wide"><span>Описание RU</span><textarea value={form.descriptionRu} onChange={e=>update('descriptionRu', e.target.value)} /></label>
+            <label className="aa-field wide"><span>Описание fallback</span><textarea value={form.description} onChange={e=>update('description', e.target.value)} /></label>
           </div>
-        </div>
-
-        <div className="admin-quality-bar">
-          <span className={form.titleRu && hasCyrillic(form.titleRu) ? 'ok' : 'warn'}>{form.titleRu && hasCyrillic(form.titleRu) ? 'RU название есть' : 'Нужно RU название'}</span>
-          <span className={!hasLatinOnly(form.titleRu) ? 'ok' : 'warn'}>{!hasLatinOnly(form.titleRu) ? 'title_ru не латиницей' : 'title_ru латиницей'}</span>
-          <span className={!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'ok' : 'warn'}>{!hasBadSymbols(`${form.titleRu} ${form.descriptionRu}`) ? 'Без мусора' : 'Есть ●●'}</span>
-          <span className={!hasEnglishGenre(form.genres) ? 'ok' : 'warn'}>{!hasEnglishGenre(form.genres) ? 'Жанры RU' : 'Есть англ. жанры'}</span>
-          <span className={!isPlaceholder(form.descriptionRu) && !isShortDescription(form.descriptionRu) ? 'ok' : 'warn'}>{!isPlaceholder(form.descriptionRu) && !isShortDescription(form.descriptionRu) ? 'Описание норм' : 'Нужно описание'}</span>
-          <span className={hasRealPosterUrl(form.posterUrl) ? 'ok' : 'warn'}>{hasRealPosterUrl(form.posterUrl) ? 'Постер норм' : 'Нет реального постера'}</span>
-          {dirty ? <span className="warn">Есть несохранённые правки</span> : <span className="ok">Сохранено</span>}
-        </div>
-
-        <div className="admin-editor-helper">
-          <b>Быстрая чистка данных</b>
-          <p>Работай по фильтрам слева: “Контент-проблемы”, “Англ. жанры”, “Короткое описание”, “С мусором”. После сохранения можно автоматически переходить к следующему тайтлу.</p>
-        </div>
-
-        <div className="admin-preview-grid editable-admin-grid admin-anime-form-grid">
-          <label className="important"><span>Русское название</span><input value={form.titleRu} onChange={e=>update('titleRu', e.target.value)} placeholder="Например: Магическая битва"/></label>
-          <label><span>Название MAL / английское</span><input value={form.title} onChange={e=>update('title', e.target.value)} placeholder="English title"/></label>
-          <label><span>Оригинальное название</span><input value={form.originalTitle} onChange={e=>update('originalTitle', e.target.value)}/></label>
-          <label><span>Slug</span><input value={form.slug} readOnly/></label>
-          <label><span>Студия</span><input value={form.studio} onChange={e=>update('studio', e.target.value)}/></label>
-          <label><span>Год</span><input value={form.year} onChange={e=>update('year', e.target.value)}/></label>
-          <label><span>Эпизоды</span><input value={form.episodes} onChange={e=>update('episodes', e.target.value)}/></label>
-          <label><span>Рейтинг</span><input value={form.rating} onChange={e=>update('rating', e.target.value)}/></label>
-          <label><span>Статус</span><select value={form.status} onChange={e=>update('status', e.target.value)}><option value="ongoing">Онгоинг</option><option value="completed">Завершён</option><option value="released">Фильм</option><option value="anons">Анонс</option></select></label>
-          <label><span>Тип</span><select value={form.kind} onChange={e=>update('kind', e.target.value)}><option value="tv">TV</option><option value="movie">Фильм</option><option value="ova">OVA</option><option value="ona">ONA</option></select></label>
-          <label className="wide"><span>Постер URL</span><input value={form.posterUrl} onChange={e=>update('posterUrl', e.target.value)}/></label>
-          <label className="wide"><span>Баннер URL</span><input value={form.bannerUrl} onChange={e=>update('bannerUrl', e.target.value)}/></label>
-          <label className="wide"><span>Жанры через запятую</span><input value={form.genres} onChange={e=>update('genres', e.target.value)} placeholder="Экшен, Фэнтези, Драма"/></label>
-          <label className="wide"><span>Описание RU</span><textarea value={form.descriptionRu} onChange={e=>update('descriptionRu', e.target.value)} placeholder="Описание для сайта на русском"/></label>
-          <label className="wide"><span>Описание original/fallback</span><textarea value={form.description} onChange={e=>update('description', e.target.value)} placeholder="Можно оставить пустым, если RU описание заполнено"/></label>
-        </div>
-
-        <div className="admin-actions-row admin-sticky-actions">
-          <button className="primary" onClick={()=>save()} disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить тайтл'}</button>
-          <button className="primary soft" onClick={saveAndNext} disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить и дальше'}</button>
-          <button className="secondary" onClick={cleanupForm}>Очистить ●●</button>
-          <button className="secondary" onClick={translateGenresInForm}>Перевести жанры</button>
-          <button className="secondary" onClick={generateDescriptionInForm}>Описание RU</button>
-          <button className="secondary" onClick={cleanupContentForm}>Контент fix</button>
-          <button className="secondary" onClick={enrichSelected} disabled={saving}>Добить постер/Kodik</button>
-          <button className="secondary" onClick={fillRuFromCurrent}>Подставить RU</button>
-          <button className="secondary" onClick={goNext} disabled={!nextProblem}>Следующий</button>
-          <Link className="secondary" href={`/anime/${selected.slug}`}>Открыть на сайте</Link>
-          <button className="secondary" onClick={copySlug}>Копировать slug</button>
-        </div>
-
-        <p className="admin-muted">Поля сохраняются в Supabase. Для ручных правок используй “Русское название” и “Описание RU” — публичный сайт в первую очередь берёт именно их.</p>
-      </> : <div className="empty-state">Выбери тайтл слева.</div>}
-    </div>
-  </section>
+          <div className="aa-actions"><button className="aa-btn primary" onClick={()=>save()} disabled={saving}>{saving?'Сохраняю…':'Сохранить'}</button><button className="aa-btn" style={{background:'#8b1d31',color:'#fff'}} onClick={()=>save({ restricted:true })} disabled={saving}>Закрыть в РФ</button><button className="aa-btn" style={{background:'#236033',color:'#fff'}} onClick={()=>save({ restricted:false })} disabled={saving}>Открыть доступ</button><button className="aa-btn" onClick={applyRuCandidate}>Подставить RU candidate</button><button className="aa-btn" onClick={cleanForm}>Очистить мусор в форме</button><button className="aa-btn" onClick={()=>navigator.clipboard?.writeText(selected.slug)}>Копировать slug</button><Link className="aa-btn" href={`/anime/${selected.slug}`}>Открыть на сайте</Link></div>
+          <div className="aa-log">{log}</div>
+        </> : <div className="aa-empty">Выбери тайтл слева.</div>}
+      </section>
+    </section>
+  </div>
 }

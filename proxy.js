@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getRestrictedAnimeInfo, isRestrictedAnimeSlug } from './lib/contentRestrictions'
+import { getRestrictedAnimeInfo, readAnimeRestrictionState } from './lib/contentRestrictions'
 
 const buckets = new Map()
 
-function restrictedContentResponse(pathname){
+function escapeHtml(value){
+  return String(value || '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]))
+}
+
+function restrictedContentResponse(pathname, overrideInfo = null){
   const slug = String(pathname || '').replace(/^\/anime\//, '')
-  const info = getRestrictedAnimeInfo(slug) || {}
-  const title = info.title || 'Контент недоступен'
-  const message = info.message || 'Этот материал удалён и недоступен на сайте.'
+  const info = overrideInfo || getRestrictedAnimeInfo(slug) || {}
+  const title = escapeHtml(info.title || 'Недоступно в РФ')
+  const message = escapeHtml(info.message || 'Этот тайтл недоступен для просмотра на территории Российской Федерации.')
   return new NextResponse(`<!doctype html>
 <html lang="ru">
 <head>
@@ -23,7 +27,7 @@ function restrictedContentResponse(pathname){
 </head>
 <body><main><h1>${title}</h1><p>${message}</p><a href="/catalog">Вернуться в каталог</a></main></body>
 </html>`, {
-    status: Number(info.status || 410),
+    status: Number(info.status || 451),
     headers:{
       'content-type':'text/html; charset=utf-8',
       'cache-control':'no-store, max-age=0',
@@ -33,6 +37,28 @@ function restrictedContentResponse(pathname){
   })
 }
 
+
+async function readDatabaseRestriction(slug){
+  const base = String(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '').replace(/\/$/, '')
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+  if(!base || !key || !slug) return { checked:false, configured:false, info:null }
+
+  try{
+    const endpoint = `${base}/rest/v1/anime?select=slug,title,title_ru,status,raw&slug=eq.${encodeURIComponent(slug)}&limit=1`
+    const response = await fetch(endpoint, {
+      cache:'no-store',
+      headers:{ apikey:key, Authorization:`Bearer ${key}`, Accept:'application/json' }
+    })
+    if(!response.ok) return { checked:false, configured:false, info:null }
+    const rows = await response.json().catch(() => [])
+    const row = Array.isArray(rows) ? rows[0] || null : null
+    if(!row) return { checked:true, configured:false, info:null }
+    const state = readAnimeRestrictionState(row)
+    return { checked:true, configured:state.configured, info:state.info, row }
+  }catch{
+    return { checked:false, configured:false, info:null }
+  }
+}
 
 function isProd(){
   return process.env.NODE_ENV === 'production'
@@ -235,12 +261,18 @@ function withPublicHtmlCache(response, pathname){
   return response
 }
 
-export function proxy(req){
+export async function proxy(req){
   const { pathname, searchParams } = req.nextUrl
 
   if(pathname.startsWith('/anime/')){
     const slug = pathname.slice('/anime/'.length)
-    if(isRestrictedAnimeSlug(slug)) return withSecurityHeaders(restrictedContentResponse(pathname))
+    const dbRestriction = await readDatabaseRestriction(slug)
+    if(dbRestriction.configured){
+      if(dbRestriction.info) return withSecurityHeaders(restrictedContentResponse(pathname, dbRestriction.info))
+    }else{
+      const staticInfo = getRestrictedAnimeInfo(slug)
+      if(staticInfo) return withSecurityHeaders(restrictedContentResponse(pathname, staticInfo))
+    }
   }
 
   if(pathname.startsWith('/api/admin')){

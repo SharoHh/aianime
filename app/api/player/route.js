@@ -1,5 +1,6 @@
 import { getAnimeBySlugFromRepo } from '@/lib/animeRepository'
 import { hasSupabase, supabaseRequest } from '@/lib/supabaseServer'
+import { getAnimeRestriction } from '@/lib/contentRestrictions'
 import { hasKodik, normalizeKodikPlayerUrl, resolveKodikPlayerForAnime } from '@/lib/kodik'
 
 function json(data, status = 200){
@@ -154,7 +155,7 @@ async function readEpisodeFromDb(slug, episode, voice = null){
 async function readAnimeFromDb(slug){
   if(!hasSupabase()) return null
   try{
-    const select = 'slug,title,title_ru,original_title,year,kind,kodik_id,kodik_link,kodik_type,translation_title,translation_type,quality,kodik_raw,episodes,description,description_ru'
+    const select = 'slug,title,title_ru,original_title,status,year,kind,kodik_id,kodik_link,kodik_type,translation_title,translation_type,quality,kodik_raw,raw,episodes,description,description_ru'
     const res = await supabaseRequest(`anime?select=${select}&slug=eq.${encodeURIComponent(slug)}&limit=1`, { method: 'GET', timeout: 9000 })
     if(!res.ok) return null
     const rows = await res.json().catch(() => [])
@@ -200,6 +201,8 @@ export async function GET(req){
   if(!slug) return json({ ok:false, error:'slug is required' }, 400)
 
   const dbAnime = await readAnimeFromDb(slug)
+  const restriction = getAnimeRestriction(dbAnime || slug)
+  if(restriction) return json({ ok:false, restricted:true, region:restriction.region || 'RU', error:'Недоступно в РФ' }, Number(restriction.status || 451))
   const dbEpisode = await readEpisodeFromDb(slug, episode, voice)
   const episodeEmbed = normalizeKodikPlayerUrl(dbEpisode?.embed_url)
   if(episodeEmbed && canUsePlayerUrlForAnime(episodeEmbed, dbAnime) && episodeRowMatchesAnime(dbEpisode, dbAnime)){
