@@ -1,6 +1,38 @@
 import { NextResponse } from 'next/server'
+import { getRestrictedAnimeInfo, isRestrictedAnimeSlug } from './lib/contentRestrictions'
 
 const buckets = new Map()
+
+function restrictedContentResponse(pathname){
+  const slug = String(pathname || '').replace(/^\/anime\//, '')
+  const info = getRestrictedAnimeInfo(slug) || {}
+  const title = info.title || 'Контент недоступен'
+  const message = info.message || 'Этот материал удалён и недоступен на сайте.'
+  return new NextResponse(`<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <title>${title} — AIanime</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#f7f5ef;color:#211d35;font-family:Manrope,Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+    main{width:min(620px,100%);padding:34px;border:1px solid rgba(33,29,53,.12);border-radius:28px;background:#fff;box-shadow:0 24px 80px rgba(33,29,53,.10)}
+    h1{margin:0 0 12px;font-size:34px;letter-spacing:-.04em}p{margin:0 0 22px;color:#716b82;line-height:1.65}a{display:inline-flex;padding:12px 16px;border-radius:14px;background:#211d35;color:#fff;text-decoration:none;font-weight:800}
+  </style>
+</head>
+<body><main><h1>${title}</h1><p>${message}</p><a href="/catalog">Вернуться в каталог</a></main></body>
+</html>`, {
+    status: Number(info.status || 410),
+    headers:{
+      'content-type':'text/html; charset=utf-8',
+      'cache-control':'no-store, max-age=0',
+      'x-robots-tag':'noindex, nofollow, noarchive',
+      'x-aianime-content-status':'restricted',
+    }
+  })
+}
+
 
 function isProd(){
   return process.env.NODE_ENV === 'production'
@@ -44,7 +76,8 @@ function json(data, status = 200, extraHeaders = {}){
 }
 
 function adminDenied(req, reason = 'Admin access denied'){
-  if(req.nextUrl.pathname.startsWith('/api/')){
+  const pathname = req.nextUrl?.pathname || ''
+  if(pathname.startsWith('/api/') || pathname.startsWith('/admin/api')){
     return json({
       ok:false,
       error: reason,
@@ -69,18 +102,14 @@ function adminDenied(req, reason = 'Admin access denied'){
   <body>
     <main>
       <h1>Админка защищена</h1>
-      <p>Открой раздел через обычный вход в админку. На VPS доступ должен закрывать Nginx Basic Auth.</p>
-      <p>Если включён внутренний пароль, задай <code>ADMIN_SECRET</code> или <code>ADMIN_PASSWORD</code> в окружении. Параметр <code>?admin_secret=...</code> больше не нужен для обычной работы.</p>
+      <p>Открой /admin?admin_secret=ТВОЙ_ADMIN_SECRET — после успешного входа браузер получит cookie для /admin/api. На VPS сверху можно включить Nginx Basic Auth.</p>
+      <p>Задай <code>ADMIN_SECRET</code> или <code>ADMIN_PASSWORD</code> в окружении. Без app-secret доступ разрешается только при <code>AIANIME_TRUST_NGINX_ADMIN_AUTH=1</code>.</p>
     </main>
   </body>
 </html>`, {
     status: 401,
     headers: { 'content-type': 'text/html; charset=utf-8' }
   })
-}
-
-function adminConfigured(){
-  return Boolean(process.env.ADMIN_SECRET)
 }
 
 function verifyAdmin(req){
@@ -93,13 +122,13 @@ function verifyAdmin(req){
   }
 
   if(!secret){
-    // Timeweb/Nginx already protects /admin with Basic Auth on production.
-    // When ADMIN_SECRET is missing, do not show the old query-token lock screen.
-    // Admin UI/API must live under /admin/* so it stays behind the same Nginx gate.
+    if(process.env.AIANIME_TRUST_NGINX_ADMIN_AUTH === '1'){
+      return { ok:true, mode:'trusted-nginx-basic-auth', setCookie:false }
+    }
     if(pathname.startsWith('/api/admin')){
       return { ok:false, reason:'Admin API moved under /admin/api. Open the admin panel through /admin.' }
     }
-    return { ok:true, mode:'external-admin-auth', setCookie:false }
+    return { ok:false, reason:'ADMIN_SECRET/ADMIN_PASSWORD is not configured. Set one or explicitly set AIANIME_TRUST_NGINX_ADMIN_AUTH=1 behind Nginx Basic Auth.' }
   }
 
   const token = getAdminToken(req)
@@ -209,6 +238,11 @@ function withPublicHtmlCache(response, pathname){
 export function proxy(req){
   const { pathname, searchParams } = req.nextUrl
 
+  if(pathname.startsWith('/anime/')){
+    const slug = pathname.slice('/anime/'.length)
+    if(isRestrictedAnimeSlug(slug)) return withSecurityHeaders(restrictedContentResponse(pathname))
+  }
+
   if(pathname.startsWith('/api/admin')){
     return json({
       ok:false,
@@ -218,9 +252,23 @@ export function proxy(req){
   }
 
   if(pathname.startsWith('/admin')){
-    // Админку на VPS закрывает Nginx Basic Auth. Внутренний ADMIN_SECRET больше не нужен,
-    // чтобы не ловить вторую розовую заглушку поверх нормального входа.
-    return withSecurityHeaders(NextResponse.next())
+    const auth = verifyAdmin(req)
+    if(!auth.ok){
+      return withSecurityHeaders(adminDenied(req, auth.reason))
+    }
+
+    const response = NextResponse.next()
+    if(auth.setCookie){
+      response.cookies.set('aianime_admin', process.env.ADMIN_SECRET || process.env.ADMIN_PASSWORD || '', {
+        httpOnly:true,
+        secure:isProd(),
+        sameSite:'lax',
+        path:'/admin',
+        maxAge: 60 * 60 * 12
+      })
+    }
+    response.headers.set('x-aianime-admin-auth', auth.mode || 'enabled')
+    return withSecurityHeaders(response)
   }
 
   if(pathname.startsWith('/api/cron')){

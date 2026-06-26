@@ -1,11 +1,14 @@
 {
-  "name": "anime-pastel-fixed-ui-platform",
+  "name": "aianime",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "smoke": "node scripts/smoke-check.mjs",
+    "smoke:prod": "SITE_URL=https://aianime.ru node scripts/smoke-check.mjs",
+    "takedown": "node scripts/takedown-anime.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
