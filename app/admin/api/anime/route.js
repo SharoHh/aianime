@@ -138,7 +138,7 @@ export async function GET(request){
       return hay.includes(q)
     })
 
-    return json({ ok:true, filter, q, stats, total:items.length, items:items.slice(0, limit) })
+    return json({ ok:true, adminVersion:'v247', filter, q, stats, total:items.length, items:items.slice(0, limit) })
   }catch(error){
     return json({ ok:false, error:error?.message || 'Unknown admin anime error' }, 500)
   }
@@ -208,7 +208,7 @@ export async function PATCH(request){
       revalidatePath('/schedule')
       if(changedSlug) revalidatePath(`/anime/${changedSlug}`)
     }catch{}
-    return json({ ok:true, item:normalizeAdminAnime(row || {}) })
+    return json({ ok:true, adminVersion:'v247', item:normalizeAdminAnime(row || {}) })
   }catch(error){
     return json({ ok:false, error:error?.message || 'Unknown admin save error' }, 500)
   }
