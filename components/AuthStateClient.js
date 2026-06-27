@@ -8,12 +8,28 @@ export const baseProfileDefaults = {
   name: 'Профиль Aianime',
   level: 'Новый участник',
   avatar: '/posters/oshi.svg',
-  cover: '/images/profile-sidebar-bg-960.webp'
+  cover: ''
 }
 
 const AUTH_USER_CACHE_KEY = 'anime:auth-user-cache'
 const PENDING_AUTH_SESSION_KEY = 'anime:pending-auth-session'
 const PENDING_AUTH_MAX_AGE_MS = 5 * 60 * 1000
+
+const obsoleteProfileCovers = new Set([
+  '/images/profile-sidebar-bg-960.webp',
+  '/images/profile-sidebar-bg.webp'
+])
+
+export function normalizeProfileCover(value){
+  const text = String(value || '').trim()
+  if(!text || obsoleteProfileCovers.has(text)) return ''
+  return text
+}
+
+function normalizeProfileData(user, profile){
+  const next = { ...getProfileDefaults(user), ...(profile || {}) }
+  return { ...next, cover:normalizeProfileCover(next.cover) }
+}
 
 export function getUserDisplayName(user){
   const metadata = user?.user_metadata || {}
@@ -40,17 +56,17 @@ export function readStoredProfile(user){
   const defaults = getProfileDefaults(user)
   try{
     const scoped = localStorage.getItem(profileStorageKey(user))
-    if(scoped) return { ...defaults, ...JSON.parse(scoped) }
+    if(scoped) return normalizeProfileData(user, JSON.parse(scoped))
 
     const legacy = localStorage.getItem('anime:profile')
-    if(legacy) return { ...defaults, ...JSON.parse(legacy) }
+    if(legacy) return normalizeProfileData(user, JSON.parse(legacy))
   }catch{}
   return defaults
 }
 
 export function saveStoredProfile(user, profile){
   if(typeof window === 'undefined') return
-  const next = { ...getProfileDefaults(user), ...(profile || {}) }
+  const next = normalizeProfileData(user, profile)
   localStorage.setItem(profileStorageKey(user), JSON.stringify(next))
   window.dispatchEvent(new Event('anime:user-updated'))
 }
@@ -248,7 +264,7 @@ function bootstrapAuth(supabase, configured){
 
 
 function normalizeProfileForCloud(user, profile){
-  const next = { ...getProfileDefaults(user), ...(profile || {}) }
+  const next = normalizeProfileData(user, profile)
   return {
     id: user.id,
     email: user.email || null,
@@ -272,7 +288,7 @@ function mapCloudProfile(user, row){
     name: payload.name || row?.full_name || row?.username || defaults.name,
     level: payload.level || row?.profile_status || defaults.level,
     avatar: payload.avatar || row?.avatar_url || defaults.avatar,
-    cover: payload.cover || row?.banner_url || defaults.cover,
+    cover: normalizeProfileCover(payload.cover || row?.banner_url || defaults.cover),
     bio: payload.bio || row?.bio || ''
   }
 }

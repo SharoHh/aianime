@@ -24934,3 +24934,339 @@ a.ai-result-card-v225{
 .admin-missing-hint{margin-top:12px;border-radius:16px;background:#fbf8ff;border:1px solid rgba(77,62,110,.08);padding:12px 14px;color:#6f6686;font-size:13px;line-height:1.55}
 .admin-missing-hint b{color:#201c3a}
 @media (max-width: 720px){.admin-missing-search-row{grid-template-columns:1fr}.admin-missing-search-row button{height:44px}.admin-missing-candidates article{grid-template-columns:48px minmax(0,1fr);align-items:start}.admin-missing-candidates button{grid-column:1 / -1;width:100%}.admin-missing-candidates img,.admin-missing-poster{width:48px;height:66px}}
+
+/* v253 — profile without fragile default background image */
+.sidebar-profile-card-v253{
+  position:relative !important;
+  isolation:isolate;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:space-between !important;
+  min-height:248px !important;
+  height:clamp(248px,32vh,332px) !important;
+  padding:12px !important;
+  overflow:hidden !important;
+  border:1px solid rgba(222,210,248,.82) !important;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(255,255,255,.94) 0 8%,transparent 32%),
+    linear-gradient(145deg,#f8f3ff 0%,#e9dcff 48%,#d7c0ff 100%) !important;
+  box-shadow:0 22px 48px rgba(88,63,145,.12) !important;
+}
+
+.sidebar-profile-card-v253::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(45,25,86,.12));
+}
+
+.sidebar-profile-card-v253::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:-1 !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0) 42%,rgba(31,18,62,.12)) !important;
+  pointer-events:none;
+}
+
+.sidebar-profile-card-v253.has-cover{
+  background:#ece4fb !important;
+}
+
+.sidebar-profile-card-v253 .sidebar-profile-cover{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  border-radius:inherit !important;
+  z-index:-3 !important;
+}
+
+.sidebar-profile-art-v253{
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+}
+
+.sidebar-profile-art-v253 > b{
+  position:absolute;
+  left:18px;
+  bottom:58px;
+  color:rgba(54,32,98,.88);
+  font-size:52px;
+  line-height:.9;
+  letter-spacing:-.08em;
+  font-weight:900;
+}
+
+.sidebar-profile-art-v253 > em{
+  position:absolute;
+  left:20px;
+  bottom:38px;
+  color:rgba(64,40,107,.66);
+  font-size:11px;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.sidebar-profile-orb-v253{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(.2px);
+}
+
+.sidebar-profile-orb-v253.orb-one{
+  width:148px;
+  height:148px;
+  right:-48px;
+  bottom:-34px;
+  background:linear-gradient(145deg,rgba(137,80,237,.95),rgba(80,43,154,.68));
+  box-shadow:0 20px 50px rgba(99,58,180,.24);
+}
+
+.sidebar-profile-orb-v253.orb-two{
+  width:74px;
+  height:74px;
+  right:36px;
+  top:72px;
+  background:rgba(255,255,255,.45);
+  border:1px solid rgba(255,255,255,.72);
+}
+
+.sidebar-profile-spark-v253{
+  position:absolute;
+  color:rgba(91,53,166,.68);
+  font-style:normal;
+}
+
+.sidebar-profile-spark-v253.spark-one{right:24px;top:30px;font-size:28px}
+.sidebar-profile-spark-v253.spark-two{right:92px;top:128px;font-size:18px}
+
+.sidebar-profile-card-v253 .sidebar-profile-top{
+  position:relative !important;
+  z-index:2 !important;
+  margin:0 !important;
+  padding:9px 10px !important;
+  border:1px solid rgba(255,255,255,.68) !important;
+  border-radius:17px !important;
+  background:rgba(255,255,255,.78) !important;
+  box-shadow:0 12px 26px rgba(48,30,90,.09) !important;
+  backdrop-filter:blur(14px);
+}
+
+.sidebar-profile-avatar-shell-v253,
+.profile-avatar-shell-v253{
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  background:linear-gradient(145deg,#fff,#e6d8ff);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.75);
+}
+
+.sidebar-profile-avatar-shell-v253{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+}
+
+.sidebar-profile-card-v253 .sidebar-profile-avatar{
+  width:100% !important;
+  height:100% !important;
+  box-shadow:none !important;
+}
+
+.sidebar-profile-meta-v253{
+  position:relative;
+  z-index:2;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  align-items:center;
+}
+
+.sidebar-profile-meta-v253 span{
+  min-width:0;
+  padding:8px 9px;
+  border-radius:12px;
+  background:rgba(255,255,255,.70);
+  color:#6f638a;
+  font-size:10px;
+  line-height:1.15;
+  font-weight:700;
+  backdrop-filter:blur(12px);
+}
+
+.sidebar-profile-meta-v253 span b{
+  color:#2b2445;
+  font-size:12px;
+}
+
+.sidebar-profile-meta-v253 strong{
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  border-radius:12px;
+  background:#2b2445;
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+}
+
+.profile-editor-v253 .profile-identity-stage-v253{
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(255,255,255,.92),transparent 27%),
+    linear-gradient(145deg,#f7f1ff 0%,#dfceff 48%,#b99af2 100%) !important;
+}
+
+.profile-editor-v253 .profile-identity-stage-v253.has-cover{
+  background:#eee8f8 !important;
+}
+
+.profile-identity-art-v253{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.profile-identity-orb-v253{
+  position:absolute;
+  border-radius:50%;
+}
+
+.profile-identity-orb-v253.orb-one{
+  width:250px;
+  height:250px;
+  right:-78px;
+  top:44px;
+  background:linear-gradient(145deg,rgba(139,83,238,.96),rgba(74,42,139,.72));
+  box-shadow:0 28px 80px rgba(88,50,168,.28);
+}
+
+.profile-identity-orb-v253.orb-two{
+  width:120px;
+  height:120px;
+  left:34px;
+  top:70px;
+  background:rgba(255,255,255,.44);
+  border:1px solid rgba(255,255,255,.72);
+}
+
+.profile-identity-ring-v253{
+  position:absolute;
+  width:168px;
+  height:168px;
+  right:44px;
+  bottom:76px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.56);
+  box-shadow:0 0 0 24px rgba(255,255,255,.10);
+}
+
+.profile-identity-art-v253 > i{
+  position:absolute;
+  left:24px;
+  top:28px;
+  color:rgba(50,31,89,.86);
+  font-size:78px;
+  line-height:.86;
+  letter-spacing:-.08em;
+  font-style:normal;
+  font-weight:900;
+}
+
+.profile-identity-art-v253 > em{
+  position:absolute;
+  left:29px;
+  top:102px;
+  color:rgba(69,45,116,.62);
+  font-size:11px;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.profile-editor-v253 .profile-cover-shade-v7{
+  z-index:1;
+  background:linear-gradient(to top,rgba(29,19,55,.54),rgba(29,19,55,.10) 54%,rgba(255,255,255,0)) !important;
+}
+
+.profile-editor-v253 .profile-clean-cover{
+  z-index:0;
+}
+
+.profile-editor-v253 .profile-cover-info-v7{
+  z-index:3;
+  bottom:58px;
+}
+
+.profile-avatar-shell-v253{
+  width:58px;
+  height:58px;
+  border-radius:18px;
+}
+
+.profile-avatar-shell-v253 .profile-clean-avatar{
+  width:100% !important;
+  height:100% !important;
+  box-shadow:none !important;
+}
+
+.profile-identity-caption-v253{
+  position:absolute;
+  left:16px;
+  right:16px;
+  bottom:14px;
+  z-index:3;
+  color:rgba(255,255,255,.92);
+  font-size:11px;
+  line-height:1.35;
+  text-shadow:0 2px 12px rgba(24,14,48,.34);
+}
+
+.profile-identity-caption-v253 b{
+  display:block;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.profile-remove-cover-v253{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:38px;
+  margin:0 0 12px;
+  padding:0 14px;
+  border:1px solid #e6dcf6;
+  border-radius:13px;
+  background:#fff;
+  color:#7650ca;
+  font:inherit;
+  font-size:12px;
+  font-weight:750;
+  cursor:pointer;
+}
+
+.profile-remove-cover-v253:hover{
+  background:#f8f3ff;
+}
+
+@media(max-width:1280px){
+  .sidebar-profile-card-v253{display:none !important}
+}
+
+@media(max-width:620px){
+  .profile-identity-art-v253 > i{font-size:62px}
+  .profile-identity-orb-v253.orb-one{width:210px;height:210px}
+}
