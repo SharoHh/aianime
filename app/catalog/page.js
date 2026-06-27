@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { getAnimeList } from '@/lib/animeRepository'
 import CatalogClient from './CatalogClient'
 import { animeListJsonLd, jsonLd } from '@/lib/seo'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 function compactAnimeText(value, limit = 220){
   const text = String(value || '').replace(/\s+/g, ' ').trim()
   if(!text) return ''
@@ -64,38 +65,8 @@ function isBrokenCatalogText(item = {}){
     || text.includes('тетрадь смерти4')
 }
 
-function unwrapPosterSource(value){
-  const raw = String(value || '').trim()
-  if(!raw) return ''
-  try{
-    const parsed = new URL(raw, 'https://aianime.local')
-    if(parsed.pathname === '/api/image' || parsed.pathname === '/_next/image'){
-      const nested = parsed.searchParams.get('url')
-      if(nested) return decodeURIComponent(nested)
-    }
-  }catch{}
-  return raw
-}
-
-function isPlaceholderPoster(url){
-  const source = unwrapPosterSource(url)
-  if(!source) return true
-  let path = source.split(/[?#]/)[0].toLowerCase()
-  try{ path = decodeURIComponent(new URL(source, 'https://aianime.local').pathname).toLowerCase() }catch{}
-  if(/^\/(?:posters|banners)\/[^/?#]+\.svg$/i.test(path)) return true
-  return /(?:^|\/)(?:placeholder|no[-_]?poster|default(?:-poster)?)(?:[._/-]|$)/i.test(path)
-}
-
 function isRenderableCatalogItem(item = {}){
-  const slug = String(item.slug || '').trim().toLowerCase()
-  if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
-  if(isBrokenCatalogText(item)) return false
-  const title = String(item.title || item.displayTitle || item.titleRu || '').trim()
-  if(!title) return false
-  if(item.hasRealPoster === false || isPlaceholderPoster(item.poster || item.poster_url)) return false
-  // Не показываем карточки, которые точно ведут в пустоту, являются старыми seed-заглушками
-  // или ещё не готовы визуально из-за декоративного placeholder-постера.
-  return true
+  return isPublicReadyAnimeItem(item)
 }
 
 export default async function Catalog(){

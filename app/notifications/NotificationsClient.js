@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { pushToast } from '@/components/ToastCenter'
+import { isUsableAnimePoster } from '@/lib/animeQuality'
 
 function fallbackSlug(title, index){
   return title?.toLowerCase?.().replace(/[^a-zа-яё0-9]+/gi, '-').replace(/^-|-$/g, '') || `schedule-${index}`
@@ -20,14 +21,14 @@ function normalize(schedule = []){
       href:`/anime/${slug}`,
       notifyKey:`${slug}-${item[0]}`,
     }
-  })
+  }).filter(item => isUsableAnimePoster(item.poster))
 }
 
 function flattenScheduleDays(scheduleDays = []){
   if(!Array.isArray(scheduleDays)) return []
   return scheduleDays.flatMap((day) => {
     const items = Array.isArray(day?.items) ? day.items : []
-    return items.map((item) => ({
+    return items.filter(item => isUsableAnimePoster(item?.poster)).map((item) => ({
       ...item,
       dayName: day.name,
       dayDate: `${day.date} ${day.month}`,
@@ -93,7 +94,7 @@ export default function NotificationsClient({ schedule = [], scheduleDays = null
     <div className="notification-toolbar"><b>{active.length}</b><span>активных уведомлений</span><button onClick={clearAll}>Отключить все</button></div>
     <section className="notification-list">
       {active.map(item=><article className="notification-card widget" key={item.notifyKey || `${item.slug}-${item.time}`}>
-        <img src={item.poster || '/posters/magic2.svg'} alt={item.title || 'Аниме'}/>
+        <img src={item.poster} alt={item.title || 'Аниме'}/>
         <div><time>{item.dayName ? `${item.dayName}, ${item.time}` : item.time}</time><h3>{item.title}</h3><p>{item.meta}</p></div>
         <Link href={item.href || `/anime/${item.slug}`}>Открыть</Link>
         <button onClick={()=>remove(item)}>Отключить</button>

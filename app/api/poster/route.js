@@ -5,7 +5,17 @@ function remoteImagesEnabled(){
 function localFallback(req){
   const raw = req.nextUrl.searchParams.get('fallback') || '/posters/magic2.svg'
   const safe = String(raw).startsWith('/') && !String(raw).startsWith('//') ? String(raw) : '/posters/magic2.svg'
-  return Response.redirect(new URL(safe, req.url), 302)
+  const fallbackUrl = new URL(safe, req.url)
+  if(/^\/(?:posters|banners)\/[^/?#]+\.svg$/i.test(fallbackUrl.pathname)){
+    return new Response(null, {
+      status:404,
+      headers:{
+        'Cache-Control':'no-store, max-age=0',
+        'X-Aianime-Poster-Missing':'1'
+      }
+    })
+  }
+  return Response.redirect(fallbackUrl, 302)
 }
 
 async function fetchWithTimeout(url, options = {}, timeout = 1800){

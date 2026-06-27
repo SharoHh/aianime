@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { pushToast } from '@/components/ToastCenter'
+import { isUsableAnimePoster } from '@/lib/animeQuality'
 
 const legacyDayLabels = [
   ['Пн', '1'],
@@ -30,7 +31,7 @@ function legacyScheduleToDays(schedule = []){
       href: `/anime/${slug}`,
       notifyKey: `${slug}-${item[0]}`,
     }
-  })
+  }).filter(item => isUsableAnimePoster(item.poster))
 
   const legacyByDay = {
     0: [base[0], base[3]].filter(Boolean),
@@ -70,7 +71,11 @@ function writeNotify(value){
 
 export default function HomeScheduleWidgetClient({ schedule = [], scheduleDays = null, initialDay = 0 }) {
   const preparedDays = useMemo(() => {
-    return Array.isArray(scheduleDays) && scheduleDays.length ? scheduleDays : legacyScheduleToDays(schedule)
+    const source = Array.isArray(scheduleDays) && scheduleDays.length ? scheduleDays : legacyScheduleToDays(schedule)
+    return source.map(day => ({
+      ...day,
+      items: (Array.isArray(day?.items) ? day.items : []).filter(item => isUsableAnimePoster(item?.poster))
+    }))
   }, [schedule, scheduleDays])
   const safeInitialDay = Math.max(0, Math.min(preparedDays.length - 1, Number(initialDay) || 0))
   const [selectedDay, setSelectedDay] = useState(safeInitialDay)
@@ -130,7 +135,7 @@ export default function HomeScheduleWidgetClient({ schedule = [], scheduleDays =
             const active = Boolean(actualNotify[key])
             return <Link className="sch schedule-reference-item" href={item.href || `/anime/${item.slug}`} key={`${key}-${index}`}>
               <time>{item.time}</time>
-              <img loading="lazy" decoding="async" width="72" height="102" src={item.poster || '/posters/magic2.svg'} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'} />
+              <img loading="lazy" decoding="async" width="72" height="102" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'} />
               <div>
                 <b>{item.title}</b>
                 <span>{item.meta}</span>

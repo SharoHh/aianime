@@ -4,25 +4,28 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useAuthState } from '@/components/AuthStateClient'
 import { getHistory } from '@/lib/userStorage'
+import { isUsableAnimePoster, versionAnimePosterUrl } from '@/lib/animeQuality'
 
 function imageSrc(value){
   const src = String(value || '').trim()
-  if(!src) return '/posters/magic2.svg'
-  if(src.startsWith('/api/image') || src.startsWith('/posters/') || src.startsWith('/images/') || src.startsWith('/aianime-logo')) return src
-  if(/^https?:\/\//i.test(src)) return `/api/image?url=${encodeURIComponent(src)}`
-  return src
+  if(!src || !isUsableAnimePoster(src)) return ''
+  if(src.startsWith('/')) return versionAnimePosterUrl(src)
+  return versionAnimePosterUrl(`/api/image?url=${encodeURIComponent(src)}&fallback=${encodeURIComponent('/posters/magic2.svg')}`)
 }
 
 function normalizeHistoryItem(item){
   if(!item?.slug) return null
   const episode = Math.max(1, Number(item.episode || 1))
   const progress = Math.max(0, Math.min(100, Number(item.progress || 0)))
+  const poster = imageSrc(item.poster || item.poster_url)
+  if(!poster) return null
+  const banner = imageSrc(item.banner || item.poster || item.poster_url) || poster
   return {
     ...item,
     episode,
     progress,
-    poster:imageSrc(item.poster || item.poster_url),
-    banner:imageSrc(item.banner || item.poster || item.poster_url),
+    poster,
+    banner,
     title:item.title || item.title_ru || item.name || 'Аниме',
     voice:item.voice || null,
     provider:item.provider || null,

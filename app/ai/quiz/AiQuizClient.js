@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 
 const questions = [
   { key:'mood', title:'Какой вайб нужен?', options:['Уютный','Мрачный','Весёлый','Динамичный'] },
@@ -33,7 +34,7 @@ export default function AiQuizClient({ items = [] }){
 
   const results = useMemo(()=>{
     if(Object.keys(answers).length < 2) return []
-    return [...items].map(item=>({...item, quizScore:score(item, answers)})).sort((a,b)=>b.quizScore-a.quizScore).slice(0,6)
+    return [...items].filter(isPublicReadyAnimeItem).map(item=>({...item, quizScore:score(item, answers)})).sort((a,b)=>b.quizScore-a.quizScore).slice(0,6)
   }, [items, answers])
 
   return <>

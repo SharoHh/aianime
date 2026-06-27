@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import { isUsableAnimePoster } from '@/lib/animeQuality'
 
 function read(key){
   try{ return JSON.parse(localStorage.getItem(key) || '[]') }catch{ return [] }
@@ -14,7 +15,7 @@ export default function UserStats(){
 
   useEffect(()=>{
     setFavorites(read('anime:favorites'))
-    setHistory(read('anime:history'))
+    setHistory(read('anime:history').filter(item => isUsableAnimePoster(item?.poster || item?.banner)))
     try{ setRatings(JSON.parse(localStorage.getItem('anime:ratings') || '{}')) }catch{ setRatings({}) }
   }, [])
 

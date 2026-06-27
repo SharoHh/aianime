@@ -4,14 +4,13 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { clearAnimeData } from '@/lib/userStorage'
 import { pushToast } from '@/components/ToastCenter'
+import { isUsableAnimePoster, versionAnimePosterUrl } from '@/lib/animeQuality'
 
 function safePoster(raw){
   const text = String(raw || '').trim()
-  if(!text) return '/posters/magic2.svg'
-  if(text.startsWith('/api/image') || text.startsWith('/posters/') || text.startsWith('/images/') || text.startsWith('/aianime-logo')) return text
-  if(text.startsWith('/')) return text
-  if(/^https?:\/\//i.test(text)) return `/api/image?url=${encodeURIComponent(text)}&fallback=${encodeURIComponent('/posters/magic2.svg')}`
-  return '/posters/magic2.svg'
+  if(!text || !isUsableAnimePoster(text)) return ''
+  if(text.startsWith('/')) return versionAnimePosterUrl(text)
+  return versionAnimePosterUrl(`/api/image?url=${encodeURIComponent(text)}&fallback=${encodeURIComponent('/posters/magic2.svg')}`)
 }
 
 function readItems(storageKey){
@@ -47,10 +46,12 @@ function normalizeItem(item, storageKey){
   const history = storageKey === 'anime:history'
   const episode = itemEpisode(item)
   const progress = itemProgress(item)
+  const poster = safePoster(item.poster || item.poster_url || item.banner)
+  if(!poster) return null
   return {
     ...item,
     title:item.title || item.titleRu || item.name || 'Без названия',
-    poster:safePoster(item.poster || item.poster_url || item.banner),
+    poster,
     episode,
     progress,
     href:itemHref(item, storageKey),

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { LIBRARY_STATUSES, getFavorites, getLibrary, libraryStatusLabel, setLibraryStatus } from '@/lib/userStorage'
 import { pushToast } from '@/components/ToastCenter'
+import { isUsableAnimePoster, versionAnimePosterUrl } from '@/lib/animeQuality'
 
 const TAB_LABELS = {
   all:'Все',
@@ -18,10 +19,9 @@ const TAB_ORDER = ['all', 'watching', 'planned', 'completed', 'dropped', 'favori
 
 function posterSrc(value){
   const text = String(value || '').trim()
-  if(!text) return '/posters/oshi.svg'
-  if(text.startsWith('/api/image') || text.startsWith('/posters/') || text.startsWith('/images/') || text.startsWith('/aianime-logo')) return text
-  if(/^https?:\/\//i.test(text)) return `/api/image?url=${encodeURIComponent(text)}&fallback=${encodeURIComponent('/posters/oshi.svg')}`
-  return text
+  if(!text || !isUsableAnimePoster(text)) return ''
+  if(text.startsWith('/')) return versionAnimePosterUrl(text)
+  return versionAnimePosterUrl(`/api/image?url=${encodeURIComponent(text)}&fallback=${encodeURIComponent('/posters/magic2.svg')}`)
 }
 
 function normalizeDate(value){
@@ -62,7 +62,7 @@ function mergeRows(library, favorites){
       favorite:true
     })
   })
-  return Array.from(map.values()).sort((a,b) => normalizeDate(b.updatedAt) - normalizeDate(a.updatedAt))
+  return Array.from(map.values()).filter(item => Boolean(item.poster)).sort((a,b) => normalizeDate(b.updatedAt) - normalizeDate(a.updatedAt))
 }
 
 export default function ProfileLibraryClient(){

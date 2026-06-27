@@ -5,6 +5,7 @@ import Link from 'next/link'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { trackPopularityEvent } from '@/components/PopularityTrackerClient'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 
 function cleanText(value){
   return String(value || '').replace(/\s+/g, ' ').trim()
@@ -21,7 +22,7 @@ function metaLine(item){
 
 
 export default function HomeNewOnSiteClient({ anime = [] }){
-  const visible = Array.isArray(anime) ? anime.filter(item => item?.slug && item?.title).slice(0, 5) : []
+  const visible = Array.isArray(anime) ? anime.filter(isPublicReadyAnimeItem).slice(0, 5) : []
   if(!visible.length) return null
 
   return <section className="home-new-site" aria-label="Новое на сайте">

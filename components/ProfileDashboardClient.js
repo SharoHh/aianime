@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { clearAnimeData, getFavorites, getHistory, getRatings } from '@/lib/userStorage'
 import { pushToast } from '@/components/ToastCenter'
+import { isUsableAnimePoster, versionAnimePosterUrl } from '@/lib/animeQuality'
 
 function posterSrc(value){
   const text = String(value || '').trim()
-  if(!text) return '/posters/oshi.svg'
-  if(text.startsWith('/api/image') || text.startsWith('/posters/') || text.startsWith('/images/') || text.startsWith('/aianime-logo')) return text
-  if(/^https?:\/\//i.test(text)) return `/api/image?url=${encodeURIComponent(text)}&fallback=${encodeURIComponent('/posters/oshi.svg')}`
-  return text
+  if(!text || !isUsableAnimePoster(text)) return ''
+  if(text.startsWith('/')) return versionAnimePosterUrl(text)
+  return versionAnimePosterUrl(`/api/image?url=${encodeURIComponent(text)}&fallback=${encodeURIComponent('/posters/magic2.svg')}`)
 }
 
 function resumeHref(item){
@@ -27,8 +27,8 @@ export default function ProfileDashboardClient(){
   const [ratings,setRatings] = useState({})
 
   function load(){
-    setFavorites(getFavorites())
-    setHistory(getHistory())
+    setFavorites(getFavorites().filter(item => isUsableAnimePoster(item?.poster || item?.banner)))
+    setHistory(getHistory().filter(item => isUsableAnimePoster(item?.banner || item?.poster)))
     setRatings(getRatings())
   }
 

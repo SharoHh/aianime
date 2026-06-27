@@ -10,9 +10,14 @@ export const metadata = {
 import Link from 'next/link'
 import { getWeeklySchedule } from '@/lib/scheduleData'
 import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
+import { isUsableAnimePoster } from '@/lib/animeQuality'
 
 export default async function Page() {
-  const weeklySchedule = await getWeeklySchedule()
+  const rawSchedule = await getWeeklySchedule()
+  const weeklySchedule = {
+    ...rawSchedule,
+    days:(rawSchedule?.days || []).map(day => ({ ...day, items:(day.items || []).filter(item => isUsableAnimePoster(item?.poster)) }))
+  }
   const scheduleItems = (weeklySchedule?.days || []).flatMap(day => (day.items || []).map(item => ({
     name:`${item.title || 'Аниме'} — ${item.meta || 'серия'}`,
     url:item.href || `/anime/${item.slug || ''}`
@@ -47,7 +52,7 @@ export default async function Page() {
             <div className="schedule-day-list">
               {day.items.length ? day.items.map((item) => (
                 <Link className="schedule-release" href={item.href || `/anime/${item.slug}`} key={item.notifyKey || `${day.key}-${item.slug}-${item.time}`}>
-                  <img loading="lazy" decoding="async" width="180" height="260" src={item.poster || '/posters/magic2.svg'} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'} />
+                  <img loading="lazy" decoding="async" width="180" height="260" src={item.poster} alt={item.title ? `Постер аниме ${item.title}` : 'Постер аниме'} />
                   <div>
                     <time>{item.time}</time>
                     <strong>{item.title}</strong>

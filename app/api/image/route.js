@@ -40,7 +40,26 @@ function fallbackUrl(req){
   return new URL(safe, req.url)
 }
 
+function isDecorativeFallback(req){
+  const path = fallbackUrl(req).pathname.toLowerCase()
+  return /^\/(?:posters|banners)\/[^/?#]+\.svg$/.test(path)
+}
+
 function fallback(req, reason = 'fallback'){
+  // Decorative SVGs used to leak into public anime cards when a remote CDN timed out.
+  // Return a real image error instead; PosterFailureGuard removes the failed card globally.
+  if(isDecorativeFallback(req)){
+    return new Response(null, {
+      status: 404,
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+        'X-Aianime-Image-Proxy': '1',
+        'X-Aianime-Image-Cache': reason,
+        'X-Aianime-Poster-Missing': '1'
+      }
+    })
+  }
+
   return new Response(null, {
     status: 302,
     headers: {

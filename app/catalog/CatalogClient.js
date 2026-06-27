@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { filterAndSortAnime, getCatalogHint } from '@/lib/searchRelevance'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 
 const statusLabels = { all:'Все статусы', ongoing:'Онгоинг', completed:'Завершено', released:'Фильм' }
 const kindLabels = { all:'Любой тип', tv:'TV сериал', movie:'Фильм', ova:'OVA' }
@@ -27,35 +28,8 @@ function animeHref(slug){
   return `/anime/${encodeURIComponent(safe)}`
 }
 
-function unwrapPosterSource(value){
-  const raw = String(value || '').trim()
-  if(!raw) return ''
-  try{
-    const parsed = new URL(raw, window.location.origin)
-    if(parsed.pathname === '/api/image' || parsed.pathname === '/_next/image'){
-      const nested = parsed.searchParams.get('url')
-      if(nested) return decodeURIComponent(nested)
-    }
-  }catch{}
-  return raw
-}
-
-function hasPlaceholderPoster(item){
-  const source = unwrapPosterSource(item?.poster)
-  if(!source) return true
-  let path = source.split(/[?#]/)[0].toLowerCase()
-  try{ path = decodeURIComponent(new URL(source, window.location.origin).pathname).toLowerCase() }catch{}
-  if(/^\/(?:posters|banners)\/[^/?#]+\.svg$/i.test(path)) return true
-  return /(?:^|\/)(?:placeholder|no[-_]?poster|default(?:-poster)?)(?:[._/-]|$)/i.test(path)
-}
-
 function visibleCatalogItem(item){
-  const slug = String(item?.slug || '').trim().toLowerCase()
-  if(!slug || slug === 'undefined' || slug === 'null' || slug.startsWith('catalog-title-')) return false
-  const text = [item.title, item.titleRu, item.displayTitle, item.originalTitle, item.description, item.slug].filter(Boolean).join(' ').toLowerCase()
-  if(text.includes('catalog-title-') || text.includes('стальной алхимик3') || text.includes('тетрадь смерти4')) return false
-  if(item?.hasRealPoster === false || hasPlaceholderPoster(item)) return false
-  return true
+  return isPublicReadyAnimeItem(item)
 }
 
 export default function CatalogClient({ items }){

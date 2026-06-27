@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { readJson } from '@/lib/userStorage'
 import { normalizeSearchText } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
+import { isPublicReadyAnimeItem, isUsableAnimePoster, versionAnimePosterUrl } from '@/lib/animeQuality'
 
 const PROMPT_GROUPS = [
   { title: 'Вайб', items: ['лёгкое и уютное', 'романтика и отношения', 'мрачное и напряжённое', 'смешное и бодрое'] },
@@ -115,7 +116,7 @@ function tokenize(value){
 }
 
 function prepareItems(items){
-  return (items || []).filter(item => item?.slug).map(item => {
+  return (items || []).filter(isPublicReadyAnimeItem).map(item => {
     const genres = safeArray(item.genres)
     const title = getPrimaryTitle(item)
     const titleText = normalizeSearchText([
@@ -276,8 +277,7 @@ function makeReason(item, query){
 
 function getPosterSrc(item){
   const raw = String(item?.poster || item?.posterUrl || item?.image || item?.imageUrl || '').trim()
-  if(raw) return raw
-  return '/posters/name.svg'
+  return isUsableAnimePoster(raw) ? versionAnimePosterUrl(raw) : ''
 }
 
 function prewarmPosterUrls(items, limit = 8){
@@ -648,7 +648,7 @@ export default function AiClient({ items, similarSlug, initialQuery: initialQuer
         const sourceLabel = getAiConfidenceLabel(item.match, hasAiRefinement)
         return <Link className="ai-result-card ai-result-card-v186 ai-result-card-v204 ai-result-card-v225" key={item.slug} href={`/anime/${item.slug}`} prefetch={false}>
           <div className="ai-poster-shell" data-rank={index + 1}>
-            <img className="ai-card-poster-img" loading="eager" fetchPriority="high" decoding="async" width="320" height="480" src={poster} alt={title ? `Постер аниме ${title}` : 'Постер аниме'} onError={event => { event.currentTarget.src = '/posters/name.svg' }}/>
+            <img className="ai-card-poster-img" loading="eager" fetchPriority="high" decoding="async" width="320" height="480" src={poster} alt={title ? `Постер аниме ${title}` : 'Постер аниме'} onError={event => { const card = event.currentTarget.closest('a'); if(card) card.style.display = 'none' }}/>
           </div>
           <div className="ai-card-info">
             <div className="ai-card-topline">

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getFavorites, getHistory, getRatings } from '@/lib/userStorage'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 
 export default function TasteRecommendationsClient(){
   const [items,setItems] = useState([])
@@ -23,7 +24,7 @@ export default function TasteRecommendationsClient(){
           })
         })
         const payload = await res.json()
-        if(active) setItems(payload?.results || [])
+        if(active) setItems((payload?.results || []).filter(isPublicReadyAnimeItem))
       }catch{
         if(active) setItems([])
       }finally{

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { scoreCatalogItem } from '@/lib/searchRelevance'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 
 function score(item, query){
   return scoreCatalogItem(item, query)
@@ -29,8 +30,9 @@ export default function GlobalSearchOverlay({ items = [] }){
 
   const results = useMemo(()=>{
     const q = query.trim()
-    if(!q) return items.slice(0, 6)
+    if(!q) return items.filter(isPublicReadyAnimeItem).slice(0, 6)
     return [...items]
+      .filter(isPublicReadyAnimeItem)
       .map(item => ({ item, value: score(item, q) }))
       .filter(x => x.value > 0)
       .sort((a,b)=>b.value-a.value)
