@@ -25270,3 +25270,1055 @@ a.ai-result-card-v225{
   .profile-identity-art-v253 > i{font-size:62px}
   .profile-identity-orb-v253.orb-one{width:210px;height:210px}
 }
+
+/* =====================================================================
+   AIanime v255 — consolidated responsive layer
+   Mobile navigation and layout are intentionally isolated below 820px.
+   No catalog/data/player logic is changed here.
+   ===================================================================== */
+
+.mobile-site-dock{display:none}
+
+@media (max-width:1180px){
+  html body .shell{
+    grid-template-columns:88px minmax(0,1fr) !important;
+    gap:16px !important;
+  }
+
+  html body .shell .rightcol{
+    display:none !important;
+  }
+
+  html body .shell .content{
+    width:100% !important;
+    min-width:0 !important;
+    padding-right:18px !important;
+  }
+
+  html body .shell .sidebar{
+    width:88px !important;
+    min-width:88px !important;
+    padding-left:9px !important;
+    padding-right:9px !important;
+  }
+
+  html body .shell .sidebar .brand-copy,
+  html body .shell .sidebar .nav:not(.active){
+    min-width:0 !important;
+  }
+
+  html body .shell .sidebar .nav{
+    padding-left:8px !important;
+    padding-right:8px !important;
+    font-size:11px !important;
+  }
+
+  html body .shell .sidebar-profile-card,
+  html body .shell .sidebar-profile-card-v253{
+    display:none !important;
+  }
+
+  html body .poster-row{
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  }
+
+  html body .catalog-layout{
+    grid-template-columns:minmax(220px,270px) minmax(0,1fr) !important;
+    gap:18px !important;
+  }
+
+  html body .catalog-results{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width:960px){
+  html body .site-interior-header__bar,
+  html body .title-wide-header-v80__bar{
+    width:calc(100% - 24px) !important;
+    max-width:none !important;
+  }
+
+  html body .site-interior-header__nav,
+  html body .title-wide-header-v80__nav{
+    gap:3px !important;
+  }
+
+  html body .site-interior-header__nav a,
+  html body .title-wide-header-v80__nav a{
+    padding-left:8px !important;
+    padding-right:8px !important;
+    font-size:11px !important;
+  }
+
+  html body .catalog-layout,
+  html body .schedule-layout,
+  html body .profile-clean-grid,
+  html body .profile-dashboard-columns-v168,
+  html body .admin-grid,
+  html body .admin-content-layout,
+  html body .aa-grid,
+  html body .av244-layout{
+    grid-template-columns:1fr !important;
+  }
+
+  html body .catalog-aside,
+  html body .admin-anime-left{
+    position:static !important;
+    top:auto !important;
+    width:100% !important;
+  }
+
+  html body .filter-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+
+  html body .anime-compact-card.compact-card-polished{
+    grid-template-columns:minmax(0,1fr) 220px !important;
+    gap:20px !important;
+  }
+
+  html body .anime-compact-card.compact-card-polished .anime-compact-poster{
+    width:220px !important;
+    min-width:220px !important;
+  }
+}
+
+@media (max-width:820px){
+  :root{
+    --mobile-gutter:12px;
+    --mobile-dock-height:70px;
+    --mobile-dock-bottom:8px;
+  }
+
+  html{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:320px !important;
+    overflow-x:clip !important;
+    scroll-padding-bottom:calc(var(--mobile-dock-height) + 24px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:320px !important;
+    min-height:100svh !important;
+    overflow-x:clip !important;
+    padding:0 !important;
+    -webkit-text-size-adjust:100% !important;
+  }
+
+  img,
+  video,
+  canvas,
+  iframe,
+  svg{
+    max-width:100%;
+  }
+
+  input,
+  select,
+  textarea{
+    min-width:0 !important;
+    max-width:100% !important;
+    font-size:16px !important;
+  }
+
+  button,
+  a,
+  summary{
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* One consistent navigation on every public mobile page. */
+  html body .mobile-site-dock{
+    position:fixed !important;
+    z-index:1200 !important;
+    left:max(8px,env(safe-area-inset-left)) !important;
+    right:max(8px,env(safe-area-inset-right)) !important;
+    bottom:calc(var(--mobile-dock-bottom) + env(safe-area-inset-bottom)) !important;
+    height:var(--mobile-dock-height) !important;
+    padding:6px !important;
+    display:grid !important;
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    gap:3px !important;
+    border:1px solid rgba(224,214,242,.96) !important;
+    border-radius:22px !important;
+    background:rgba(255,255,255,.95) !important;
+    box-shadow:0 18px 52px rgba(50,35,86,.20) !important;
+    backdrop-filter:blur(18px) !important;
+    -webkit-backdrop-filter:blur(18px) !important;
+  }
+
+  html body .mobile-site-dock > a{
+    min-width:0 !important;
+    height:58px !important;
+    padding:5px 2px !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:3px !important;
+    border-radius:16px !important;
+    color:#6d6482 !important;
+    text-decoration:none !important;
+    font-size:9.5px !important;
+    line-height:1 !important;
+    font-weight:750 !important;
+    letter-spacing:-.025em !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+  }
+
+  html body .mobile-site-dock > a.is-active{
+    color:#7b43db !important;
+    background:linear-gradient(180deg,#f4edff,#eee3ff) !important;
+  }
+
+  html body .mobile-site-dock__icon{
+    width:23px !important;
+    height:23px !important;
+    display:grid !important;
+    place-items:center !important;
+    flex:0 0 23px !important;
+  }
+
+  html body .mobile-site-dock__icon svg{
+    width:22px !important;
+    height:22px !important;
+    display:block !important;
+  }
+
+  html body .mobile-site-dock__label{
+    display:block !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  /* The desktop home sidebar must never compete with the mobile dock. */
+  html body .shell{
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:visible !important;
+  }
+
+  html body .shell > .sidebar{
+    display:none !important;
+  }
+
+  html body .shell .rightcol{
+    display:none !important;
+  }
+
+  html body .shell .content{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:10px var(--mobile-gutter) calc(var(--mobile-dock-height) + 28px + env(safe-area-inset-bottom)) !important;
+    overflow-x:clip !important;
+  }
+
+  /* Compact public header: brand + actions. Main destinations live in the dock. */
+  html body .site-interior-header,
+  html body .title-wide-header-v80{
+    width:100% !important;
+    max-width:100% !important;
+    margin:0 !important;
+    padding:8px var(--mobile-gutter) 2px !important;
+    overflow:visible !important;
+  }
+
+  html body .site-interior-header__bar,
+  html body .title-wide-header-v80__bar{
+    width:100% !important;
+    max-width:100% !important;
+    min-height:54px !important;
+    margin:0 !important;
+    padding:7px 8px 7px 10px !important;
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    align-items:center !important;
+    gap:8px !important;
+    border-radius:18px !important;
+    overflow:visible !important;
+  }
+
+  html body .site-interior-header__brand,
+  html body .title-wide-header-v80__brand{
+    min-width:0 !important;
+    height:40px !important;
+    display:flex !important;
+    align-items:center !important;
+    gap:8px !important;
+  }
+
+  html body .site-interior-header__brand img,
+  html body .title-wide-header-v80__brand img{
+    width:38px !important;
+    height:38px !important;
+    min-width:38px !important;
+    flex:0 0 38px !important;
+  }
+
+  html body .site-interior-header__brand b,
+  html body .title-wide-header-v80__brand b{
+    min-width:0 !important;
+    font-size:19px !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  html body .site-interior-header__nav,
+  html body .title-wide-header-v80__nav{
+    display:none !important;
+  }
+
+  html body .site-interior-header__actions,
+  html body .title-wide-header-v80__actions{
+    min-width:0 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:6px !important;
+  }
+
+  html body .site-interior-header__search,
+  html body .title-wide-header-v80__search,
+  html body .title-wide-header-v80 .search-trigger{
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    padding:0 !important;
+    display:grid !important;
+    place-items:center !important;
+    border-radius:13px !important;
+  }
+
+  html body .site-interior-header__search strong,
+  html body .site-interior-header__search kbd,
+  html body .title-wide-header-v80__search strong,
+  html body .title-wide-header-v80__search kbd,
+  html body .title-wide-header-v80 .search-trigger strong,
+  html body .title-wide-header-v80 .search-trigger kbd{
+    display:none !important;
+  }
+
+  html body .site-interior-header__actions .title-nav-profile,
+  html body .title-wide-header-v80__actions .title-nav-profile{
+    min-width:0 !important;
+    height:40px !important;
+    padding:0 12px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border-radius:13px !important;
+    font-size:11px !important;
+    white-space:nowrap !important;
+  }
+
+  html body .site-interior-header__actions .title-wide-header-v80__signup,
+  html body .title-wide-header-v80__actions .title-wide-header-v80__signup{
+    display:none !important;
+  }
+
+  /* All page wrappers receive the same safe width and dock clearance. */
+  html body :is(
+    .page,
+    .catalog-page,
+    .schedule-page,
+    .profile-page-clean,
+    .local-library-page,
+    .auth-page,
+    .seo-page,
+    .anime-compact-page,
+    .admin-page,
+    .admin-hub-page,
+    .admin-v244-page
+  ){
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding-left:var(--mobile-gutter) !important;
+    padding-right:var(--mobile-gutter) !important;
+    padding-bottom:calc(var(--mobile-dock-height) + 28px + env(safe-area-inset-bottom)) !important;
+    overflow-x:clip !important;
+  }
+
+  html body :is(
+    .page,
+    .catalog-page,
+    .schedule-page,
+    .profile-page-clean,
+    .local-library-page,
+    .auth-page,
+    .seo-page,
+    .anime-compact-page,
+    .admin-page,
+    .admin-hub-page,
+    .admin-v244-page
+  ) > *{
+    min-width:0 !important;
+    max-width:100% !important;
+  }
+
+  html body :is(.page-head,.catalog-hero-head,.schedule-hero,.seo-head) h1{
+    max-width:100% !important;
+    margin-left:0 !important;
+    margin-right:0 !important;
+    font-size:clamp(29px,9vw,39px) !important;
+    line-height:1.02 !important;
+    letter-spacing:-.05em !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  html body :is(.page-head,.catalog-hero-head,.schedule-hero,.seo-head) p{
+    max-width:100% !important;
+    font-size:13.5px !important;
+    line-height:1.55 !important;
+  }
+
+  /* Home search and hero. */
+  html body .topbar{
+    width:100% !important;
+    min-height:46px !important;
+    height:auto !important;
+    margin:0 0 10px !important;
+    display:block !important;
+  }
+
+  html body .topbar .search,
+  html body .search{
+    width:100% !important;
+    max-width:100% !important;
+    height:46px !important;
+    min-height:46px !important;
+    padding:0 14px !important;
+    border-radius:15px !important;
+  }
+
+  html body .topbar .actions,
+  html body .search kbd{
+    display:none !important;
+  }
+
+  html body .hero.ai-hero-image{
+    width:100% !important;
+    height:auto !important;
+    min-height:410px !important;
+    margin:0 0 18px !important;
+    border-radius:21px !important;
+    overflow:hidden !important;
+    contain:layout paint !important;
+  }
+
+  html body .hero.ai-hero-image .hero-lcp-picture,
+  html body .hero.ai-hero-image .hero-lcp-image{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100% !important;
+    object-fit:cover !important;
+    object-position:64% center !important;
+  }
+
+  html body .hero.ai-hero-image .hero-image-overlay{
+    background:linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.86) 48%,rgba(255,255,255,.30) 100%) !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy{
+    position:relative !important;
+    inset:auto !important;
+    width:100% !important;
+    max-width:100% !important;
+    padding:22px 17px 20px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy > span{
+    width:max-content !important;
+    max-width:100% !important;
+    min-height:27px !important;
+    height:auto !important;
+    margin:0 0 14px !important;
+    padding:6px 10px !important;
+    font-size:9.5px !important;
+    line-height:1.2 !important;
+    white-space:normal !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy h1{
+    max-width:320px !important;
+    margin:0 !important;
+    font-size:clamp(33px,10.4vw,44px) !important;
+    line-height:.98 !important;
+    letter-spacing:-.055em !important;
+    overflow-wrap:normal !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy p{
+    max-width:295px !important;
+    margin:14px 0 0 !important;
+    font-size:13.5px !important;
+    line-height:1.48 !important;
+  }
+
+  html body .hero.ai-hero-image .hero-actions{
+    width:100% !important;
+    max-width:305px !important;
+    margin:18px 0 0 !important;
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-actions :is(.primary,.secondary,.how-works-btn){
+    width:100% !important;
+    min-width:0 !important;
+    min-height:46px !important;
+    height:auto !important;
+    margin:0 !important;
+    padding:10px 9px !important;
+    border-radius:14px !important;
+    font-size:11px !important;
+    line-height:1.15 !important;
+    white-space:normal !important;
+  }
+
+  /* Mobile rails: cards stay readable and no grid is squeezed into two columns. */
+  html body :is(.poster-row,.continue-row,.home-new-grid,.popular-live-grid,.profile-continue-row-v168){
+    width:100% !important;
+    max-width:100% !important;
+    display:flex !important;
+    grid-template-columns:none !important;
+    gap:10px !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scroll-snap-type:x mandatory !important;
+    overscroll-behavior-inline:contain !important;
+    -webkit-overflow-scrolling:touch !important;
+    scrollbar-width:none !important;
+    padding:0 1px 10px !important;
+  }
+
+  html body :is(.poster-row,.continue-row,.home-new-grid,.popular-live-grid,.profile-continue-row-v168)::-webkit-scrollbar{
+    display:none !important;
+  }
+
+  html body .poster-row .poster,
+  html body .home-new-card,
+  html body .popular-live-card{
+    flex:0 0 min(66vw,220px) !important;
+    width:min(66vw,220px) !important;
+    min-width:min(66vw,220px) !important;
+    height:294px !important;
+    min-height:294px !important;
+    scroll-snap-align:start !important;
+  }
+
+  html body .continue-row .continue-card,
+  html body .profile-continue-row-v168 .continue-card{
+    flex:0 0 min(86vw,340px) !important;
+    width:min(86vw,340px) !important;
+    min-width:min(86vw,340px) !important;
+    height:154px !important;
+    scroll-snap-align:start !important;
+  }
+
+  html body :is(.section-title,.home-new-title,.popular-live-title){
+    width:100% !important;
+    min-width:0 !important;
+    margin:18px 0 10px !important;
+    display:flex !important;
+    align-items:flex-end !important;
+    justify-content:space-between !important;
+    gap:8px !important;
+  }
+
+  html body :is(.section-title,.home-new-title,.popular-live-title) h2{
+    min-width:0 !important;
+    margin:0 !important;
+    font-size:18px !important;
+    line-height:1.15 !important;
+  }
+
+  html body :is(.section-title,.home-new-title,.popular-live-title) a{
+    flex:0 0 auto !important;
+    font-size:11px !important;
+    white-space:nowrap !important;
+  }
+
+  html body .collections{
+    grid-template-columns:1fr !important;
+    gap:9px !important;
+  }
+
+  html body .collection{
+    width:100% !important;
+    min-height:92px !important;
+    height:auto !important;
+    padding:14px !important;
+    border-radius:17px !important;
+  }
+
+  /* Catalog: filters and cards stack predictably. */
+  html body .catalog-layout{
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+
+  html body .catalog-aside{
+    position:static !important;
+    top:auto !important;
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  html body .filter-grid,
+  html body .catalog-filter-grid{
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+  }
+
+  html body .catalog-results{
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+  }
+
+  html body .catalog-card{
+    width:100% !important;
+    max-width:100% !important;
+    min-height:174px !important;
+    display:grid !important;
+    grid-template-columns:104px minmax(0,1fr) !important;
+    gap:11px !important;
+    padding:9px !important;
+    overflow:hidden !important;
+  }
+
+  html body .catalog-cover{
+    width:104px !important;
+    min-width:104px !important;
+    height:156px !important;
+    min-height:156px !important;
+    border-radius:13px !important;
+  }
+
+  html body .catalog-card :is(h2,h3,b,p,span){
+    max-width:100% !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  html body .catalog-card .catalog-card-body{
+    min-width:0 !important;
+  }
+
+  /* Title page: text first, poster as a compact visual, player never overflows. */
+  html body .anime-compact-page{
+    padding-top:8px !important;
+  }
+
+  html body .anime-compact-card.compact-card-polished{
+    width:100% !important;
+    max-width:100% !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    grid-template-areas:"poster" "content" !important;
+    gap:13px !important;
+    padding:12px !important;
+    border-radius:19px !important;
+    overflow:hidden !important;
+  }
+
+  html body .anime-compact-card.compact-card-polished .anime-compact-poster{
+    grid-area:poster !important;
+    position:relative !important;
+    inset:auto !important;
+    order:-1 !important;
+    width:min(180px,52vw) !important;
+    min-width:0 !important;
+    max-width:180px !important;
+    margin:0 auto !important;
+  }
+
+  html body .anime-compact-card.compact-card-polished .anime-compact-poster img{
+    width:100% !important;
+    height:auto !important;
+    aspect-ratio:2/3 !important;
+    object-fit:cover !important;
+  }
+
+  html body .anime-compact-card.compact-card-polished .anime-compact-left{
+    grid-area:content !important;
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  html body .anime-compact-card h1{
+    max-width:100% !important;
+    margin:4px 0 8px !important;
+    font-size:clamp(28px,9vw,38px) !important;
+    line-height:1 !important;
+    letter-spacing:-.055em !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  html body .compact-aliases,
+  html body .compact-genres,
+  html body .compact-actions{
+    max-width:100% !important;
+    display:flex !important;
+    flex-wrap:wrap !important;
+    gap:7px !important;
+  }
+
+  html body .compact-actions > *{
+    flex:1 1 138px !important;
+    min-width:0 !important;
+    justify-content:center !important;
+  }
+
+  html body .compact-player-section{
+    width:100% !important;
+    max-width:100% !important;
+    padding:11px !important;
+    border-radius:19px !important;
+    overflow:hidden !important;
+  }
+
+  html body :is(.compact-player,.native-kodik-frame,.native-kodik-v65-frame,.compact-player iframe){
+    width:100% !important;
+    max-width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    aspect-ratio:16/9 !important;
+    border-radius:14px !important;
+  }
+
+  html body .compact-player-controls,
+  html body .native-kodik-v65-controls{
+    grid-template-columns:1fr !important;
+    gap:7px !important;
+  }
+
+  html body .compact-similar > div:last-child{
+    width:100% !important;
+    display:flex !important;
+    grid-template-columns:none !important;
+    gap:9px !important;
+    overflow-x:auto !important;
+    scroll-snap-type:x mandatory !important;
+    scrollbar-width:none !important;
+    padding-bottom:8px !important;
+  }
+
+  html body .compact-similar > div:last-child::-webkit-scrollbar{
+    display:none !important;
+  }
+
+  html body .compact-similar a{
+    flex:0 0 140px !important;
+    width:140px !important;
+    min-width:140px !important;
+    scroll-snap-align:start !important;
+  }
+
+  /* Schedule, profile, auth and AI pages. */
+  html body :is(
+    .schedule-board,
+    .schedule-grid,
+    .profile-clean-grid,
+    .profile-main-fields-v7,
+    .profile-upload-grid-v7,
+    .profile-stat-grid,
+    .profile-stat-grid-v168,
+    .profile-dashboard-columns-v168,
+    .ai-results-grid,
+    .ai-results-grid-v186,
+    .ai-results-grid-v204,
+    .ai-results-grid-v225,
+    .seo-grid
+  ){
+    grid-template-columns:1fr !important;
+  }
+
+  html body :is(.profile-clean-card,.profile-dashboard,.auth-card,.auth-required-card,.ai-search-panel,.ai-search-panel-v186,.ai-search-panel-v204){
+    width:100% !important;
+    max-width:100% !important;
+    padding:13px !important;
+    border-radius:19px !important;
+  }
+
+  html body :is(.profile-preview-v7,.profile-identity-stage-v253,.profile-cover-stage-v7){
+    width:100% !important;
+    min-height:240px !important;
+    height:auto !important;
+    aspect-ratio:16/10 !important;
+  }
+
+  html body :is(.profile-clean-actions,.profile-account-actions-v7,.profile-actions,.ai-actions,.ai-actions-v186){
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+  }
+
+  html body :is(.profile-clean-actions,.profile-account-actions-v7,.profile-actions,.ai-actions,.ai-actions-v186) > *{
+    width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+  }
+
+  html body .ai-smart-row,
+  html body .ai-search-panel-v204 .ai-smart-row{
+    grid-template-columns:1fr !important;
+    gap:7px !important;
+  }
+
+  html body .ai-preset-row{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:7px !important;
+    overflow-x:auto !important;
+    scrollbar-width:none !important;
+    padding-bottom:4px !important;
+  }
+
+  html body .ai-preset-row::-webkit-scrollbar{
+    display:none !important;
+  }
+
+  html body .ai-preset-row > *{
+    flex:0 0 auto !important;
+  }
+
+  html body .ai-result-card-v225,
+  html body a.ai-result-card-v225{
+    grid-template-columns:92px minmax(0,1fr) !important;
+    gap:10px !important;
+    min-height:158px !important;
+    padding:8px !important;
+  }
+
+  html body .ai-poster-shell{
+    width:92px !important;
+    height:142px !important;
+  }
+
+  /* Admin stays usable on phone without contaminating public layout. */
+  html body :is(
+    .admin-grid,
+    .admin-content-layout,
+    .aa-grid,
+    .aa-form,
+    .aa-restriction-fields,
+    .av244-grid,
+    .av244-layout,
+    .av244-actions,
+    .episode-form,
+    .admin-preview-grid,
+    .editable-admin-grid,
+    .admin-cron-grid,
+    .admin-live-health-grid
+  ){
+    grid-template-columns:1fr !important;
+  }
+
+  html body :is(.admin-page-head-row,.aa-top,.av244-top){
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    gap:9px !important;
+  }
+
+  html body :is(.admin-issue-table-wrap,.admin-reports-panel-v172,.admin-player-report-list-v172){
+    width:100% !important;
+    overflow-x:auto !important;
+  }
+
+  /* Footer is above the dock and never overflows. */
+  html body .site-footer.site-footer-minimal{
+    width:100% !important;
+    max-width:100% !important;
+    padding:0 var(--mobile-gutter) calc(var(--mobile-dock-height) + 28px + env(safe-area-inset-bottom)) !important;
+  }
+
+  html body .site-footer.site-footer-minimal .site-footer-inner{
+    width:100% !important;
+    max-width:100% !important;
+    grid-template-columns:1fr !important;
+    justify-items:center !important;
+    gap:10px !important;
+    text-align:center !important;
+  }
+
+  html body .site-footer-links{
+    width:100% !important;
+    max-width:100% !important;
+    display:flex !important;
+    justify-content:flex-start !important;
+    gap:8px !important;
+    overflow-x:auto !important;
+    scrollbar-width:none !important;
+    padding-bottom:4px !important;
+  }
+
+  html body .site-footer-links::-webkit-scrollbar{
+    display:none !important;
+  }
+
+  html body .site-footer-links a{
+    flex:0 0 auto !important;
+  }
+}
+
+@media (max-width:520px){
+  :root{
+    --mobile-gutter:10px;
+  }
+
+  html body .mobile-site-dock{
+    left:max(6px,env(safe-area-inset-left)) !important;
+    right:max(6px,env(safe-area-inset-right)) !important;
+    bottom:calc(6px + env(safe-area-inset-bottom)) !important;
+    border-radius:20px !important;
+  }
+
+  html body .mobile-site-dock > a{
+    font-size:8.8px !important;
+  }
+
+  html body .hero.ai-hero-image{
+    min-height:430px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-actions{
+    grid-template-columns:1fr !important;
+    max-width:270px !important;
+  }
+
+  html body .poster-row .poster,
+  html body .home-new-card,
+  html body .popular-live-card{
+    flex-basis:min(72vw,215px) !important;
+    width:min(72vw,215px) !important;
+    min-width:min(72vw,215px) !important;
+  }
+
+  html body .filter-grid,
+  html body .catalog-filter-grid{
+    grid-template-columns:1fr !important;
+  }
+
+  html body .catalog-card{
+    grid-template-columns:92px minmax(0,1fr) !important;
+    min-height:158px !important;
+  }
+
+  html body .catalog-cover{
+    width:92px !important;
+    min-width:92px !important;
+    height:140px !important;
+    min-height:140px !important;
+  }
+
+  html body .anime-compact-card.compact-card-polished .anime-compact-poster{
+    width:min(166px,50vw) !important;
+    max-width:166px !important;
+  }
+
+  html body .compact-actions > *{
+    flex-basis:100% !important;
+  }
+}
+
+@media (max-width:370px){
+  :root{
+    --mobile-gutter:8px;
+  }
+
+  html body .mobile-site-dock{
+    height:66px !important;
+    padding:4px !important;
+  }
+
+  html body .mobile-site-dock > a{
+    height:56px !important;
+    font-size:8px !important;
+    letter-spacing:-.04em !important;
+  }
+
+  html body .mobile-site-dock__icon,
+  html body .mobile-site-dock__icon svg{
+    width:20px !important;
+    height:20px !important;
+  }
+
+  html body .site-interior-header__brand b,
+  html body .title-wide-header-v80__brand b{
+    font-size:17px !important;
+  }
+
+  html body .site-interior-header__actions .title-nav-profile,
+  html body .title-wide-header-v80__actions .title-nav-profile{
+    padding-left:9px !important;
+    padding-right:9px !important;
+    font-size:10px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy h1{
+    font-size:32px !important;
+  }
+}
+
+@media (max-width:900px) and (max-height:540px) and (orientation:landscape){
+  html body .hero.ai-hero-image{
+    min-height:300px !important;
+    height:300px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy{
+    padding:16px 20px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy > span{
+    display:none !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy h1{
+    max-width:440px !important;
+    font-size:34px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-copy p{
+    margin-top:8px !important;
+    font-size:12.5px !important;
+  }
+
+  html body .hero.ai-hero-image .hero-actions{
+    margin-top:12px !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+
+  html body .mobile-site-dock{
+    --mobile-dock-height:62px;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  html body *,
+  html body *::before,
+  html body *::after{
+    scroll-behavior:auto !important;
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
