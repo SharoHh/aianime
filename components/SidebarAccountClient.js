@@ -60,7 +60,11 @@ export default function SidebarAccountClient(){
   return <>
     <div className="sidebar-separator"/>
     <Link className="nav" href="/profile"><span className="nav-icon"><Icon type="profile"/></span>Профиль</Link>
-    <Link href="/profile" className="sidebar-profile-card">
+    <Link
+      href="/profile"
+      className="sidebar-profile-card sidebar-profile-card-compact-v257"
+      aria-label="Открыть профиль"
+    >
       <div className="sidebar-profile-top">
         <img className="sidebar-profile-avatar" src={safeProfile.avatar} alt="Аватар"/>
         <div>
@@ -69,7 +73,6 @@ export default function SidebarAccountClient(){
         </div>
         <i>›</i>
       </div>
-      <img className="sidebar-profile-cover" src={safeProfile.cover} alt="Профиль"/>
     </Link>
   </>
 }

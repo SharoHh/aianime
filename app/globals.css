@@ -26322,3 +26322,57 @@ a.ai-result-card-v225{
     transition-duration:.01ms !important;
   }
 }
+
+
+/* v257 — compact profile in the home sidebar, without a background cover */
+html body .sidebar .sidebar-profile-card-compact-v257{
+  position:relative !important;
+  display:block !important;
+  flex:0 0 auto !important;
+  width:100% !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin-top:18px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:18px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+  transform:none !important;
+}
+
+html body .sidebar .sidebar-profile-card-compact-v257::before,
+html body .sidebar .sidebar-profile-card-compact-v257::after,
+html body .sidebar .sidebar-profile-card-compact-v257 .sidebar-profile-cover{
+  display:none !important;
+  content:none !important;
+}
+
+html body .sidebar .sidebar-profile-card-compact-v257 .sidebar-profile-top{
+  position:relative !important;
+  z-index:1 !important;
+  display:grid !important;
+  grid-template-columns:40px minmax(0,1fr) 14px !important;
+  gap:10px !important;
+  align-items:center !important;
+  min-height:62px !important;
+  margin:0 !important;
+  padding:10px 12px !important;
+  border:1px solid #eee7f8 !important;
+  border-radius:18px !important;
+  background:#fff !important;
+  box-shadow:0 12px 28px rgba(81,62,130,.08) !important;
+  backdrop-filter:none !important;
+}
+
+html body .sidebar .sidebar-profile-card-compact-v257:hover .sidebar-profile-top{
+  border-color:#e1d4f5 !important;
+  box-shadow:0 16px 34px rgba(81,62,130,.12) !important;
+}
+
+@media(max-width:1180px){
+  html body .sidebar .sidebar-profile-card-compact-v257{
+    display:none !important;
+  }
+}
