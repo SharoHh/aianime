@@ -77,5 +77,23 @@ export default function HomeSectionIcon({ type = 'spark' }){
       <path d="M8.5 10h7M8.5 13h4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
       <path d="M8.8 3.8h6.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".45"/>
     </svg> : null}
+
+
+    {type === 'movie' ? <svg {...common}>
+      <rect x="4.5" y="6" width="15" height="12" rx="2.2" stroke="currentColor" strokeWidth="2"/>
+      <path d="M7 6V4.5M11 6V4.5M15 6V4.5M5 10h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="m10 12.2 3.3 2-3.3 2v-4Z" fill="currentColor"/>
+    </svg> : null}
+
+    {type === 'series' ? <svg {...common}>
+      <rect x="5" y="5" width="14" height="14" rx="2.2" stroke="currentColor" strokeWidth="2"/>
+      <path d="M8.3 8.6h7.4M8.3 12h7.4M8.3 15.4h4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg> : null}
+
+    {type === 'genre' ? <svg {...common}>
+      <path d="M4.8 7.2h6.4M4.8 12h10.5M4.8 16.8h6.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="15.8" cy="7.2" r="2" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="18" cy="16.8" r="2" stroke="currentColor" strokeWidth="2"/>
+    </svg> : null}
   </span>
 }

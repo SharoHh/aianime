@@ -2,7 +2,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import { filterAndSortAnime, getCatalogHint } from '@/lib/searchRelevance'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
@@ -33,13 +34,26 @@ function visibleCatalogItem(item){
 }
 
 export default function CatalogClient({ items }){
-  const [query,setQuery] = useState('')
-  const [genre,setGenre] = useState('all')
-  const [status,setStatus] = useState('all')
-  const [kind,setKind] = useState('all')
-  const [year,setYear] = useState('all')
-  const [sort,setSort] = useState('relevant')
+  const searchParams = useSearchParams()
+  const paramsKey = searchParams.toString()
+  const readParam = (name, fallback = 'all') => searchParams.get(name) || fallback
+  const [query,setQuery] = useState(()=>searchParams.get('search') || searchParams.get('q') || '')
+  const [genre,setGenre] = useState(()=>readParam('genre'))
+  const [status,setStatus] = useState(()=>readParam('status'))
+  const [kind,setKind] = useState(()=>readParam('kind'))
+  const [year,setYear] = useState(()=>readParam('year'))
+  const [sort,setSort] = useState(()=>readParam('sort', 'relevant'))
   const [visible,setVisible] = useState(24)
+
+  useEffect(()=>{
+    setQuery(searchParams.get('search') || searchParams.get('q') || '')
+    setGenre(readParam('genre'))
+    setStatus(readParam('status'))
+    setKind(readParam('kind'))
+    setYear(readParam('year'))
+    setSort(readParam('sort', 'relevant'))
+    setVisible(24)
+  }, [paramsKey])
 
   const safeItems = useMemo(()=>Array.isArray(items) ? items.filter(visibleCatalogItem) : [], [items])
   const genres = useMemo(()=>unique(safeItems.flatMap(a=>a.genres)).sort((a,b)=>a.localeCompare(b,'ru')), [safeItems])
@@ -69,7 +83,7 @@ export default function CatalogClient({ items }){
     </section>
 
     <section className="catalog-layout">
-      <aside className="catalog-aside widget">
+      <aside id="catalog-genres" className="catalog-aside widget">
         <h3>Быстрые жанры</h3>
         <div className="genre-cloud">
           {genres.slice(0,18).map(g=><button className={genre===g?'active':''} onClick={()=>{setGenre(genre===g?'all':g);setVisible(24)}} key={g}>{g}</button>)}
