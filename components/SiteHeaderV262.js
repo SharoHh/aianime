@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import HeaderDiscoveryMenu from '@/components/HeaderDiscoveryMenu'
@@ -26,20 +27,36 @@ function pathMatches(pathname, href){
   return pathname === href || pathname?.startsWith(`${href}/`)
 }
 
-function quickLinkActive(pathname, searchParams, link){
+function queryValue(search, name){
+  return new URLSearchParams(String(search || '').replace(/^\?/, '')).get(name)
+}
+
+function quickLinkActive(pathname, search, link){
   if(link.match?.pathname && !pathMatches(pathname, link.match.pathname)) return false
-  if(link.match?.sort) return searchParams?.get('sort') === link.match.sort
-  if(link.match?.kind) return searchParams?.get('kind') === link.match.kind
-  if(link.href === '/catalog') return pathname === '/catalog' && !searchParams?.get('sort') && !searchParams?.get('kind')
+  if(link.match?.sort) return queryValue(search, 'sort') === link.match.sort
+  if(link.match?.kind) return queryValue(search, 'kind') === link.match.kind
+  if(link.href === '/catalog') return pathname === '/catalog' && !queryValue(search, 'sort') && !queryValue(search, 'kind')
   return Boolean(link.match?.pathname)
 }
 
-
+function searchFromHref(href){
+  const value = String(href || '')
+  const index = value.indexOf('?')
+  return index >= 0 ? value.slice(index) : ''
+}
 
 export default function SiteHeaderV262({ searchItems = [] }){
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  return <header className="aianime-header-v262" data-aianime-header="v264" aria-label="Меню AIanime">
+  const [currentSearch, setCurrentSearch] = useState('')
+
+  useEffect(() => {
+    const syncSearch = () => setCurrentSearch(window.location.search || '')
+    syncSearch()
+    window.addEventListener('popstate', syncSearch)
+    return () => window.removeEventListener('popstate', syncSearch)
+  }, [pathname])
+
+  return <header className="aianime-header-v262" data-aianime-header="v265" aria-label="Меню AIanime">
     <div className="aianime-header-v262__main">
       <Link href="/" className="aianime-header-v262__brand" aria-label="AIanime — на главную">
         <span className="aianime-header-v262__logo"><img src="/aianime-logo.png" alt="" aria-hidden="true" /></span>
@@ -71,10 +88,11 @@ export default function SiteHeaderV262({ searchItems = [] }){
     <div className="aianime-header-v262__quick-wrap">
       <nav className="aianime-header-v262__quick" aria-label="Быстрые разделы каталога">
         {QUICK_LINKS.map(item => {
-          const active = quickLinkActive(pathname, searchParams, item)
+          const active = quickLinkActive(pathname, currentSearch, item)
           return <Link
             key={item.href}
             href={item.href}
+            onClick={() => setCurrentSearch(searchFromHref(item.href))}
             className={active ? 'is-active' : undefined}
             aria-current={active ? 'page' : undefined}
           >
