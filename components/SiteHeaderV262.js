@@ -14,12 +14,12 @@ const PRIMARY_LINKS = [
 ]
 
 const QUICK_LINKS = [
+  { href:'/catalog', label:'Все аниме', icon:'catalog', match:{ pathname:'/catalog' } },
   { href:'/catalog?sort=newest', label:'Новинки', icon:'new', match:{ sort:'newest' } },
   { href:'/catalog?sort=popular', label:'Популярное', icon:'popular', match:{ sort:'popular' } },
   { href:'/catalog?kind=movie', label:'Фильмы', icon:'movie', match:{ kind:'movie' } },
   { href:'/catalog?kind=tv', label:'Сериалы', icon:'series', match:{ kind:'tv' } },
-  { href:'/catalog#catalog-genres', label:'По жанрам', icon:'genre', match:{ hash:'catalog-genres' } },
-  { href:'/collections', label:'Подборки', icon:'collections', match:{ pathname:'/collections' } }
+  { href:'/collections', label:'Подборки сообщества', icon:'collections', match:{ pathname:'/collections' } }
 ]
 
 function pathMatches(pathname, href){
@@ -33,7 +33,7 @@ function quickLinkActive(pathname, link){
 
 export default function SiteHeaderV262({ searchItems = [] }){
   const pathname = usePathname()
-  return <header className="aianime-header-v262" data-aianime-header="v262" aria-label="Меню AIanime">
+  return <header className="aianime-header-v262" data-aianime-header="v263" aria-label="Меню AIanime">
     <div className="aianime-header-v262__main">
       <Link href="/" className="aianime-header-v262__brand" aria-label="AIanime — на главную">
         <span className="aianime-header-v262__logo"><img src="/aianime-logo.png" alt="" aria-hidden="true" /></span>
