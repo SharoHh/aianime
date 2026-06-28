@@ -56,7 +56,7 @@ export default function SiteHeaderV262({ searchItems = [] }){
     return () => window.removeEventListener('popstate', syncSearch)
   }, [pathname])
 
-  return <header className="aianime-header-v262" data-aianime-header="v265" aria-label="Меню AIanime">
+  return <header className="aianime-header-v262" data-aianime-header="v266" aria-label="Меню AIanime">
     <div className="aianime-header-v262__main">
       <Link href="/" className="aianime-header-v262__brand" aria-label="AIanime — на главную">
         <span className="aianime-header-v262__logo"><img src="/aianime-logo.png" alt="" aria-hidden="true" /></span>
