@@ -13,6 +13,7 @@ import RatingControl from '@/components/RatingControl'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
+import HeaderDiscoveryMenu from '@/components/HeaderDiscoveryMenu'
 import CommentsClient from '@/components/CommentsClient'
 import KodikPlayerClient from '@/components/KodikPlayerClient'
 import WatchTracker from '@/components/WatchTracker'
@@ -1009,20 +1010,18 @@ export default async function AnimePage({ params, searchParams }){
 
   return <main className="anime-compact-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(animeJsonLd)}} />
-    <header className="title-wide-header-v80" data-aianime-title-nav="v138" aria-label="Меню страницы тайтла">
+    <header className="title-wide-header-v80" data-aianime-title-nav="v261" aria-label="Меню страницы тайтла">
       <div className="title-wide-header-v80__bar">
         <Link href="/" className="title-wide-header-v80__brand" aria-label="AIanime — на главную">
           <img src="/aianime-logo.png" alt="" aria-hidden="true" width="44" height="44" decoding="async" />
           <b>Aianime</b>
         </Link>
 
-        <nav className="title-wide-header-v80__nav" aria-label="Разделы сайта">
+        <nav className="title-wide-header-v80__nav" aria-label="Основные разделы">
           <Link href="/catalog"><HomeSectionIcon type="catalog"/>Каталог</Link>
           <Link href="/season"><HomeSectionIcon type="ongoing"/>Онгоинги</Link>
           <Link href="/schedule"><HomeSectionIcon type="schedule"/>Расписание</Link>
-          <Link href="/collections"><HomeSectionIcon type="collections"/>Подборки</Link>
-          <Link href="/ai"><HomeSectionIcon type="question"/>Что посмотреть?</Link>
-          <Link href="/recommend"><HomeSectionIcon type="random"/>Случайное</Link>
+          <HeaderDiscoveryMenu/>
         </nav>
 
         <div className="title-wide-header-v80__actions">
