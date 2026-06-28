@@ -26376,3 +26376,15 @@ html body .sidebar .sidebar-profile-card-compact-v257:hover .sidebar-profile-top
     display:none !important;
   }
 }
+
+
+/* AIanime v260: search buttons open one global search on every public page. */
+button.site-interior-header__search{
+  font:inherit;
+  cursor:pointer;
+}
+button.site-interior-header__search:focus-visible,
+button.search-trigger:focus-visible{
+  outline:3px solid rgba(141,85,238,.24);
+  outline-offset:2px;
+}

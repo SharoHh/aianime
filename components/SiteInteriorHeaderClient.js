@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import TitleAuthActionClient from '@/components/TitleAuthActionClient'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
+import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 
 const HIDDEN_PREFIXES = ['/admin', '/auth', '/anime']
 
@@ -35,9 +36,7 @@ export default function SiteInteriorHeaderClient(){
       </nav>
 
       <div className="site-interior-header__actions">
-        <Link href="/catalog" className="site-interior-header__search" aria-label="Открыть поиск в каталоге">
-          <HomeSectionIcon type="search"/><strong>Поиск аниме...</strong><kbd>Ctrl K</kbd>
-        </Link>
+        <GlobalSearchOverlay className="site-interior-header__search" label="Поиск аниме..."/>
         <TitleAuthActionClient/>
       </div>
     </div>

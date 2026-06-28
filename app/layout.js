@@ -6,6 +6,7 @@ import SiteFooter from '@/components/SiteFooter'
 import SiteInteriorHeaderClient from '@/components/SiteInteriorHeaderClient'
 import PosterFailureGuard from '@/components/PosterFailureGuard'
 import MobileBottomNavClient from '@/components/MobileBottomNavClient'
+import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE, siteUrl, jsonLd } from '@/lib/seo'
 
 export const viewport = {
@@ -121,6 +122,6 @@ export default function RootLayout({ children }) {
       <link rel="preconnect" href="https://shikimori.one" crossOrigin="anonymous" />
       <link rel="dns-prefetch" href="https://shikimori.one" />
     </head>
-    <body><RouteWarmupClient/><AccountSyncClient/><PosterFailureGuard/><SiteInteriorHeaderClient/>{children}<SiteFooter/><MobileBottomNavClient/><ToastCenter/></body>
+    <body><RouteWarmupClient/><AccountSyncClient/><PosterFailureGuard/><GlobalSearchOverlay global/><SiteInteriorHeaderClient/>{children}<SiteFooter/><MobileBottomNavClient/><ToastCenter/></body>
   </html>
 }
