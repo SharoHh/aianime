@@ -22,15 +22,16 @@ import ContinueWatchingClient from '@/components/ContinueWatchingClient'
 import HomeMoodPickerClient from '@/components/HomeMoodPickerClient'
 import HomeCollectionsClient from '@/components/HomeCollectionsClient'
 import HomeScheduleWidgetClient from '@/components/HomeScheduleWidgetClient'
+import GlobalSearchOverlay from '@/components/GlobalSearchOverlay'
 import OnboardingClient from '@/components/OnboardingClient'
 import SidebarAccountClient from '@/components/SidebarAccountClient'
+import HeaderAccountClient from '@/components/HeaderAccountClient'
 import SiteStatsClient from '@/components/SiteStatsClient'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import HomePopularNowClient from '@/components/HomePopularNowClient'
 import HomeNewOnSiteClient from '@/components/HomeNewOnSiteClient'
 import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
-import SiteHeaderV262 from '@/components/SiteHeaderV262'
 import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
 function compactAnimeText(value, limit = 220){
   const text = String(value || '').replace(/\s+/g, ' ').trim()
@@ -158,8 +159,8 @@ function RightPanel({anime, animeCount, weeklySchedule}){return <aside className
   <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,9).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug} prefetch={false}><img loading="lazy" decoding="async" width="72" height="102" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
   <SiteStatsWidget animeCount={animeCount} weeklySchedule={weeklySchedule}/>
 </aside>}
-export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 12); const newestVisibleSlugs = new Set(newestAnime.slice(0, 5).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 12, { descriptionLimit: 160 }); return <><SiteHeaderV262 searchItems={clientAnime.slice(0,80)}/><main className="shell home-shell-v267"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
-<section className="hero ai-hero ai-hero-image">
+export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 12); const newestVisibleSlugs = new Set(newestAnime.slice(0, 5).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 12, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
+<header className="topbar"><GlobalSearchOverlay items={clientAnime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
   <picture className="hero-lcp-picture" aria-hidden="true">
     <source media="(max-width: 760px)" srcSet="/images/ai-hero-768.webp" />
     <img className="hero-lcp-image" src="/images/ai-hero-1280.webp" alt="" width="1280" height="720" sizes="(max-width: 760px) 100vw, 72vw" loading="eager" decoding="async" fetchPriority="high" />
@@ -184,4 +185,4 @@ export default async function Home(){const [animeRaw, weeklySchedule, popularity
     <div className="hero-prompts"><Link href="/ai?q=уютное%20аниме%20на%20вечер">Уютное на вечер</Link><Link href="/ai?q=мрачный%20психологический%20триллер">Психология</Link><Link href="/ai?q=романтика%20без%20кринжа">Романтика</Link></div>
   </div>
 </section>
-<HomeNewOnSiteClient anime={newestClient}/><HomePopularNowClient anime={popularClient}/><SectionTitle icon="continue" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="collections" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={clientAnime} animeCount={anime.length} weeklySchedule={weeklySchedule}/><OnboardingClient/></main></>}
+<HomeNewOnSiteClient anime={newestClient}/><HomePopularNowClient anime={popularClient}/><SectionTitle icon="continue" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="collections" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={clientAnime} animeCount={anime.length} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}

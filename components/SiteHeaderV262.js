@@ -70,7 +70,7 @@ export default function SiteHeaderV262({ searchItems = [] }){
     }
   }, [pathname])
 
-  return <header className="aianime-header-v267" data-aianime-header="v267" aria-label="Меню AIanime">
+  return <header className="aianime-header-v267" data-aianime-header="v268" aria-label="Меню AIanime">
     <div className="aianime-header-v267__main">
       <Link href="/" className="aianime-header-v267__brand" aria-label="AIanime — на главную">
         <span className="aianime-header-v267__logo"><img src="/aianime-logo.png" alt="" aria-hidden="true" /></span>
