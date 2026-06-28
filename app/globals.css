@@ -27581,3 +27581,443 @@ button.aianime-header-v262__search:hover{
     display:none;
   }
 }
+
+/* AIanime v264 — pixel-matched desktop header, concept #3. */
+@media (min-width:821px){
+  html body .aianime-header-v262{
+    position:sticky;
+    top:0;
+    z-index:110;
+    width:100%;
+    padding:18px 18px 0;
+    border:0;
+    background:linear-gradient(180deg,rgba(248,246,252,.98),rgba(248,246,252,.90));
+    box-shadow:none;
+    box-sizing:border-box;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+  }
+
+  html body .aianime-header-v262__main,
+  html body .aianime-header-v262__quick-wrap{
+    width:100%;
+    max-width:none;
+    margin:0;
+    box-sizing:border-box;
+  }
+
+  html body .aianime-header-v262__main{
+    min-height:104px;
+    display:flex;
+    align-items:center;
+    gap:0;
+    padding:0 34px;
+    border:1px solid #e6def2;
+    border-bottom:0;
+    border-radius:18px 18px 0 0;
+    background:#fff;
+    box-shadow:0 14px 38px rgba(54,36,89,.08);
+  }
+
+  html body .aianime-header-v262__brand{
+    flex:0 0 auto;
+    min-width:224px;
+    gap:15px;
+    color:#1f1738;
+  }
+
+  html body .aianime-header-v262__logo{
+    width:62px;
+    height:62px;
+    border-radius:50%;
+    background:transparent;
+    box-shadow:none;
+  }
+
+  html body .aianime-header-v262__logo::after{
+    display:none;
+  }
+
+  html body .aianime-header-v262__logo img{
+    width:62px;
+    height:62px;
+    object-fit:contain;
+  }
+
+  html body .aianime-header-v262__brand b{
+    display:block;
+    color:#1d1537;
+    font-size:31px;
+    line-height:1;
+    letter-spacing:-.055em;
+    font-weight:950;
+  }
+
+  html body .aianime-header-v262__primary{
+    flex:1 1 auto;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:22px;
+    margin-left:44px;
+  }
+
+  html body .aianime-header-v262__primary > a,
+  html body .aianime-header-v262 .header-discovery__trigger{
+    min-height:56px;
+    gap:11px;
+    padding:0 18px;
+    border:1px solid transparent;
+    border-radius:13px;
+    color:#241b40;
+    background:transparent;
+    font-size:16px;
+    line-height:1;
+    font-weight:850;
+    box-shadow:none;
+  }
+
+  html body .aianime-header-v262__primary > a:hover,
+  html body .aianime-header-v262 .header-discovery__trigger:hover,
+  html body .aianime-header-v262 .header-discovery.is-open .header-discovery__trigger{
+    color:#6e37d5;
+    background:#f8f3ff;
+    border-color:#eadffc;
+    transform:none;
+  }
+
+  html body .aianime-header-v262__primary > a.is-active,
+  html body .aianime-header-v262 .header-discovery.is-active .header-discovery__trigger{
+    color:#fff;
+    background:linear-gradient(135deg,#8c4ff2 0%,#7441e8 54%,#9c59ff 100%);
+    border-color:transparent;
+    box-shadow:0 12px 26px rgba(121,65,226,.29), inset 0 1px 0 rgba(255,255,255,.28);
+  }
+
+  html body .aianime-header-v262__primary .home-section-icon,
+  html body .aianime-header-v262 .header-discovery__trigger .home-section-icon{
+    width:28px;
+    height:28px;
+    margin:0;
+    border:0;
+    border-radius:8px;
+    color:#8c51ef;
+    background:transparent;
+    box-shadow:none;
+  }
+
+  html body .aianime-header-v262__primary > a.is-active .home-section-icon,
+  html body .aianime-header-v262 .header-discovery.is-active .header-discovery__trigger .home-section-icon{
+    color:#fff;
+    background:rgba(255,255,255,.16);
+  }
+
+  html body .aianime-header-v262__primary .home-section-icon svg,
+  html body .aianime-header-v262 .header-discovery__trigger .home-section-icon svg{
+    width:19px;
+    height:19px;
+  }
+
+  html body .aianime-header-v262__actions{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:18px;
+    margin-left:auto;
+  }
+
+  html body button.aianime-header-v262__search{
+    width:286px;
+    min-width:286px;
+    height:56px;
+    grid-template-columns:27px minmax(0,1fr) auto;
+    gap:12px;
+    padding:0 16px;
+    border:1px solid #dfd5ef;
+    border-radius:16px;
+    background:#fff;
+    color:#9285a8;
+    box-shadow:0 8px 22px rgba(70,48,112,.045);
+  }
+
+  html body button.aianime-header-v262__search:hover{
+    border-color:#cdb5f2;
+    box-shadow:0 11px 28px rgba(112,69,191,.11);
+    transform:none;
+  }
+
+  html body .aianime-header-v262__search .home-section-icon{
+    width:27px;
+    height:27px;
+    color:#8d4ff0;
+  }
+
+  html body .aianime-header-v262__search .home-section-icon svg{
+    width:19px;
+    height:19px;
+  }
+
+  html body .aianime-header-v262__search strong{
+    display:block;
+    color:#9b90ad;
+    font-size:15px;
+    font-weight:760;
+  }
+
+  html body .aianime-header-v262__search kbd{
+    display:block;
+    padding:6px 9px;
+    border:1px solid #e7def1;
+    border-radius:7px;
+    background:#faf8fd;
+    color:#877b9b;
+    font-size:11px;
+  }
+
+  html body .aianime-header-v262__profile{
+    width:180px;
+    min-width:180px;
+    height:58px;
+    grid-template-columns:42px minmax(0,1fr) 18px;
+    gap:10px;
+    padding:0 14px 0 9px;
+    border:0;
+    border-radius:15px;
+    color:#fff;
+    background:linear-gradient(135deg,#7b42e8 0%,#9659f7 100%);
+    box-shadow:0 12px 28px rgba(117,62,220,.28), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+
+  html body .aianime-header-v262__profile:hover{
+    color:#fff;
+    transform:none;
+    box-shadow:0 14px 30px rgba(117,62,220,.32), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+
+  html body .aianime-header-v262__profile img{
+    width:42px;
+    height:42px;
+    border:2px solid rgba(255,255,255,.8);
+    border-radius:50%;
+    object-fit:cover;
+  }
+
+  html body .aianime-header-v262__profile > span,
+  html body .aianime-header-v262__profile > svg{
+    display:flex;
+  }
+
+  html body .aianime-header-v262__profile b{
+    font-size:15px;
+    line-height:1.05;
+    font-weight:950;
+  }
+
+  html body .aianime-header-v262__profile small{
+    margin-top:3px;
+    color:rgba(255,255,255,.78);
+    font-size:11px;
+    line-height:1;
+    font-weight:700;
+  }
+
+  html body .aianime-header-v262__profile.is-guest{
+    width:150px;
+    min-width:150px;
+    grid-template-columns:minmax(0,1fr) 18px;
+    padding-left:17px;
+  }
+
+  html body .aianime-header-v262__quick-wrap{
+    overflow:hidden;
+    border:1px solid #e6def2;
+    border-top:1px solid #eee7f7;
+    border-radius:0 0 18px 18px;
+    background:linear-gradient(90deg,#fbf9ff 0%,#f8f3ff 50%,#fbf9ff 100%);
+    box-shadow:0 18px 42px rgba(56,37,93,.07);
+  }
+
+  html body .aianime-header-v262__quick{
+    width:100%;
+    min-height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0;
+    padding:0 30px;
+    overflow-x:auto;
+    box-sizing:border-box;
+  }
+
+  html body .aianime-header-v262__quick a{
+    position:relative;
+    flex:0 0 auto;
+    height:42px;
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    padding:0 28px;
+    border:0;
+    border-radius:11px;
+    color:#776a8c;
+    background:transparent;
+    font-size:14px;
+    font-weight:760;
+  }
+
+  html body .aianime-header-v262__quick a:not(:last-child)::after{
+    content:"·";
+    position:absolute;
+    right:-2px;
+    top:50%;
+    transform:translateY(-52%);
+    color:#d8cce9;
+    font-size:17px;
+    font-weight:900;
+    pointer-events:none;
+  }
+
+  html body .aianime-header-v262__quick a:hover,
+  html body .aianime-header-v262__quick a.is-active{
+    color:#743bd6;
+    background:rgba(255,255,255,.7);
+    border-color:transparent;
+  }
+
+  html body .aianime-header-v262__quick .home-section-icon{
+    width:23px;
+    height:23px;
+    margin:0;
+    border:0;
+    border-radius:6px;
+    color:#8c4ff0;
+    background:transparent;
+  }
+
+  html body .aianime-header-v262__quick .home-section-icon svg{
+    width:17px;
+    height:17px;
+  }
+
+  html body .aianime-header-v262 .header-discovery__trigger{
+    display:inline-flex;
+  }
+
+  html body .aianime-header-v262 .header-discovery__chevron{
+    width:16px;
+    height:16px;
+    margin-left:1px;
+  }
+}
+
+@media (min-width:821px) and (max-width:1450px){
+  html body .aianime-header-v262{
+    padding:12px 12px 0;
+  }
+
+  html body .aianime-header-v262__main{
+    min-height:88px;
+    padding:0 22px;
+  }
+
+  html body .aianime-header-v262__brand{
+    min-width:190px;
+  }
+
+  html body .aianime-header-v262__logo,
+  html body .aianime-header-v262__logo img{
+    width:52px;
+    height:52px;
+  }
+
+  html body .aianime-header-v262__brand b{
+    font-size:27px;
+  }
+
+  html body .aianime-header-v262__primary{
+    gap:8px;
+    margin-left:20px;
+  }
+
+  html body .aianime-header-v262__primary > a,
+  html body .aianime-header-v262 .header-discovery__trigger{
+    min-height:50px;
+    padding:0 13px;
+    font-size:13.5px;
+  }
+
+  html body button.aianime-header-v262__search{
+    width:240px;
+    min-width:220px;
+    height:50px;
+  }
+
+  html body .aianime-header-v262__profile{
+    width:158px;
+    min-width:158px;
+    height:52px;
+  }
+
+  html body .aianime-header-v262__quick{
+    min-height:54px;
+    padding:0 12px;
+  }
+
+  html body .aianime-header-v262__quick a{
+    padding:0 18px;
+    font-size:12.5px;
+  }
+}
+
+@media (min-width:821px) and (max-width:1120px){
+  html body .aianime-header-v262__brand{
+    min-width:auto;
+  }
+
+  html body .aianime-header-v262__brand b{
+    display:none;
+  }
+
+  html body .aianime-header-v262__primary{
+    margin-left:12px;
+    gap:3px;
+  }
+
+  html body .aianime-header-v262__primary > a,
+  html body .aianime-header-v262 .header-discovery__trigger{
+    padding:0 9px;
+    font-size:12px;
+  }
+
+  html body button.aianime-header-v262__search{
+    width:50px;
+    min-width:50px;
+    grid-template-columns:1fr;
+    place-items:center;
+    padding:0;
+  }
+
+  html body .aianime-header-v262__search strong,
+  html body .aianime-header-v262__search kbd{
+    display:none;
+  }
+
+  html body .aianime-header-v262__profile{
+    width:52px;
+    min-width:52px;
+    grid-template-columns:36px;
+    place-content:center;
+    padding:0;
+  }
+
+  html body .aianime-header-v262__profile > span,
+  html body .aianime-header-v262__profile > svg{
+    display:none;
+  }
+
+  html body .aianime-header-v262__quick a{
+    padding:0 12px;
+  }
+}
