@@ -48,6 +48,7 @@ function SearchModal(){
   const [remoteQuery,setRemoteQuery] = useState(null)
   const [loading,setLoading] = useState(false)
   const [error,setError] = useState('')
+  const [overlayTop,setOverlayTop] = useState(28)
 
   useEffect(()=>{
     const openHandler = (event) => {
@@ -77,6 +78,40 @@ function SearchModal(){
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = previous }
+  }, [open])
+
+  useEffect(()=>{
+    if(!open) return
+
+    let frame = 0
+    let observer = null
+
+    const syncTop = () => {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(() => {
+        const header = document.querySelector('[data-aianime-header]')
+        const rect = header?.getBoundingClientRect?.()
+        const headerBottom = rect && rect.bottom > 0 ? Math.ceil(rect.bottom) : 0
+        setOverlayTop(Math.max(12, headerBottom + 12))
+      })
+    }
+
+    syncTop()
+    window.addEventListener('resize', syncTop)
+    window.addEventListener('orientationchange', syncTop)
+
+    const header = document.querySelector('[data-aianime-header]')
+    if(header && typeof ResizeObserver !== 'undefined'){
+      observer = new ResizeObserver(syncTop)
+      observer.observe(header)
+    }
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('resize', syncTop)
+      window.removeEventListener('orientationchange', syncTop)
+      observer?.disconnect()
+    }
   }, [open])
 
   const localResults = useMemo(()=>localSearch(sourceItems, query), [sourceItems, query])
@@ -129,7 +164,7 @@ function SearchModal(){
   const normalized = query.trim()
   const results = remoteQuery === normalized ? remoteResults : localResults
 
-  return <div className="global-search-overlay" role="dialog" aria-modal="true" aria-label="Поиск по каталогу аниме">
+  return <div className="global-search-overlay" style={{ '--global-search-top':`${overlayTop}px` }} role="dialog" aria-modal="true" aria-label="Поиск по каталогу аниме">
     <button type="button" className="global-search-backdrop" onClick={()=>setOpen(false)} aria-label="Закрыть поиск"/>
     <section className="global-search-modal">
       <div className="global-search-input">

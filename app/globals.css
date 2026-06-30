@@ -28625,3 +28625,34 @@ html body .aianime-header-v267 .header-discovery__panel > a small{
     padding-right:8px;
   }
 }
+
+/* =====================================================================
+   AIanime v271 — search modal always starts below the real site header
+   ===================================================================== */
+html body .global-search-overlay{
+  --global-search-top:28px;
+  box-sizing:border-box;
+  padding:0 14px 14px !important;
+  overflow:hidden;
+}
+
+html body .global-search-modal{
+  width:min(760px,calc(100vw - 28px)) !important;
+  max-width:760px !important;
+  max-height:calc(100svh - var(--global-search-top) - 14px) !important;
+  margin:var(--global-search-top) auto 0 !important;
+  overscroll-behavior:contain;
+}
+
+@media (max-width:820px){
+  html body .global-search-overlay{
+    padding:0 10px calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+
+  html body .global-search-modal{
+    width:calc(100vw - 20px) !important;
+    max-width:none !important;
+    max-height:calc(100svh - var(--global-search-top) - 94px - env(safe-area-inset-bottom)) !important;
+    border-radius:20px !important;
+  }
+}
