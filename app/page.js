@@ -33,7 +33,6 @@ import HomeNewOnSiteClient from '@/components/HomeNewOnSiteClient'
 import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
-import { getSiteStatsSnapshot } from '@/lib/siteStats'
 function compactAnimeText(value, limit = 220){
   const text = String(value || '').replace(/\s+/g, ' ').trim()
   if(!text) return ''
@@ -135,35 +134,32 @@ function formatStat(value){
   return new Intl.NumberFormat('ru-RU').format(Number(value) || 0)
 }
 
-function statValue(value, fallback = '—'){
-  const number = Number(value)
-  return Number.isFinite(number) && number >= 0 ? formatStat(number) : fallback
-}
-
-function buildSiteStats(todaySchedule, siteStats = {}){
+function buildSiteStats(anime, todaySchedule, totalAnimeCount = null){
+  const list = Array.isArray(anime) ? anime : []
+  const animeCount = Number.isFinite(Number(totalAnimeCount)) ? Number(totalAnimeCount) : list.length
   const newEpisodesToday = Array.isArray(todaySchedule) ? todaySchedule.length : 0
 
   return [
-    { key:'accounts', icon:'accounts', label:'Аккаунтов на сайте', value:statValue(siteStats?.accounts) },
-    { key:'anime', icon:'anime', label:'Всего аниме', value:statValue(siteStats?.anime) },
+    { key:'accounts', icon:'accounts', label:'Аккаунтов на сайте', value:'—' },
+    { key:'anime', icon:'anime', label:'Всего аниме', value:formatStat(animeCount) },
     { key:'episodesToday', icon:'episodesToday', label:'Новых серий сегодня', value:formatStat(newEpisodesToday) },
-    { key:'comments', icon:'comments', label:'Комментариев', value:statValue(siteStats?.comments) },
-    { key:'openTabs', icon:'openTabs', label:'Вкладок открыто', value:statValue(siteStats?.openTabs, '1'), dividerBefore:true },
-    { key:'online', icon:'online', label:'Пользователей онлайн', value:statValue(siteStats?.online, '1'), isOnline:true },
+    { key:'comments', icon:'comments', label:'Комментариев', value:'—' },
+    { key:'openTabs', icon:'openTabs', label:'Вкладок открыто', value:'1', dividerBefore:true },
+    { key:'online', icon:'online', label:'Пользователей онлайн', value:'1', isOnline:true },
   ]
 }
 
-function SiteStatsWidget({weeklySchedule, siteStats}){
-  return <SiteStatsClient initialStats={buildSiteStats(weeklySchedule?.todayItems || [], siteStats)} />
+function SiteStatsWidget({animeCount, weeklySchedule}){
+  return <SiteStatsClient initialStats={buildSiteStats([], weeklySchedule?.todayItems || [], animeCount)} />
 }
 
-function RightPanel({anime, weeklySchedule, siteStats}){return <aside className="rightcol">
+function RightPanel({anime, animeCount, weeklySchedule}){return <aside className="rightcol">
   <HomeScheduleWidgetClient scheduleDays={weeklySchedule?.days || []} initialDay={weeklySchedule?.todayIndex || 0}/>
   <HomeMoodPickerClient anime={anime.slice(0,40)}/>
   <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,9).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug} prefetch={false}><img loading="lazy" decoding="async" width="72" height="102" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
-  <SiteStatsWidget weeklySchedule={weeklySchedule} siteStats={siteStats}/>
+  <SiteStatsWidget animeCount={animeCount} weeklySchedule={weeklySchedule}/>
 </aside>}
-export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot, siteStats] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot(), getSiteStatsSnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 12); const newestVisibleSlugs = new Set(newestAnime.slice(0, 5).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 12, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
+export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:720}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 12); const newestVisibleSlugs = new Set(newestAnime.slice(0, 5).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 12, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
 <header className="topbar"><GlobalSearchOverlay items={clientAnime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><section className="hero ai-hero ai-hero-image">
   <picture className="hero-lcp-picture" aria-hidden="true">
     <source media="(max-width: 760px)" srcSet="/images/ai-hero-768.webp" />
@@ -189,4 +185,4 @@ export default async function Home(){const [animeRaw, weeklySchedule, popularity
     <div className="hero-prompts"><Link href="/ai?q=уютное%20аниме%20на%20вечер">Уютное на вечер</Link><Link href="/ai?q=мрачный%20психологический%20триллер">Психология</Link><Link href="/ai?q=романтика%20без%20кринжа">Романтика</Link></div>
   </div>
 </section>
-<HomeNewOnSiteClient anime={newestClient}/><HomePopularNowClient anime={popularClient}/><SectionTitle icon="continue" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="collections" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={clientAnime} weeklySchedule={weeklySchedule} siteStats={siteStats}/><OnboardingClient/></main>}
+<HomeNewOnSiteClient anime={newestClient}/><HomePopularNowClient anime={popularClient}/><SectionTitle icon="continue" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="collections" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={clientAnime} animeCount={anime.length} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}

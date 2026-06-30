@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-const STORAGE_KEY = 'aianime:site-stats:v2'
-const GLOBAL_REFRESH_MS = 60000
-const PRESENCE_REFRESH_MS = 30000
+const STORAGE_KEY = 'aianime:site-stats:v3'
+const GLOBAL_REFRESH_MS = 5 * 60 * 1000
+const INITIAL_STATS_DELAY_MS = 1500
 
 function formatNumber(value){
   if(value === null || value === undefined || value === '') return '—'
@@ -26,20 +26,12 @@ function mergeRealStats(prev, entries){
   return next
 }
 
-function initialSnapshot(stats){
-  const result = {}
-  for(const item of Array.isArray(stats) ? stats : []){
-    if(item?.key && hasRealStat(item.value)) result[item.key] = item.value
-  }
-  return result
-}
 
 function readStoredStats(){
   if(typeof window === 'undefined') return {}
   try{
     const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}')
-    if(!parsed || typeof parsed !== 'object') return {}
-    return parsed.values && typeof parsed.values === 'object' ? parsed.values : {}
+    return parsed && typeof parsed === 'object' && parsed.values && typeof parsed.values === 'object' ? parsed.values : {}
   }catch{
     return {}
   }
@@ -90,7 +82,7 @@ async function pingPresence(visitorId, tabId){
   const res = await fetch('/api/presence', {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ visitorId, tabId, page:window.location.pathname }),
+    body:JSON.stringify({ visitorId, tabId, page: window.location.pathname }),
     cache:'no-store',
   })
   if(!res.ok) throw new Error('presence failed')
@@ -129,86 +121,66 @@ export default function SiteStatsClient({ initialStats = [] }){
 
   useEffect(() => {
     let cancelled = false
-    const retryTimers = new Set()
     const visitorId = getVisitorId()
     const tabId = getTabId()
-    const serverValues = initialSnapshot(baseStats)
-    const cachedValues = readStoredStats()
-
-    setLiveStats(prev => mergeRealStats(mergeRealStats(prev, cachedValues), serverValues))
-    storeStats({ ...cachedValues, ...serverValues })
-
-    function commit(entries){
-      if(cancelled) return
-      setLiveStats(prev => {
-        const next = mergeRealStats(prev, entries)
-        storeStats(next)
-        return next
-      })
-    }
 
     async function updatePresence(){
       try{
         const data = await pingPresence(visitorId, tabId)
-        commit({
-          online:data?.online ?? 1,
-          openTabs:data?.openTabs ?? 1,
-        })
+        if(cancelled) return
+        setLiveStats(prev => mergeRealStats(prev, {
+          online: data?.online ?? 1,
+          openTabs: data?.openTabs ?? 1,
+        }))
       }catch{
-        commit({ online:1, openTabs:1 })
+        if(!cancelled){
+          setLiveStats(prev => ({ ...prev, online: prev.online || '1', openTabs: prev.openTabs || '1' }))
+        }
       }
     }
+
+    setLiveStats(prev => mergeRealStats(prev, readStoredStats()))
 
     async function updateGlobalStats(){
       try{
         const data = await fetchSiteStats()
-        if(cancelled) return false
-        commit({
-          accounts:data?.accounts,
-          anime:data?.anime,
-          comments:data?.comments,
-          openTabs:data?.openTabs,
-          online:data?.online,
+        if(cancelled) return
+        setLiveStats(prev => {
+          const next = mergeRealStats(prev, {
+            accounts:data?.accounts,
+            anime:data?.anime,
+            comments:data?.comments,
+            openTabs:data?.openTabs,
+            online:data?.online,
+          })
+          storeStats(next)
+          return next
         })
-        return true
       }catch{
-        return false
-      }
-    }
-
-    async function refreshWithRetries(){
-      const ok = await updateGlobalStats()
-      if(ok || cancelled) return
-      for(const delay of [5000, 15000]){
-        const timer = window.setTimeout(() => {
-          retryTimers.delete(timer)
-          if(!cancelled) updateGlobalStats()
-        }, delay)
-        retryTimers.add(timer)
-      }
-    }
-
-    function refreshWhenVisible(){
-      if(document.visibilityState === 'visible'){
-        updatePresence()
-        updateGlobalStats()
+        // Статистика не должна влиять на загрузку главной и каталога.
       }
     }
 
     updatePresence()
-    refreshWithRetries()
-    const presenceTimer = window.setInterval(updatePresence, PRESENCE_REFRESH_MS)
-    const statsTimer = window.setInterval(updateGlobalStats, GLOBAL_REFRESH_MS)
-    document.addEventListener('visibilitychange', refreshWhenVisible)
 
+    let idleId = null
+    let initialStatsTimer = null
+    if(typeof window.requestIdleCallback === 'function'){
+      idleId = window.requestIdleCallback(updateGlobalStats, { timeout:INITIAL_STATS_DELAY_MS })
+    }else{
+      initialStatsTimer = window.setTimeout(updateGlobalStats, INITIAL_STATS_DELAY_MS)
+    }
+
+    const presenceTimer = window.setInterval(updatePresence, 30000)
+    const statsTimer = window.setInterval(updateGlobalStats, GLOBAL_REFRESH_MS)
     return () => {
       cancelled = true
+      if(idleId !== null && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId)
+      if(initialStatsTimer !== null) window.clearTimeout(initialStatsTimer)
       window.clearInterval(presenceTimer)
       window.clearInterval(statsTimer)
-      for(const timer of retryTimers) window.clearTimeout(timer)
-      document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
-  }, [baseStats])
+  }, [])
 
   return <div className="widget site-stats-widget">
     <div className="site-stats-title"><span className="site-stats-title-icon"><StatIcon type="analytics" /></span><h3>Статистика сайта</h3></div>
