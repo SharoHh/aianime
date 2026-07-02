@@ -263,6 +263,23 @@ function getExternalRatingsSnapshot(item){
   }
 }
 
+function compactTitleSearchItems(list = [], limit = 60){
+  return (Array.isArray(list) ? list : []).slice(0, limit).map(item => ({
+    slug:item?.slug,
+    title:item?.title,
+    originalTitle:item?.originalTitle,
+    englishTitle:item?.englishTitle,
+    poster:item?.poster,
+    year:item?.year,
+    meta:item?.meta,
+    rating:item?.rating,
+    genres:Array.isArray(item?.genres) ? item.genres.slice(0, 6) : [],
+    studio:item?.studio,
+    status:item?.status,
+    kind:item?.kind
+  })).filter(item => item.slug && item.title)
+}
+
 function compactPlayerOptionsForClient(options = []){
   return (Array.isArray(options) ? options : []).map(option => ({
     id:option?.id,
