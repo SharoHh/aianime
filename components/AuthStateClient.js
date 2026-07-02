@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createBrowserSupabase, fetchRuntimeSupabaseConfig, getSupabaseConfig, hasSupabaseBrowser } from '@/lib/supabaseClient'
+import { createBrowserSupabase, fetchRuntimeSupabaseConfig, getBuildSupabaseConfig, getSupabaseConfig, hasSupabaseBrowser } from '@/lib/supabaseClient'
 import { prepareLocalAccountData, resetLocalAccountState } from '@/lib/userStorage'
 
 export const baseProfileDefaults = {
@@ -349,17 +349,14 @@ export async function restoreProfileFromCloud(user, supabaseInput = null){
 }
 
 export function useAuthState(){
-  const [runtimeConfig,setRuntimeConfig] = useState(() => getSupabaseConfig())
-  const configured = hasSupabaseBrowser(runtimeConfig)
-  const supabase = useMemo(() => createBrowserSupabase(runtimeConfig), [runtimeConfig])
+  // Важно для SSR: первый рендер клиента должен совпадать с HTML сервера.
+  // Нельзя читать localStorage/sessionStorage в useState-инициализаторах — у
+  // авторизованного пользователя это давало React hydration error #418.
+  const [runtimeConfig,setRuntimeConfig] = useState(() => getBuildSupabaseConfig())
+  const configured = Boolean(runtimeConfig?.supabaseUrl && runtimeConfig?.supabaseAnonKey)
+  const supabase = useMemo(() => configured ? createBrowserSupabase(runtimeConfig) : null, [configured, runtimeConfig])
   const [configChecked,setConfigChecked] = useState(() => configured)
-  const [state,setState] = useState(() => {
-    if(cachedAuthState) return cachedAuthState
-    const pendingAuth = readPendingAuthSession()
-    const cachedUser = readCachedUser() || pendingAuth?.user || null
-    if(cachedUser) return { loading:false, configured:configured || true, user:cachedUser }
-    return { loading:true, configured, user:null }
-  })
+  const [state,setState] = useState(() => ({ loading:true, configured, user:null }))
 
   useEffect(()=>{
     return subscribeAuthState(setState)
@@ -375,6 +372,18 @@ export function useAuthState(){
     }
 
     setConfigChecked(false)
+
+    // После гидратации можно безопасно использовать runtime-конфиг из
+    // localStorage. Это сохраняет поддержку VPS-конфигурации без расхождения
+    // серверной и клиентской разметки.
+    const storedConfig = getSupabaseConfig()
+    const hasStoredConfig = Boolean(storedConfig?.supabaseUrl && storedConfig?.supabaseAnonKey)
+    if(hasStoredConfig){
+      setRuntimeConfig(storedConfig)
+      setConfigChecked(true)
+      return () => { alive = false }
+    }
+
     fetchRuntimeSupabaseConfig({ force:true })
       .then(config => {
         if(!alive) return

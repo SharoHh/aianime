@@ -23,21 +23,22 @@ function label(state){
 }
 
 export default function UserSyncStatusClient(){
-  const [status,setStatus] = useState(() => {
-    const current = normalizeVisibleStatus(getUserSyncStatus())
-    if(current?.state === 'syncing' && current?.updatedAt){
-      const startedAt = new Date(current.updatedAt).getTime()
-      if(Number.isFinite(startedAt) && Date.now() - startedAt > 4500){
-        return { ...current, state:'idle', message:'Данные аккаунта обновляются в фоне. Можно пользоваться сайтом.' }
-      }
-    }
-    return current
+  // Первый рендер должен быть одинаковым на сервере и в браузере. Реальное
+  // состояние из localStorage читаем только после гидратации.
+  const [status,setStatus] = useState({
+    state:'idle',
+    message:'Избранное, история, оценки и профиль сохраняются в аккаунте.',
+    updatedAt:null,
   })
 
   useEffect(()=>{
-    const current = getUserSyncStatus()
+    const current = normalizeVisibleStatus(getUserSyncStatus())
     if(isOldSchemaMessage(current?.message)){
-      setUserSyncStatus({ state:'idle', message:'Профиль работает. Синхронизация истории проверяется в фоне.' })
+      const next = { state:'idle', message:'Профиль работает. Синхронизация истории проверяется в фоне.' }
+      setUserSyncStatus(next)
+      setStatus(next)
+    }else if(current){
+      setStatus(current)
     }
     const update = event => setStatus(normalizeVisibleStatus(event?.detail || getUserSyncStatus()))
     window.addEventListener('anime:user-sync-status', update)

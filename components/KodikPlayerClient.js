@@ -608,7 +608,6 @@ export default function KodikPlayerClient({
           title={`${title} — серия ${activeEpisodeNumber}`}
           loading="eager"
           allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-          allowFullScreen
           referrerPolicy="origin-when-cross-origin"
         />
       </div> : <div className="compact-player compact-player-kodik is-fallback is-clean native-kodik-frame native-kodik-v65-frame">
