@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useAuthState, restoreProfileFromCloud } from '@/components/AuthStateClient'
-import { restoreCloudAnimeData, setUserSyncStatus, syncLocalAnimeDataToCloud } from '@/lib/userStorage'
+import { setUserSyncStatus } from '@/lib/userStorage'
 
 function runWhenIdle(callback){
   if(typeof window === 'undefined') return setTimeout(callback, 250)
@@ -45,7 +45,6 @@ export default function AccountSyncClient(){
     window.__AIANIME_ACCOUNT_SYNC_OWNER__ = ownerKey
 
     let cancelled = false
-    let timer = null
     let idleTask = null
     const readyKey = `anime:cloud-sync-ready:${user.id}`
     const lastRunKey = `anime:cloud-sync-last-run:${user.id}`
@@ -63,12 +62,12 @@ export default function AccountSyncClient(){
 
         setUserSyncStatus({ state:'idle', message:'Данные аккаунта обновляются в фоне. Можно пользоваться сайтом.' })
 
+        // Не запускаем массовую синхронизацию истории и библиотеки при каждом
+        // открытии страницы. На старой схеме Supabase она порождала десятки
+        // 400/404 и забивала соединения, из-за чего каталог мог не загрузиться.
         const result = await withTimeout(
-          Promise.all([
-            restoreCloudAnimeData({ silent:true }),
-            restoreProfileFromCloud(user, supabase).catch(() => null)
-          ]),
-          3500,
+          restoreProfileFromCloud(user, supabase).catch(() => null),
+          2500,
           { timedOut:true }
         )
 
@@ -95,22 +94,10 @@ export default function AccountSyncClient(){
 
     idleTask = runWhenIdle(runInitialSync)
 
-    const onUserUpdate = () => {
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        if(!cancelled) syncLocalAnimeDataToCloud().catch(() => {})
-      }, 1600)
-    }
-
-    window.addEventListener('anime:user-updated', onUserUpdate)
-    window.addEventListener('storage', onUserUpdate)
 
     return () => {
       cancelled = true
-      clearTimeout(timer)
       if(idleTask) cancelIdleTask(idleTask)
-      window.removeEventListener('anime:user-updated', onUserUpdate)
-      window.removeEventListener('storage', onUserUpdate)
       if(window.__AIANIME_ACCOUNT_SYNC_OWNER__ === ownerKey){
         delete window.__AIANIME_ACCOUNT_SYNC_OWNER__
       }
