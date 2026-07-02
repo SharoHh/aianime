@@ -17,7 +17,6 @@ import WatchTracker from '@/components/WatchTracker'
 import PopularityTrackerClient from '@/components/PopularityTrackerClient'
 import PlayerReportClient from '@/components/PlayerReportClient'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
-import SiteHeaderV262 from '@/components/SiteHeaderV262'
 import { encodeSlug } from '@/lib/routeSlugs'
 import { itemLastModified } from '@/lib/sitemapSeo'
 import { cleanPublicText, isPlaceholderText } from '@/lib/ruContent'
@@ -261,23 +260,6 @@ function getExternalRatingsSnapshot(item){
     malHref:malId ? `https://myanimelist.net/anime/${malId}` : externalSearchUrl('mal', item),
     shikiHref:shikiId ? `https://shikimori.one/animes/${shikiId}` : externalSearchUrl('shiki', item)
   }
-}
-
-function compactTitleSearchItems(list = [], limit = 60){
-  return (Array.isArray(list) ? list : []).slice(0, limit).map(item => ({
-    slug:item?.slug,
-    title:item?.title,
-    originalTitle:item?.originalTitle,
-    englishTitle:item?.englishTitle,
-    poster:item?.poster,
-    year:item?.year,
-    meta:item?.meta,
-    rating:item?.rating,
-    genres:Array.isArray(item?.genres) ? item.genres.slice(0, 6) : [],
-    studio:item?.studio,
-    status:item?.status,
-    kind:item?.kind
-  })).filter(item => item.slug && item.title)
 }
 
 function compactPlayerOptionsForClient(options = []){
@@ -923,7 +905,6 @@ function RestrictedAnimePage({ item, restriction }){
   const title = cleanPublicText(item?.title) || cleanPublicText(item?.titleRu) || 'Этот тайтл'
   const message = restriction?.message || 'Этот тайтл недоступен для просмотра на территории Российской Федерации.'
   return <main style={{minHeight:'100vh',background:'#f7f5ef',color:'#211d35',fontFamily:'Manrope,Inter,system-ui,sans-serif'}}>
-    <SiteHeaderV262/>
     <section style={{width:'min(760px,calc(100% - 32px))',margin:'72px auto',background:'#fff',border:'1px solid rgba(33,29,53,.12)',borderRadius:28,padding:'36px',boxShadow:'0 24px 80px rgba(33,29,53,.10)'}}>
       <div style={{display:'inline-flex',padding:'7px 11px',borderRadius:999,background:'#ffe5e9',color:'#8b1d31',fontWeight:900,fontSize:13,marginBottom:16}}>Доступ ограничен</div>
       <h1 style={{fontSize:'clamp(32px,6vw,54px)',letterSpacing:'-.05em',lineHeight:1,margin:'0 0 14px'}}>Недоступно в РФ</h1>
@@ -996,7 +977,6 @@ export default async function AnimePage({ params, searchParams }){
 
   return <main className="anime-compact-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(animeJsonLd)}} />
-    <SiteHeaderV262 searchItems={compactTitleSearchItems(allAnime, 60)}/>
     <section className="anime-compact-card compact-card-polished"><img className="compact-bg-glow" loading="lazy" decoding="async" width="420" height="600" src={item.poster} alt=""/>
       <div className="anime-compact-left">
         <nav className="compact-breadcrumb"><Link href="/">← На главную</Link><span>/</span><Link href="/catalog">Каталог</Link></nav>
