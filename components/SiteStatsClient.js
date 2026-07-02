@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-const STORAGE_KEY = 'aianime:site-stats:v3'
+const STORAGE_KEY = 'aianime:site-stats:v4'
 const GLOBAL_REFRESH_MS = 5 * 60 * 1000
 const INITIAL_STATS_DELAY_MS = 1500
 
@@ -41,7 +41,7 @@ function storeStats(values){
   if(typeof window === 'undefined') return
   try{
     const stable = {}
-    for(const key of ['accounts','anime','comments','openTabs','online']){
+    for(const key of ['accounts','comments','openTabs','online']){
       if(hasRealStat(values?.[key])) stable[key] = values[key]
     }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ values:stable, savedAt:Date.now() }))
@@ -148,7 +148,6 @@ export default function SiteStatsClient({ initialStats = [] }){
         setLiveStats(prev => {
           const next = mergeRealStats(prev, {
             accounts:data?.accounts,
-            anime:data?.anime,
             comments:data?.comments,
             openTabs:data?.openTabs,
             online:data?.online,
