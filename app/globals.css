@@ -30217,3 +30217,58 @@ html body .global-search-modal{
     height:38px;
   }
 }
+
+/* AIanime v285: remove noisy gradient and inner recommendation panel */
+.hero.ai-dashboard-hero{
+  background:#fff !important;
+  border:1px solid #e9e1f7 !important;
+  box-shadow:0 18px 44px rgba(83,57,133,.08) !important;
+}
+.hero.ai-dashboard-hero::before{
+  display:none !important;
+  content:none !important;
+}
+.ai-dashboard-badge{
+  background:#f6efff !important;
+  box-shadow:none !important;
+}
+.ai-dashboard-mood{
+  background:#fff !important;
+  box-shadow:none !important;
+}
+.ai-dashboard-mood:hover{
+  box-shadow:0 12px 22px rgba(118,74,187,.08) !important;
+}
+.ai-dashboard-carousel{
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
+.ai-dashboard-side{
+  background:transparent !important;
+}
+.ai-dashboard-sidehead{
+  margin-bottom:16px !important;
+}
+.ai-dashboard-sidehead h2{
+  color:#2a2346 !important;
+}
+.ai-dashboard-track{
+  padding:2px 2px 14px !important;
+}
+.ai-dashboard-track .ai-dashboard-card{
+  border:1px solid #ece4fb !important;
+  box-shadow:0 12px 28px rgba(74,52,118,.10) !important;
+}
+.ai-dashboard-refresh,
+.ai-dashboard-control{
+  background:#fff !important;
+  box-shadow:none !important;
+}
+.ai-dashboard-edge-next{
+  background:#fff !important;
+  box-shadow:0 10px 24px rgba(83,57,133,.14) !important;
+}
