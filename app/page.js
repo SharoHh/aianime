@@ -156,6 +156,7 @@ function HomeAiHero({ recommendations = [] }){
     { icon:'😂', label:'Посмеяться', href:'/ai?q=смешное%20аниме%20для%20хорошего%20настроения' },
     { icon:'🥲', label:'Погрустить', href:'/ai?q=трогательное%20или%20грустное%20аниме' },
     { icon:'🔥', label:'Экшен', href:'/ai?q=динамичное%20экшен%20аниме' },
+    { icon:'💜', label:'Ещё', href:'/ai' },
   ]
 
   return <section className="hero ai-dashboard-hero">
