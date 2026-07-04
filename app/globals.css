@@ -30633,3 +30633,155 @@ html body .global-search-modal{
     flex-basis:calc((100% - 18px)/2) !important;
   }
 }
+
+/* AIanime v288: recommendation field styled like selected dark reference */
+.ai-dashboard-side{
+  padding-top:0 !important;
+}
+.ai-dashboard-carousel{
+  padding:18px 18px 14px !important;
+  border:1px solid rgba(87,71,145,.32) !important;
+  border-radius:22px !important;
+  background:
+    radial-gradient(circle at 90% 15%, rgba(120,66,219,.18), transparent 28%),
+    linear-gradient(180deg, #0b1024 0%, #0c1127 56%, #0b1123 100%) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 34px rgba(7,10,22,.24) !important;
+}
+.ai-dashboard-sidehead{
+  margin-bottom:14px !important;
+}
+.ai-dashboard-sidehead h2{
+  color:#f4f2ff !important;
+  font-size:20px !important;
+  letter-spacing:-.3px !important;
+}
+.ai-dashboard-controls{
+  gap:10px !important;
+}
+.ai-dashboard-refresh{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:34px !important;
+  padding:0 14px !important;
+  border:1px solid rgba(126,99,214,.4) !important;
+  border-radius:12px !important;
+  background:rgba(18,22,45,.82) !important;
+  color:#ddd6ff !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+}
+.ai-dashboard-track{
+  background:transparent !important;
+  gap:14px !important;
+  padding:0 0 12px !important;
+}
+.ai-dashboard-track .ai-dashboard-card{
+  flex:0 0 calc((100% - 28px)/3.03) !important;
+  border:1px solid rgba(107,94,164,.28) !important;
+  border-radius:16px !important;
+  background:linear-gradient(180deg, rgba(17,22,43,.98) 0%, rgba(16,20,40,.98) 100%) !important;
+  box-shadow:0 10px 22px rgba(0,0,0,.18) !important;
+  overflow:hidden !important;
+}
+.ai-dashboard-card-coverwrap{
+  aspect-ratio:16/12 !important;
+  background:#11152b !important;
+}
+.ai-dashboard-card-cover{
+  object-fit:cover !important;
+  object-position:center !important;
+}
+.ai-dashboard-match{
+  left:10px !important;
+  top:10px !important;
+  min-height:24px !important;
+  padding:0 10px !important;
+  background:linear-gradient(90deg,#f45fc0 0%,#a76af6 100%) !important;
+  color:#fff !important;
+  font-size:10px !important;
+  font-weight:800 !important;
+}
+.ai-dashboard-favorite{
+  right:10px !important;
+  top:10px !important;
+  width:28px !important;
+  height:28px !important;
+  border-color:rgba(255,255,255,.36) !important;
+  background:rgba(20,22,38,.55) !important;
+  color:#fff !important;
+}
+.ai-dashboard-card-body{
+  gap:7px !important;
+  padding:13px 13px 14px !important;
+  min-height:132px !important;
+}
+.ai-dashboard-card-body b{
+  color:#ffffff !important;
+  font-size:16px !important;
+  line-height:1.16 !important;
+  letter-spacing:-.2px !important;
+  min-height:38px !important;
+}
+.ai-dashboard-card-subtitle{
+  color:#c2c6db !important;
+  font-size:12px !important;
+}
+.ai-dashboard-card-tags{
+  gap:6px !important;
+}
+.ai-dashboard-card-tags i{
+  min-height:22px !important;
+  padding:0 8px !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.08) !important;
+  color:#d9ddf1 !important;
+  font-size:10px !important;
+  font-weight:650 !important;
+}
+.ai-dashboard-card-rating{
+  color:#ffbf2e !important;
+  font-size:14px !important;
+  font-weight:800 !important;
+}
+.ai-dashboard-edge-next{
+  right:-10px !important;
+  width:46px !important;
+  height:46px !important;
+  border:1px solid rgba(154,114,243,.7) !important;
+  background:#14192f !important;
+  color:#b985ff !important;
+  box-shadow:0 10px 22px rgba(8,10,22,.30) !important;
+}
+.ai-dashboard-dots{
+  margin-top:4px !important;
+}
+.ai-dashboard-dots i{
+  width:7px !important;
+  height:7px !important;
+  background:rgba(255,255,255,.22) !important;
+}
+.ai-dashboard-dots i.is-active{
+  width:18px !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg,#9e67ff,#ef67bb) !important;
+}
+@container (max-width: 720px){
+  .ai-dashboard-track .ai-dashboard-card{
+    flex-basis:calc((100% - 14px)/2) !important;
+  }
+}
+@container (max-width: 520px){
+  .ai-dashboard-track .ai-dashboard-card{
+    flex-basis:82% !important;
+  }
+}
+@media (max-width:760px){
+  .ai-dashboard-carousel{
+    padding:16px 14px 12px !important;
+  }
+  .ai-dashboard-sidehead h2{
+    font-size:18px !important;
+  }
+}

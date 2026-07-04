@@ -70,8 +70,7 @@ export default function HomeAiRecommendationsCarouselClient({ items = [] }){
     <div className="ai-dashboard-sidehead">
       <h2>Рекомендуем тебе</h2>
       <div className="ai-dashboard-controls">
-        <button type="button" className="ai-dashboard-control ai-dashboard-control-prev" onClick={() => move(-1)} aria-label="Предыдущие рекомендации">‹</button>
-        <button type="button" className="ai-dashboard-control ai-dashboard-control-next" onClick={() => move(1)} aria-label="Следующие рекомендации">›</button>
+        <button type="button" className="ai-dashboard-refresh" onClick={() => move(1)}>Обновить</button>
       </div>
     </div>
 
