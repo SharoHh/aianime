@@ -30682,3 +30682,8 @@ html body .global-search-modal{
     flex-basis:84% !important;
   }
 }
+
+/* AIanime v291: larger poster area in home recommendation cards */
+.ai-dashboard-card-coverwrap{
+  aspect-ratio:6 / 5 !important;
+}
