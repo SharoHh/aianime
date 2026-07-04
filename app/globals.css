@@ -30865,3 +30865,232 @@ html body .global-search-modal{
     height:54px;
   }
 }
+
+/* AIanime v293: anime roulette in the home sidebar */
+.home-roulette-widget{
+  position:relative;
+  overflow:hidden;
+  padding:18px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(157,92,255,.15),transparent 34%),
+    linear-gradient(180deg,#fff 0%,#fbf8ff 100%);
+}
+.home-roulette-widget::after{
+  content:"";
+  position:absolute;
+  right:-24px;
+  bottom:-30px;
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(229,104,187,.12),transparent 68%);
+  pointer-events:none;
+}
+.home-roulette-head{
+  position:relative;
+  z-index:1;
+  margin-bottom:14px;
+}
+.home-roulette-head > div{
+  min-width:0;
+}
+.home-roulette-kicker{
+  display:block;
+  margin-bottom:4px;
+  color:#9a60ee;
+  font-size:10px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.home-roulette-head h3{
+  margin:0;
+  color:#282142;
+  font-size:19px;
+  line-height:1.1;
+  letter-spacing:-.35px;
+}
+.home-roulette-dice{
+  flex:0 0 auto;
+  width:42px;
+  height:42px;
+  border:1px solid #e8ddf8;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 9px 22px rgba(91,63,139,.09);
+  display:grid;
+  place-items:center;
+  font-size:20px;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.home-roulette-dice:hover{
+  transform:rotate(8deg) translateY(-1px);
+  box-shadow:0 13px 28px rgba(91,63,139,.14);
+}
+.home-roulette-card{
+  position:relative;
+  z-index:1;
+  overflow:hidden;
+  border:1px solid #ebe3f7;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 14px 30px rgba(81,58,126,.09);
+  animation:homeRouletteReveal .24s ease both;
+}
+@keyframes homeRouletteReveal{
+  from{opacity:.25;transform:translateY(5px) scale(.99)}
+  to{opacity:1;transform:none}
+}
+.home-roulette-cover{
+  position:relative;
+  display:block;
+  aspect-ratio:16/9;
+  overflow:hidden;
+  background:#f1eafa;
+}
+.home-roulette-cover img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  transition:transform .28s ease;
+}
+.home-roulette-cover:hover img{
+  transform:scale(1.035);
+}
+.home-roulette-cover::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,transparent 56%,rgba(19,13,37,.34));
+  pointer-events:none;
+}
+.home-roulette-badge{
+  position:absolute;
+  z-index:2;
+  left:11px;
+  top:11px;
+  min-height:27px;
+  padding:0 10px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  background:linear-gradient(90deg,#9259f3,#e96ebb);
+  color:#fff;
+  box-shadow:0 9px 20px rgba(158,92,238,.25);
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.035em;
+}
+.home-roulette-body{
+  padding:14px;
+}
+.home-roulette-title{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  color:#282142;
+  font-size:17px;
+  line-height:1.16;
+  font-weight:900;
+  letter-spacing:-.25px;
+}
+.home-roulette-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:10px;
+}
+.home-roulette-meta span{
+  min-height:24px;
+  padding:0 8px;
+  border-radius:999px;
+  background:#f5efff;
+  color:#8055dc;
+  display:inline-flex;
+  align-items:center;
+  font-size:10px;
+  line-height:1;
+  font-weight:850;
+}
+.home-roulette-meta span:first-child{
+  color:#d18a00;
+  background:#fff7dc;
+}
+.home-roulette-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:13px;
+}
+.home-roulette-watch,
+.home-roulette-spin{
+  min-width:0;
+  min-height:42px;
+  border-radius:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 10px;
+  font-size:12px;
+  line-height:1.1;
+  font-weight:900;
+  text-align:center;
+}
+.home-roulette-watch{
+  border:0;
+  background:linear-gradient(90deg,#9259f3,#d862cf);
+  color:#fff;
+  box-shadow:0 11px 24px rgba(142,84,229,.2);
+}
+.home-roulette-spin{
+  border:1px solid #e8def7;
+  background:#fff;
+  color:#6e49c5;
+  cursor:pointer;
+}
+.home-roulette-spin:hover{
+  background:#faf7ff;
+}
+@media(max-width:1100px){
+  .home-roulette-actions{
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:760px){
+  .home-roulette-widget{
+    padding:16px;
+  }
+  .home-roulette-actions{
+    grid-template-columns:1fr 1fr;
+  }
+}
+@media(max-width:390px){
+  .home-roulette-actions{
+    grid-template-columns:1fr;
+  }
+}
+
+/* AIanime v293: roulette responsive finishing */
+@media(max-width:1100px){
+  .home-roulette-actions{
+    grid-template-columns:1fr 1fr;
+  }
+}
+.home-roulette-watch,
+.home-roulette-spin{
+  min-height:44px;
+}
+@media(max-width:390px){
+  .home-roulette-actions{
+    grid-template-columns:1fr;
+  }
+}
+.home-roulette-watch,
+.home-roulette-spin{
+  min-height:46px;
+}

@@ -29,6 +29,7 @@ import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import HomePopularNowClient from '@/components/HomePopularNowClient'
 import HomeNewOnSiteClient from '@/components/HomeNewOnSiteClient'
 import HomeContinueWatchingWidgetClient from '@/components/HomeContinueWatchingWidgetClient'
+import HomeAnimeRouletteClient from '@/components/HomeAnimeRouletteClient'
 import HomeAiRecommendationsCarouselClient from '@/components/HomeAiRecommendationsCarouselClient'
 import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
@@ -198,7 +199,7 @@ function SiteStatsWidget({animeCount, weeklySchedule}){
 function RightPanel({anime, popular, animeCount, weeklySchedule}){return <aside className="rightcol">
   <HomeScheduleWidgetClient scheduleDays={weeklySchedule?.days || []} initialDay={weeklySchedule?.todayIndex || 0}/>
   <HomeContinueWatchingWidgetClient popular={popular}/>
-  <div className="widget mini-list"><div className="widget-head"><h3>Рекомендуем для тебя</h3><Link href="/ai?q=подбери%20аниме%20для%20меня">Смотреть все</Link></div>{anime.slice(5,9).map(a=><Link href={`/anime/${a.slug}`} className="mini" key={a.slug} prefetch={false}><img loading="lazy" decoding="async" width="72" height="102" src={a.poster} alt={a.title ? `Постер аниме ${a.title}` : 'Постер аниме'}/><div><b>{a.title}</b><span>{a.meta}</span></div><GlobalRatingBadge slug={a.slug} score={a.rating} count={a.siteRatingCount} className="mini-rating-gold"/></Link>)}</div>
+  <HomeAnimeRouletteClient items={anime}/>
   <SiteStatsWidget animeCount={animeCount} weeklySchedule={weeklySchedule}/>
 </aside>}
 export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:1000}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 12); const newestVisibleSlugs = new Set(newestAnime.slice(0, 5).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 12, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
