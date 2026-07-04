@@ -22,14 +22,14 @@ function metaLine(item){
 
 
 export default function HomeNewOnSiteClient({ anime = [] }){
-  const visible = Array.isArray(anime) ? anime.filter(isPublicReadyAnimeItem).slice(0, 5) : []
+  const visible = Array.isArray(anime) ? anime.filter(isPublicReadyAnimeItem).slice(0, 10) : []
   if(!visible.length) return null
 
   return <section className="home-new-site" aria-label="Новое на сайте">
     <div className="section-title home-new-title">
       <div>
         <h2><HomeSectionIcon type="new"/>Новое на сайте</h2>
-        <p>Последние добавленные тайтлы. Онгоинги оставим в расписании и отдельных подборках.</p>
+        <p>Последние 10 тайтлов, добавленных в каталог AIanime.</p>
       </div>
       <Link href="/catalog">В каталог ›</Link>
     </div>
