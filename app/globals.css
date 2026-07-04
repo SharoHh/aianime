@@ -30572,3 +30572,64 @@ html body .global-search-modal{
     height:44px !important;
   }
 }
+
+/* AIanime v287: refine selected variant 1 */
+.hero.ai-dashboard-hero,
+.ai-dashboard-side,
+.ai-dashboard-carousel,
+.ai-dashboard-carousel-frame,
+.ai-dashboard-track{
+  background:#fff !important;
+}
+.ai-dashboard-copy{
+  padding-top:18px !important;
+}
+.ai-dashboard-copy p{
+  margin-bottom:24px !important;
+}
+.ai-dashboard-moods{
+  margin-top:8px !important;
+  margin-bottom:26px !important;
+}
+.ai-dashboard-controls{
+  gap:8px !important;
+}
+.ai-dashboard-refresh{
+  display:none !important;
+}
+.ai-dashboard-control-prev,
+.ai-dashboard-control-next{
+  display:grid !important;
+  width:36px !important;
+  height:36px !important;
+  border:1px solid #e7ddf8 !important;
+  border-radius:12px !important;
+  background:#fff !important;
+  color:#8a5bea !important;
+  box-shadow:none !important;
+}
+.ai-dashboard-track{
+  gap:18px !important;
+  padding:2px 0 16px !important;
+}
+.ai-dashboard-track .ai-dashboard-card{
+  flex:0 0 calc((100% - 36px)/3) !important;
+}
+.ai-dashboard-card-coverwrap{
+  aspect-ratio:16/9.8 !important;
+}
+.ai-dashboard-card-body{
+  padding:15px 15px 16px !important;
+}
+.ai-dashboard-card-body b{
+  font-size:19px !important;
+  min-height:44px;
+}
+.ai-dashboard-edge-next{
+  right:-14px !important;
+}
+@container (max-width: 720px){
+  .ai-dashboard-track .ai-dashboard-card{
+    flex-basis:calc((100% - 18px)/2) !important;
+  }
+}
