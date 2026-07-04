@@ -30,6 +30,7 @@ import SiteStatsClient from '@/components/SiteStatsClient'
 import GlobalRatingBadge from '@/components/GlobalRatingBadge'
 import HomePopularNowClient from '@/components/HomePopularNowClient'
 import HomeNewOnSiteClient from '@/components/HomeNewOnSiteClient'
+import HomeAiRecommendationsCarouselClient from '@/components/HomeAiRecommendationsCarouselClient'
 import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
@@ -156,56 +157,35 @@ function HomeAiHero({ recommendations = [] }){
     { icon:'🥲', label:'Погрустить', href:'/ai?q=трогательное%20или%20грустное%20аниме' },
     { icon:'🔥', label:'Экшен', href:'/ai?q=динамичное%20экшен%20аниме' },
   ]
-  const matches = [94, 91, 89]
-  const safeRecs = recommendations.slice(0, 3)
 
   return <section className="hero ai-dashboard-hero">
-    <div className="ai-dashboard-copy">
-      <span className="ai-dashboard-badge">AI-подбор аниме</span>
-      <h1>Что хочется <br/>посмотреть сегодня?</h1>
-      <p>Расскажи о своём настроении или выбери вариант ниже — наш AI подберёт идеальное аниме специально для тебя.</p>
-      <div className="ai-dashboard-moods" aria-label="Быстрый выбор настроения">
-        {moods.map(mood => <Link key={mood.label} href={mood.href} className="ai-dashboard-mood" prefetch={false}><b aria-hidden="true">{mood.icon}</b><span>{mood.label}</span></Link>)}
-      </div>
-      <div className="ai-dashboard-actions">
-        <Link href="/ai" className="primary">✨ Подобрать аниме</Link>
-        <label htmlFor="how-modal-toggle" className="secondary how-works-btn">Как это работает?</label>
-      </div>
-      <div className="how-modal" aria-hidden="true">
-        <label className="how-modal-backdrop" htmlFor="how-modal-toggle" />
-        <div className="how-modal-card" role="dialog" aria-modal="true" aria-labelledby="how-modal-title">
-          <label className="how-modal-close" htmlFor="how-modal-toggle" aria-label="Закрыть">×</label>
-          <h2 id="how-modal-title">Как это работает?</h2>
-          <div className="how-modal-steps">
-            <article><b>☺</b><div><strong>Выбери настроение</strong><span>Отметь вайб или просто опиши, что хочется посмотреть прямо сейчас.</span></div></article>
-            <article><b className="how-card-icon"><HomeSectionIcon type="ai"/></b><div><strong>AI подберёт похожие тайтлы</strong><span>Система учитывает жанры, твой запрос и уже просмотренные аниме.</span></div></article>
-            <article><b>▶</b><div><strong>Открой рекомендацию и смотри</strong><span>Переходи к понравившемуся тайтлу или запускай полный AI-подбор.</span></div></article>
+    <div className="ai-dashboard-layout">
+      <div className="ai-dashboard-copy">
+        <span className="ai-dashboard-badge">AI-подбор аниме</span>
+        <h1>Что хочется <br/>посмотреть сегодня?</h1>
+        <p>Расскажи о своём настроении или выбери вариант ниже — наш AI подберёт идеальное аниме специально для тебя.</p>
+        <div className="ai-dashboard-moods" aria-label="Быстрый выбор настроения">
+          {moods.map(mood => <Link key={mood.label} href={mood.href} className="ai-dashboard-mood" prefetch={false}><b aria-hidden="true">{mood.icon}</b><span>{mood.label}</span></Link>)}
+        </div>
+        <div className="ai-dashboard-actions">
+          <Link href="/ai" className="primary">✨ Подобрать аниме</Link>
+          <label htmlFor="how-modal-toggle" className="secondary how-works-btn">Как это работает?</label>
+        </div>
+        <div className="how-modal" aria-hidden="true">
+          <label className="how-modal-backdrop" htmlFor="how-modal-toggle" />
+          <div className="how-modal-card" role="dialog" aria-modal="true" aria-labelledby="how-modal-title">
+            <label className="how-modal-close" htmlFor="how-modal-toggle" aria-label="Закрыть">×</label>
+            <h2 id="how-modal-title">Как это работает?</h2>
+            <div className="how-modal-steps">
+              <article><b>☺</b><div><strong>Выбери настроение</strong><span>Отметь вайб или просто опиши, что хочется посмотреть прямо сейчас.</span></div></article>
+              <article><b className="how-card-icon"><HomeSectionIcon type="ai"/></b><div><strong>AI подберёт похожие тайтлы</strong><span>Система учитывает жанры, твой запрос и уже просмотренные аниме.</span></div></article>
+              <article><b>▶</b><div><strong>Открой рекомендацию и смотри</strong><span>Переходи к понравившемуся тайтлу или запускай полный AI-подбор.</span></div></article>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div className="ai-dashboard-side">
-      <div className="ai-dashboard-sidehead">
-        <h2>Рекомендуем тебе</h2>
-        <Link href="/ai?q=подбери%20аниме%20для%20меня" className="ai-dashboard-refresh" prefetch={false}>Обновить</Link>
-      </div>
-      <div className="ai-dashboard-grid">
-        {safeRecs.map((item, index) => {
-          const title = item.displayTitle || item.title || 'Без названия'
-          const subtitle = item.originalTitle || item.englishTitle || item.meta || ''
-          return <Link href={`/anime/${item.slug}`} key={item.slug} className="ai-dashboard-card" prefetch={false}>
-            <div className="ai-dashboard-card-coverwrap">
-              <img loading="lazy" decoding="async" width="320" height="420" src={item.banner || item.poster} alt={title ? `Кадр из аниме ${title}` : 'Постер аниме'} className="ai-dashboard-card-cover"/>
-              <span className="ai-dashboard-match">{matches[index] || 88}% совпадение</span>
-            </div>
-            <div className="ai-dashboard-card-body">
-              <b>{title}</b>
-              {subtitle ? <span className="ai-dashboard-card-subtitle">{subtitle}</span> : null}
-              <div className="ai-dashboard-card-tags">{(item.genres || []).slice(0,2).map(genre => <i key={genre}>{genre}</i>)}</div>
-              <div className="ai-dashboard-card-rating">★ {item.rating || '—'}</div>
-            </div>
-          </Link>
-        })}
+      <div className="ai-dashboard-side">
+        <HomeAiRecommendationsCarouselClient items={recommendations}/>
       </div>
     </div>
   </section>
@@ -222,5 +202,5 @@ function RightPanel({anime, animeCount, weeklySchedule}){return <aside className
   <SiteStatsWidget animeCount={animeCount} weeklySchedule={weeklySchedule}/>
 </aside>}
 export default async function Home(){const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:1000}), getWeeklySchedule(), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 12); const newestVisibleSlugs = new Set(newestAnime.slice(0, 5).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 12, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с новыми тайтлами, популярным аниме, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
-<header className="topbar"><GlobalSearchOverlay items={clientAnime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><HomeAiHero recommendations={compactAnimeItems(popularAnime.slice(0,3), 3, { descriptionLimit: 120, genresLimit: 2 })}/>
+<header className="topbar"><GlobalSearchOverlay items={clientAnime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><HomeAiHero recommendations={compactAnimeItems(popularAnime.slice(0,9), 9, { descriptionLimit: 120, genresLimit: 2 })}/>
 <HomeNewOnSiteClient anime={newestClient}/><HomePopularNowClient anime={popularClient}/><SectionTitle icon="continue" title="Продолжить просмотр"/><ContinueWatchingClient/><SectionTitle icon="collections" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={clientAnime} animeCount={anime.length} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}
