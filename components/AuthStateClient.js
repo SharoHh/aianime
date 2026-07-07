@@ -41,7 +41,7 @@ export function getProfileDefaults(user){
   return {
     ...baseProfileDefaults,
     name: getUserDisplayName(user),
-    level: user?.email ? 'Аккаунт подключён' : baseProfileDefaults.level,
+    level: user?.id ? 'Аккаунт подключён' : baseProfileDefaults.level,
     avatar: user?.user_metadata?.avatar_url || baseProfileDefaults.avatar,
     cover: baseProfileDefaults.cover
   }
@@ -98,7 +98,9 @@ function writeCachedUser(user){
 function readPendingAuthSession(){
   if(typeof window === 'undefined') return null
   try{
-    const raw = sessionStorage.getItem(PENDING_AUTH_SESSION_KEY) || localStorage.getItem(PENDING_AUTH_SESSION_KEY)
+    const sessionRaw = sessionStorage.getItem(PENDING_AUTH_SESSION_KEY)
+    const legacyRaw = sessionRaw ? null : localStorage.getItem(PENDING_AUTH_SESSION_KEY)
+    const raw = sessionRaw || legacyRaw
     if(!raw) return null
     const parsed = JSON.parse(raw)
     if(!parsed?.access_token || !parsed?.refresh_token) return null
@@ -106,6 +108,12 @@ function readPendingAuthSession(){
       sessionStorage.removeItem(PENDING_AUTH_SESSION_KEY)
       localStorage.removeItem(PENDING_AUTH_SESSION_KEY)
       return null
+    }
+    // Старые версии дублировали refresh token в localStorage. Мигрируем его в
+    // sessionStorage и сразу удаляем лишнюю долговременную копию.
+    if(legacyRaw){
+      sessionStorage.setItem(PENDING_AUTH_SESSION_KEY, raw)
+      localStorage.removeItem(PENDING_AUTH_SESSION_KEY)
     }
     return parsed
   }catch{
@@ -135,7 +143,9 @@ export function setPendingAuthSession(session, user = null){
   try{
     const raw = JSON.stringify(payload)
     sessionStorage.setItem(PENDING_AUTH_SESSION_KEY, raw)
-    localStorage.setItem(PENDING_AUTH_SESSION_KEY, raw)
+    // Refresh token хранится только в sessionStorage до передачи Supabase-клиенту.
+    // Удаляем возможную копию, оставшуюся от старых версий.
+    localStorage.removeItem(PENDING_AUTH_SESSION_KEY)
   }catch{}
   if(payload.user) writeCachedUser(payload.user)
   return payload

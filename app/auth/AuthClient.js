@@ -10,7 +10,8 @@ function authErrorMessage(message){
   const text = String(message || '')
   if(text.toLowerCase().includes('invalid login')) return 'Неверный email или пароль.'
   if(text.toLowerCase().includes('email not confirmed')) return 'Email ещё не подтверждён. Проверь почту.'
-  if(text.toLowerCase().includes('password')) return 'Проверь пароль: минимум 6 символов.'
+  if(text.toLowerCase().includes('provider') || text.toLowerCase().includes('oauth')) return 'Вход через VK ID пока не настроен или временно недоступен.'
+  if(text.toLowerCase().includes('password')) return 'Проверь пароль: минимум 8 символов.'
   return text || 'Ошибка авторизации.'
 }
 
@@ -18,7 +19,7 @@ function getNextUrl(){
   if(typeof window === 'undefined') return '/profile'
   const params = new URLSearchParams(window.location.search)
   const next = params.get('next') || '/profile'
-  return next.startsWith('/') ? next : '/profile'
+  return next.startsWith('/') && !next.startsWith('//') ? next : '/profile'
 }
 
 async function loadRuntimeSupabaseConfig(){
@@ -33,7 +34,7 @@ export default function AuthClient(){
   const [message,setMessage] = useState('')
   const [user,setUser] = useState(null)
   const [loading,setLoading] = useState(false)
-  const [runtimeConfig,setRuntimeConfig] = useState(null)
+  const [runtimeConfig,setRuntimeConfig] = useState(() => getBuildSupabaseConfig())
   const [configChecked,setConfigChecked] = useState(hasSupabaseBrowser(getBuildSupabaseConfig()))
 
   const configured = hasSupabaseBrowser(runtimeConfig)
@@ -42,11 +43,8 @@ export default function AuthClient(){
   useEffect(()=>{
     let alive = true
 
-    if(hasSupabaseBrowser(getBuildSupabaseConfig())){
-      setConfigChecked(true)
-      return () => { alive = false }
-    }
-
+    // Даже когда URL и anon key встроены на этапе build, runtime endpoint нужен
+    // для безопасного включения/выключения VK ID без правок клиентского кода.
     loadRuntimeSupabaseConfig()
       .then(config => {
         if(!alive) return
@@ -102,7 +100,9 @@ export default function AuthClient(){
       })
       const data = await response.json().catch(() => ({}))
       if(!response.ok || !data?.ok){
-        throw new Error(data?.error || 'Ошибка авторизации.')
+        const error = new Error(data?.error || 'Ошибка авторизации.')
+        error.status = response.status
+        throw error
       }
 
       const session = data.session
@@ -121,6 +121,45 @@ export default function AuthClient(){
       return { data:{ user:nextUser, session }, error:null, via:'server-proxy' }
     }finally{
       clearTimeout(timer)
+    }
+  }
+
+
+  async function signInWithVk(){
+    setMessage('')
+    setLoading(true)
+    try{
+      const activeSupabase = await ensureSupabase()
+      if(!activeSupabase){
+        setMessage('Вход временно недоступен: Supabase не подключён на сервере.')
+        return
+      }
+
+      const provider = String(runtimeConfig?.vkAuthProvider || 'custom:vk')
+      const callbackUrl = new URL('/auth/callback', window.location.origin)
+      callbackUrl.searchParams.set('next', getNextUrl())
+
+      const { data, error } = await activeSupabase.auth.signInWithOAuth({
+        provider,
+        options:{
+          redirectTo:callbackUrl.toString(),
+          skipBrowserRedirect:true
+        }
+      })
+
+      if(error){
+        setMessage(authErrorMessage(error.message))
+        return
+      }
+      if(!data?.url){
+        setMessage('VK ID не вернул адрес авторизации. Проверь настройку провайдера.')
+        return
+      }
+      window.location.assign(data.url)
+    }catch(error){
+      setMessage(authErrorMessage(error?.message))
+    }finally{
+      setLoading(false)
     }
   }
 
@@ -145,16 +184,25 @@ export default function AuthClient(){
         try{
           result = await signInWithServerProxy(cleanEmail, activeSupabase)
         }catch(proxyError){
-          // Fallback оставляем на случай, если endpoint ещё не задеплоен или Supabase
-          // поменял ответ auth/v1/token.
-          result = await activeSupabase.auth.signInWithPassword({ email:cleanEmail, password })
-          if(result.error && proxyError?.message) result.error.message = proxyError.message
+          // Прямой fallback разрешён только при технической ошибке endpoint. Ошибки
+          // пароля и rate limit нельзя обходить вторым запросом напрямую в Supabase.
+          const status = Number(proxyError?.status || 0)
+          if(status && status < 500 && status !== 404){
+            result = { data:{ user:null, session:null }, error:proxyError }
+          }else{
+            result = await activeSupabase.auth.signInWithPassword({ email:cleanEmail, password })
+            if(result.error && proxyError?.message) result.error.message = proxyError.message
+          }
         }
       }else{
+        const emailCallback = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(getNextUrl())}` : undefined
         result = await activeSupabase.auth.signUp({
           email:cleanEmail,
           password,
-          options:{ data:{ name:cleanName || cleanEmail.split('@')[0] } }
+          options:{
+            data:{ name:cleanName || cleanEmail.split('@')[0] },
+            emailRedirectTo:emailCallback
+          }
         })
       }
 
@@ -194,7 +242,7 @@ export default function AuthClient(){
       <div className="auth-user">
         <span>аккаунт</span>
         <h2>{getUserDisplayName(user)}</h2>
-        <p>{user.email}</p>
+        <p>{user.email || 'Вход через VK ID'}</p>
       </div>
       <div className="auth-actions">
         <Link className="primary" href="/profile">Открыть профиль</Link>
@@ -217,10 +265,18 @@ export default function AuthClient(){
       <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={()=>setMode('signup')}>Регистрация</button>
     </div>
 
+    {runtimeConfig?.vkAuthEnabled ? <>
+      <button type="button" className="auth-vk-button" onClick={signInWithVk} disabled={loading}>
+        <span className="auth-vk-logo" aria-hidden="true">VK</span>
+        <span>{loading ? 'Открываем VK ID…' : 'Продолжить через VK ID'}</span>
+      </button>
+      <div className="auth-divider"><span>или по email</span></div>
+    </> : null}
+
     <form onSubmit={submit} className="auth-form">
-      {mode === 'signup' ? <label><span>Имя профиля</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Например, Haruno" /></label> : null}
-      <label><span>Email</span><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" required /></label>
-      <label><span>Пароль</span><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Минимум 6 символов" minLength={6} required /></label>
+      {mode === 'signup' ? <label><span>Имя профиля</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Например, Haruno" autoComplete="name" maxLength={80} /></label> : null}
+      <label><span>Email</span><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" autoComplete="email" maxLength={254} required /></label>
+      <label><span>Пароль</span><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={mode === 'signup' ? 'Минимум 8 символов' : 'Твой пароль'} minLength={mode === 'signup' ? 8 : 1} maxLength={1024} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} required /></label>
       <button className="primary" disabled={loading}>{loading ? (mode === 'login' ? 'Входим…' : 'Создаём…') : mode === 'login' ? 'Войти' : 'Создать аккаунт'}</button>
     </form>
 

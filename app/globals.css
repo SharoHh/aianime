@@ -31094,3 +31094,136 @@ html body .global-search-modal{
 .home-roulette-spin{
   min-height:46px;
 }
+
+/* AIanime v297: secure auth UI + VK ID */
+.auth-vk-button{
+  width:100%;
+  min-height:52px;
+  border:0;
+  border-radius:16px;
+  padding:0 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  background:#0077ff;
+  color:#fff;
+  box-shadow:0 14px 28px rgba(0,119,255,.20);
+  font-size:15px;
+  font-weight:850;
+  cursor:pointer;
+  transition:transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+}
+.auth-vk-button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 17px 34px rgba(0,119,255,.25);
+}
+.auth-vk-button:disabled{
+  opacity:.62;
+  cursor:wait;
+  transform:none;
+}
+.auth-vk-logo{
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  color:#0077ff;
+  font-size:12px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:-.5px;
+}
+.auth-divider{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:#9a92aa;
+  font-size:11px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.auth-divider::before,
+.auth-divider::after{
+  content:"";
+  height:1px;
+  flex:1;
+  background:#eee6f8;
+}
+.auth-divider span{
+  flex:none;
+}
+.auth-callback-card{
+  text-align:center;
+  display:grid;
+  justify-items:center;
+  gap:12px;
+}
+.auth-callback-card h2{
+  margin:0;
+  color:#241f42;
+  font-size:26px;
+  letter-spacing:-.7px;
+}
+.auth-callback-card p{
+  margin:0;
+  color:#766e87;
+  font-size:14px;
+  line-height:1.5;
+}
+.auth-callback-spinner{
+  width:46px;
+  height:46px;
+  border:4px solid #eee6fb;
+  border-top-color:#8d55ee;
+  border-radius:50%;
+  animation:auth-callback-spin .8s linear infinite;
+}
+.auth-callback-card.is-success .auth-callback-spinner{
+  border:0;
+  background:#eefbf5;
+  color:#2fad78;
+  animation:none;
+}
+.auth-callback-card.is-success .auth-callback-spinner::before{
+  content:"✓";
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  font-size:24px;
+  font-weight:950;
+}
+.auth-callback-card.is-error .auth-callback-spinner{
+  border:0;
+  background:#fff0f5;
+  color:#d94d78;
+  animation:none;
+}
+.auth-callback-card.is-error .auth-callback-spinner::before{
+  content:"!";
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  font-size:24px;
+  font-weight:950;
+}
+@keyframes auth-callback-spin{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+  .auth-vk-button{
+    min-height:48px;
+    padding:10px 14px;
+    font-size:14px;
+  }
+  .auth-vk-logo{
+    width:28px;
+    height:28px;
+  }
+  .auth-callback-card{
+    width:100%;
+  }
+}
