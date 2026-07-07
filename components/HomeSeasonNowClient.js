@@ -29,7 +29,7 @@ export default function HomeSeasonNowClient({ anime = [], title = 'Аниме т
     <div className="section-title popular-live-title">
       <div>
         <h2><HomeSectionIcon type="schedule"/>{title}</h2>
-        <p>{seasonLabel ? `${seasonLabel}. ` : ''}Онгоинги, которые продолжают выходить сейчас и присутствуют в расписании AIanime.</p>
+        <p>{seasonLabel ? `Только онгоинги сезона ${seasonLabel} из текущего расписания AIanime.` : 'Только онгоинги текущего сезона из расписания AIanime.'}</p>
       </div>
       <Link href="/season">Все онгоинги ›</Link>
     </div>

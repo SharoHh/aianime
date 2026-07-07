@@ -34,6 +34,7 @@ import HomeAiRecommendationsCarouselClient from '@/components/HomeAiRecommendati
 import { getPopularitySnapshot, decorateAnimeWithPopularity, rankPopularAnime, rankNewAnime } from '@/lib/popularityData'
 import HomeSectionIcon from '@/components/HomeSectionIcon'
 import { collectionPageJsonLd, jsonLd } from '@/lib/seo'
+import { isPublicReadyAnimeItem } from '@/lib/animeQuality'
 function compactAnimeText(value, limit = 220){
   const text = String(value || '').replace(/\s+/g, ' ').trim()
   if(!text) return ''
@@ -96,29 +97,22 @@ function currentSeasonAnime(anime = [], weeklySchedule = {}, season = currentHom
   const result = []
   const used = new Set()
 
-  const push = item => {
-    if(!item?.slug || used.has(item.slug)) return
-    used.add(item.slug)
-    result.push(item)
-  }
-
   for(const day of weeklySchedule?.days || []){
     for(const release of day?.items || []){
       const item = bySlug.get(release?.slug)
-      if(item) push(item)
+      if(!item?.slug || used.has(item.slug)) continue
+      if(item.status !== 'ongoing') continue
+      if(Number(item.year || 0) !== season.year) continue
+      if(item.kind === 'movie') continue
+
+      used.add(item.slug)
+      result.push(item)
       if(result.length >= limit) return result
     }
   }
 
-  const fallback = rankPopularAnime(
-    safeAnime.filter(item => item?.status === 'ongoing' && Number(item?.year || 0) >= season.year - 1),
-    Math.max(limit * 4, 20),
-  )
-  for(const item of fallback){
-    push(item)
-    if(result.length >= limit) break
-  }
-
+  // Никаких старых онгоингов в качестве подстраховки: если текущих
+  // сезонных релизов меньше пяти, показываем меньше карточек.
   return result
 }
 
@@ -248,6 +242,6 @@ function RightPanel({anime, popular, animeCount, weeklySchedule}){return <aside 
   <HomeAnimeRouletteClient items={anime}/>
   <SiteStatsWidget animeCount={animeCount} weeklySchedule={weeklySchedule}/>
 </aside>}
-export default async function Home(){const now = new Date(); const season = currentHomeSeason(now); const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:1000}), getWeeklySchedule({ now }), getPopularitySnapshot()]); const anime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 20); const newestVisibleSlugs = new Set(newestAnime.slice(0, 10).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const seasonAnime = currentSeasonAnime(anime, weeklySchedule, season, 5); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const seasonClient = compactAnimeItems(seasonAnime, 5, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 20, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с сезонными онгоингами, новыми тайтлами, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...seasonAnime, ...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
+export default async function Home(){const now = new Date(); const season = currentHomeSeason(now); const [animeRaw, weeklySchedule, popularitySnapshot] = await Promise.all([getAnimeList({limit:1000}), getWeeklySchedule({ now }), getPopularitySnapshot()]); const decoratedAnime = decorateAnimeWithPopularity(animeRaw, popularitySnapshot); const anime = decoratedAnime.filter(isPublicReadyAnimeItem); const clientAnime = compactAnimeItems(anime, 160, { descriptionLimit: 180 }); const newestAnime = rankNewAnime(anime, 20); const newestVisibleSlugs = new Set(newestAnime.slice(0, 10).map(item => item?.slug).filter(Boolean)); const popularAnime = rankPopularAnime(anime.filter(item => !newestVisibleSlugs.has(item?.slug)), 24); const seasonAnime = currentSeasonAnime(anime, weeklySchedule, season, 5); const popularClient = compactAnimeItems(popularAnime, 24, { descriptionLimit: 160 }); const seasonClient = compactAnimeItems(seasonAnime, 5, { descriptionLimit: 160 }); const newestClient = compactAnimeItems(newestAnime, 20, { descriptionLimit: 160 }); return <main className="shell"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(collectionPageJsonLd({ name:'AIanime — аниме онлайн на русском', description:'Главная страница AIanime с сезонными онгоингами, новыми тайтлами, подборками, расписанием и AI-рекомендациями.', path:'/', items:[...seasonAnime, ...newestAnime, ...popularAnime].slice(0, 20).map(item => ({ title:item.title, slug:item.slug })) }))}} /><Sidebar/><section className="content"><input className="how-modal-toggle" id="how-modal-toggle" type="checkbox" />
 <header className="topbar"><GlobalSearchOverlay items={clientAnime.slice(0,80)}/><div className="actions"><Link href="/notifications" className="top-action">🔔</Link><Link href="/favorites" className="top-action">♡</Link><HeaderAccountClient/></div></header><HomeAiHero recommendations={compactAnimeItems(popularAnime.slice(0,9), 9, { descriptionLimit: 120, genresLimit: 2 })}/>
 <HomeSeasonNowClient anime={seasonClient} title={season.title} seasonLabel={`${season.label} ${season.year}`}/><HomeNewOnSiteClient anime={newestClient}/><SectionTitle icon="collections" title="Подборки для тебя"/><HomeCollectionsClient collections={collections}/></section><RightPanel anime={clientAnime} popular={popularClient} animeCount={anime.length} weeklySchedule={weeklySchedule}/><OnboardingClient/></main>}
