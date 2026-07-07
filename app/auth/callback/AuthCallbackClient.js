@@ -43,7 +43,7 @@ export default function AuthCallbackClient(){
     async function run(){
       const providerError = callbackError()
       if(providerError){
-        setState({ status:'error', message:'VK ID отменил вход или вернул ошибку. Попробуй ещё раз.' })
+        setState({ status:'error', message:'Сервис авторизации отменил вход или вернул ошибку. Попробуй ещё раз.' })
         return
       }
 
@@ -68,19 +68,19 @@ export default function AuthCallbackClient(){
       if(await finish(data?.session)) return
 
       // Browser client usually exchanges the PKCE code automatically during
-      // initialization. Keep an explicit fallback for slow/custom OAuth callbacks.
+      // initialization. Keep an explicit fallback for email confirmation and PKCE callbacks.
       const code = new URLSearchParams(window.location.search).get('code')
       if(code){
         const { data:exchangeData, error:exchangeError } = await supabase.auth.exchangeCodeForSession(code)
         if(!exchangeError && await finish(exchangeData?.session)) return
         if(exchangeError){
-          setState({ status:'error', message:'Код авторизации недействителен или уже использован. Повтори вход через VK ID.' })
+          setState({ status:'error', message:'Код подтверждения недействителен или уже использован. Повтори вход или запроси новое письмо.' })
           return
         }
       }
 
       timer = setTimeout(() => {
-        if(alive) setState({ status:'error', message:'Сессия не получена. Проверь настройки VK ID и разрешённые redirect URL.' })
+        if(alive) setState({ status:'error', message:'Сессия не получена. Повтори вход или открой новую ссылку подтверждения из письма.' })
       }, 10_000)
     }
 

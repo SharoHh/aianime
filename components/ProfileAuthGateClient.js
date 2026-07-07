@@ -69,7 +69,7 @@ export default function ProfileAuthGateClient(){
         <div>
           <span>профиль активен</span>
           <h2>{safeProfile.name || displayName}</h2>
-          <p>{user.email || 'Вход через VK ID'}</p>
+          <p>{user.email || 'Email не указан'}</p>
         </div>
       </div>
       <div className="profile-account-stats">
